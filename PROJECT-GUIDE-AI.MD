@@ -3,10 +3,11 @@
 **Versione:** v1.0.0-alpha  
 **Status:** 🚀 PROGETTO OPERATIVO
 
-## 📍 **REPOSITORY GITHUB**
+## 📍 **REPOSITORY & DEPLOYMENT**
 🔗 **GitHub**: https://github.com/fabriziocostola970/ai-trainer  
 📦 **Branch**: main  
-✅ **Status**: Successfully deployed and operational
+🚀 **Production**: https://ai-trainer-production-8fd9.up.railway.app/  
+✅ **Status**: Successfully deployed and operational on Railway
 
 ## 🎯 **OBIETTIVO PRINCIPALE**
 Sviluppare un **sistema AI autonomo e creativo** per VendiOnline.EU che, basandosi sui template mostrati durante il training, sia in grado di:
@@ -100,7 +101,7 @@ ai-trainer/                         # 🔗 https://github.com/fabriziocostola970
     └── 📄 integration.test.js      # Test integrazione VendiOnline.EU
 ```
 
-### **📊 Stato Implementazione**
+### 📊 **Stato Implementazione**
 | Componente | Status | Note |
 |------------|--------|------|
 | **Core Server** | ✅ Completato | Express.js + middleware configurati |
@@ -110,8 +111,8 @@ ai-trainer/                         # 🔗 https://github.com/fabriziocostola970
 | **Test Suite** | ✅ Completa | Health check + layout + template generation |
 | **Documentation** | ✅ Professionale | README.md + PROJECT-GUIDE completi |
 | **GitHub Repo** | ✅ Deployed | 13 files, 7228+ lines, main branch |
+| **Railway Production** | ✅ Live | https://ai-trainer-production-8fd9.up.railway.app/ |
 | **Real AI Integration** | 🔄 Fase 2 | OpenAI + Anthropic (prossima settimana) |
-| **Production Deploy** | 🔄 Fase 3 | Railway deployment (settimana 3) |
 
 ## 🎯 **FEATURES PRINCIPALI**
 
@@ -286,12 +287,28 @@ const BUSINESS_TEMPLATES = {
 
 ## 🔗 **INTEGRAZIONE CON VENDIONLINE.EU**
 
-### **📡 API Communication**
+### **� INTEGRATION ENDPOINTS**
 ```javascript
-// In VendiOnline.EU - Hook personalizzato
+// Production URL
+const AI_TRAINER_API = 'https://ai-trainer-production-8fd9.up.railway.app';
+
+// Development URL (locale)
+const AI_TRAINER_DEV = 'http://localhost:4000';
+
+// Environment based selection
+const AI_API_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://ai-trainer-production-8fd9.up.railway.app'
+  : 'http://localhost:4000';
+```
+
+### **�📡 API Communication**
+```javascript
+// In VendiOnline.EU - Hook personalizzato aggiornato
 const useAITemplates = () => {
-  const AI_TRAINER_API = 'http://localhost:4000'; // Dev
-  // const AI_TRAINER_API = 'https://ai-trainer.railway.app'; // Prod
+  // URLs dinamici per environment
+  const AI_TRAINER_API = process.env.NODE_ENV === 'production'
+    ? 'https://ai-trainer-production-8fd9.up.railway.app' // Railway Production
+    : 'http://localhost:4000'; // Development locale
   
   const generateIntelligentLayout = async (businessData) => {
     try {
@@ -591,8 +608,8 @@ const AI_CONFIG = {
 - [ ] 🆕 **AGGIUNTO**: Real AI testing e validazione accuracy
 - [ ] 🆕 **AGGIUNTO**: Cost optimization per API calls AI
 
-### **📅 Settimana 3 (19-25 Agosto) - 🔮 PIANIFICATA**
-- [ ] 🚀 Production deployment (Railway.app)
+### **📅 Settimana 3 (19-25 Agosto) - ✅ ANTICIPATA E COMPLETATA**
+- [x] ✅ Production deployment (Railway.app) - **COMPLETATO**: https://ai-trainer-production-8fd9.up.railway.app/
 - [ ] 🗄️ Database PostgreSQL condiviso con VendiOnline.EU
 - [ ] 📊 Advanced features (A/B testing layouts automatico)
 - [ ] 📈 Analytics e metrics collection (usage, performance, accuracy)
@@ -724,17 +741,20 @@ cp .env.example .env
 npm start
 ```
 
-### 🧪 **Test API**
+### **🧪 Test API (Production & Development)**
 ```bash
-# Health check
-curl http://localhost:4000/health
+# Production Health check
+curl https://ai-trainer-production-8fd9.up.railway.app/health
 
-# Test layout generation
-curl -X POST http://localhost:4000/api/generate/layout \
+# Production layout generation
+curl -X POST https://ai-trainer-production-8fd9.up.railway.app/api/generate/layout \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ai-trainer-secret-key-123" \
   -d '{"businessType":"restaurant","currentBlocks":[]}'
 
-# Run test suite
+# Development Health check
+curl http://localhost:4000/health
+
+# Run local test suite
 node test-full.js
 ```
