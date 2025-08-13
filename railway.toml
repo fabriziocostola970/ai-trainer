@@ -1,0 +1,21 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[variables]
+NODE_ENV = "production"
+PORT = "4000"
+AI_TRAINER_API_KEY = "ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c"
+
+# Frontend Configuration
+CORS_ORIGIN = "https://ai-trainer-production.up.railway.app"
+
+# Optional AI API Keys (for advanced features)
+# OPENAI_API_KEY = "configurata su Railway se necessaria"
+# CLAUDE_API_KEY = "configurata su Railway se necessaria"

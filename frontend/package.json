@@ -1,0 +1,110 @@
+{
+  "name": "ai-trainer-frontend",
+  "version": "1.2.0",
+  "description": "AI-Trainer Dashboard - Advanced training system interface for intelligent template generation",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve -s . -l 3000",
+    "dev": "npx serve -s . -l 3000 --cors",
+    "build": "npm run optimize",
+    "optimize": "node scripts/optimize.js",
+    "test": "node scripts/test.js",
+    "deploy": "npm run build && npm run upload",
+    "upload": "echo 'Deploy to Railway or CDN'",
+    "lint": "echo 'Linting frontend code...'",
+    "format": "echo 'Formatting code...'",
+    "validate": "node scripts/validate.js"
+  },
+  "keywords": [
+    "ai",
+    "machine-learning",
+    "template-generation",
+    "web-design",
+    "training-interface",
+    "dashboard",
+    "react",
+    "javascript"
+  ],
+  "author": "VendiOnline.EU",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fabriziocostola970/ai-trainer.git",
+    "directory": "frontend"
+  },
+  "bugs": {
+    "url": "https://github.com/fabriziocostola970/ai-trainer/issues"
+  },
+  "homepage": "https://ai-trainer-production-8fd9.up.railway.app/",
+  "dependencies": {
+    "serve": "^14.2.1"
+  },
+  "devDependencies": {
+    "terser": "^5.22.0",
+    "cssnano": "^6.0.1",
+    "postcss": "^8.4.32",
+    "html-minifier": "^4.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ],
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "files": [
+    "index.html",
+    "src/",
+    "sw.js",
+    "manifest.json",
+    "icons/"
+  ],
+  "config": {
+    "apiUrl": {
+      "development": "http://localhost:4000",
+      "production": "https://ai-trainer-production-8fd9.up.railway.app"
+    },
+    "features": {
+      "serviceWorker": true,
+      "offlineMode": true,
+      "pushNotifications": false,
+      "analytics": true
+    }
+  },
+  "metadata": {
+    "title": "AI-Trainer Dashboard",
+    "description": "Advanced training system for intelligent template generation",
+    "theme": {
+      "primaryColor": "#667EEA",
+      "secondaryColor": "#764BA2",
+      "accentColor": "#F093FB"
+    },
+    "features": [
+      "Real-time training data collection",
+      "Multi-modal dataset management", 
+      "AI analysis and scoring",
+      "Batch processing capabilities",
+      "Advanced analytics dashboard",
+      "Offline functionality",
+      "Responsive design",
+      "Error boundary protection"
+    ],
+    "technologies": [
+      "React 18",
+      "Vanilla JavaScript",
+      "CSS3 Grid/Flexbox", 
+      "Service Workers",
+      "Progressive Web App",
+      "REST API Integration",
+      "WebGL Ready",
+      "Modern ES6+"
+    ]
+  }
+}
