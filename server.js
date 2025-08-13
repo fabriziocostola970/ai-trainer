@@ -122,7 +122,23 @@ app.get('/api/status', authenticateAPI, (req, res) => {
 
 // Serve frontend interface at root
 app.get('/', (req, res) => {
+  console.log('🔄 Serving clean dashboard interface (no React)');
+  res.sendFile(path.join(__dirname, 'frontend', 'index.clean.html'));
+});
+
+// Explicit route for clean interface
+app.get('/clean', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'index.clean.html'));
+});
+
+// Simple interface fallback
+app.get('/simple', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.simple.html'));
+});
+
+// Legacy route redirect
+app.get('/dashboard', (req, res) => {
+  res.redirect('/');
 });
 
 // PWA Manifest
