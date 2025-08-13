@@ -122,7 +122,7 @@ app.get('/api/status', authenticateAPI, (req, res) => {
 
 // Serve frontend interface at root
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+  res.sendFile(path.join(__dirname, 'frontend', 'index.simple.html'));
 });
 
 // PWA Manifest

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Trainer Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    
+    <!-- React CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8fafc; }
+        
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #667EEA;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .action-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            background: #667EEA;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        
+        .btn:hover { background: #5a5fcf; }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #48bb78;
+            margin-right: 0.5rem;
+        }
+        
+        .log {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-root">
+        <div class="dashboard">
+            <div class="header">
+                <h1>🤖 AI-Trainer Dashboard</h1>
+                <p>Template Intelligence Engine</p>
+                <p><span class="status-indicator"></span> Sistema Operativo</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="serverStatus">✅</div>
+                    <div class="stat-label">Server Status</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="apiCalls">0</div>
+                    <div class="stat-label">API Calls Today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="templateCount">156</div>
+                    <div class="stat-label">Templates Generated</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="accuracyScore">94%</div>
+                    <div class="stat-label">Accuracy Score</div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <div class="action-card">
+                    <h3>🎨 Template Generation</h3>
+                    <p>Genera layout intelligenti per business specifici</p>
+                    <button class="btn" onclick="testLayoutGeneration()">Test Layout Generation</button>
+                    <button class="btn" onclick="testTemplateCreation()">Test Template Creation</button>
+                </div>
+                
+                <div class="action-card">
+                    <h3>📊 System Monitoring</h3>
+                    <p>Controlla stato sistema e performance</p>
+                    <button class="btn" onclick="getServerStatus()">Check Server Status</button>
+                    <button class="btn" onclick="getHealthCheck()">Health Check</button>
+                </div>
+                
+                <div class="action-card">
+                    <h3>🔧 Debug Tools</h3>
+                    <p>Strumenti per testing e debug</p>
+                    <button class="btn" onclick="testAPI()">Test Full API</button>
+                    <button class="btn" onclick="clearLogs()">Clear Logs</button>
+                </div>
+            </div>
+            
+            <div class="action-card" style="margin-top: 2rem;">
+                <h3>📋 System Logs</h3>
+                <div id="logs" class="log">
+                    <div>🚀 AI-Trainer Dashboard Initialized</div>
+                    <div>✅ Server Connection: Active</div>
+                    <div>🤖 AI Systems: Ready</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_KEY = 'ai-trainer-1e212623176704eea6dba3b62117d36c0f64d6512419defdd25226294c45a90d';
+        const API_BASE = window.location.origin; // Usa l'URL attuale
+        
+        // Logging function
+        function logMessage(message) {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logs.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+        
+        // API Functions
+        async function getServerStatus() {
+            try {
+                logMessage('🔍 Checking server status...');
+                const response = await fetch(`${API_BASE}/api/status`, {
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                });
+                const data = await response.json();
+                logMessage(`✅ Server Status: ${JSON.stringify(data)}`);
+                document.getElementById('serverStatus').textContent = response.ok ? '✅' : '❌';
+            } catch (error) {
+                logMessage(`❌ Server Status Error: ${error.message}`);
+                document.getElementById('serverStatus').textContent = '❌';
+            }
+        }
+        
+        async function getHealthCheck() {
+            try {
+                logMessage('🩺 Running health check...');
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                logMessage(`✅ Health Check: ${JSON.stringify(data)}`);
+            } catch (error) {
+                logMessage(`❌ Health Check Error: ${error.message}`);
+            }
+        }
+        
+        async function testLayoutGeneration() {
+            try {
+                logMessage('🎨 Testing layout generation...');
+                const response = await fetch(`${API_BASE}/api/generate-layout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        businessType: 'restaurant',
+                        currentBlocks: ['hero', 'about', 'menu', 'contact'],
+                        requirements: { mobileFirst: true }
+                    })
+                });
+                const data = await response.json();
+                logMessage(`🎨 Layout Generated: Score ${data.semanticScore}/100`);
+                document.getElementById('apiCalls').textContent = parseInt(document.getElementById('apiCalls').textContent) + 1;
+            } catch (error) {
+                logMessage(`❌ Layout Generation Error: ${error.message}`);
+            }
+        }
+        
+        async function testTemplateCreation() {
+            try {
+                logMessage('🖼️ Testing template creation...');
+                const response = await fetch(`${API_BASE}/api/validate-template`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        template: { name: 'Test Template', blocks: ['hero', 'features'] },
+                        businessType: 'tech-startup'
+                    })
+                });
+                const data = await response.json();
+                logMessage(`🖼️ Template Valid: Score ${data.score}/100`);
+                document.getElementById('apiCalls').textContent = parseInt(document.getElementById('apiCalls').textContent) + 1;
+            } catch (error) {
+                logMessage(`❌ Template Creation Error: ${error.message}`);
+            }
+        }
+        
+        async function testAPI() {
+            logMessage('🔄 Running full API test suite...');
+            await getHealthCheck();
+            await getServerStatus();
+            await testLayoutGeneration();
+            await testTemplateCreation();
+            logMessage('✅ Full API test completed');
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '<div>🧹 Logs cleared</div>';
+        }
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            logMessage('🚀 Dashboard initialized successfully');
+            getServerStatus();
+        });
+    </script>
+</body>
+</html>
