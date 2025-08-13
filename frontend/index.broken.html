@@ -238,7 +238,7 @@
                     try {
                         const response = await fetch('/training/health', {
                             headers: {
-                                'Authorization': 'Bearer ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c'
+                                'Authorization': 'Bearer your-api-key-here'
                             }
                         });
                         if (response.ok) {
@@ -431,7 +431,7 @@
                     try {
                         const response = await fetch('/training/health', {
                             headers: {
-                                'Authorization': 'Bearer ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c'
+                                'Authorization': 'Bearer your-api-key-here'
                             }
                         });
                         return await response.json();
@@ -444,7 +444,7 @@
                         const response = await fetch(`/training${endpoint}`, {
                             headers: {
                                 'Content-Type': 'application/json',
-                                'Authorization': 'Bearer ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c',
+                                'Authorization': 'Bearer your-api-key-here',
                                 ...options.headers
                             },
                             ...options

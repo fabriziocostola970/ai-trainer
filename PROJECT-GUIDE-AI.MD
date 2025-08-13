@@ -481,7 +481,7 @@ const response = await fetch('/training/health');
 // DOPO (Con API Key):
 const response = await fetch('/training/health', {
   headers: {
-    'Authorization': 'Bearer ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c'
+    'Authorization': 'Bearer your-api-key-here'
   }
 });
 ```
@@ -1259,7 +1259,7 @@ curl http://localhost:4000/api/health
 ### ✅ **COMPLETATO CON SUCCESSO**
 - **✅ Server API**: Operativo su porta 4000 con Express.js
 - **✅ Railway Production**: https://ai-trainer-production-8fd9.up.railway.app/ - **FUNZIONANTE**
-- **✅ Authentication**: API key sicura configurata e testata (ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c)
+- **✅ Authentication**: API key sicura configurata e testata (your-api-key-here)
 - **✅ Tutti gli endpoint**: `/health`, `/api/generate/layout`, `/api/generate/template`
 - **✅ Test suite completa**: `test-api.js` e `test-full.js` funzionanti
 - **✅ Mock AI responses**: Realistiche con score semantici e creativi (85/100, 89/100)
@@ -1277,7 +1277,7 @@ curl http://localhost:4000/api/health
 // Authentication Test - WORKING ✅
 {
   "message": "API authenticated successfully",
-  "apiKey": "ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c",
+  "apiKey": "your-api-key-here",
   "status": "active"
 }
 
@@ -1344,11 +1344,11 @@ curl https://ai-trainer-production-8fd9.up.railway.app/health
 
 # ✅ API ENDPOINTS (AUTHENTICATION FIXED)
 curl -X POST https://ai-trainer-production-8fd9.up.railway.app/api/generate/layout \
-  -H "Authorization: Bearer ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c"
+  -H "Authorization: Bearer your-api-key-here"
 # {"success":true,"semanticScore":85,"trainingDataUsed":true}
 
 # ✅ CONFIGURED VARIABLES (ALL WORKING):
-# - AI_TRAINER_API_KEY=ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c ✅
+# - AI_TRAINER_API_KEY=your-api-key-here ✅
 # - DATABASE_URL (shared with VendiOnline.EU) ✅
 # - OPENAI_API_KEY ✅  
 # - CLAUDE_API_KEY ✅

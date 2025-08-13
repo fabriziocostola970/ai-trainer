@@ -9,7 +9,7 @@ const API_BASE_URL = typeof process !== 'undefined' && process.env && process.en
   ? 'https://ai-trainer-production-8fd9.up.railway.app'
   : 'http://localhost:4000';
 
-const API_KEY = 'ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c';
+const API_KEY = 'your-api-key-here';
 
 // Utility function for API calls
 const apiCall = async (endpoint, options = {}) => {

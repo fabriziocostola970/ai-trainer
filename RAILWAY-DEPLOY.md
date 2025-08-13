@@ -18,7 +18,7 @@ railway new
 In Railway dashboard, set these variables:
 - `NODE_ENV` = `production`
 - `PORT` = `4000`
-- `AI_TRAINER_API_KEY` = `ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c`
+- `AI_TRAINER_API_KEY` = `your-api-key-here`
 
 ### 3. Deploy
 ```bash

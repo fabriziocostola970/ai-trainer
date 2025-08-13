@@ -47,7 +47,7 @@ app.use(express.static(path.join(__dirname, 'frontend'), {
 // API Authentication middleware
 const authenticateAPI = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  const expectedKey = process.env.AI_TRAINER_API_KEY || 'ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c';
+  const expectedKey = process.env.AI_TRAINER_API_KEY || 'your-api-key-here';
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({

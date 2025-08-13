@@ -225,7 +225,7 @@
             getServerStatus: async () => {
                 try {
                     const response = await fetch('/api/status', {
-                        headers: { 'Authorization': 'Bearer ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c' }
+                        headers: { 'Authorization': 'Bearer your-api-key-here' }
                     });
                     return await response.json();
                 } catch (error) {
@@ -236,7 +236,7 @@
             testAPI: async (endpoint) => {
                 try {
                     const response = await fetch(endpoint, {
-                        headers: { 'Authorization': 'Bearer ai-trainer-2aad7097cb20e8712a77213cbd9487300db4919b56d5097c' }
+                        headers: { 'Authorization': 'Bearer your-api-key-here' }
                     });
                     return await response.json();
                 } catch (error) {

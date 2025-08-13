@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AI-Trainer Debug</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="app-root">Loading...</div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Simple test component
+        const TestDashboard = () => {
+            const [status, setStatus] = useState('Testing...');
+            
+            useEffect(() => {
+                setTimeout(() => {
+                    setStatus('✅ React is working!');
+                }, 1000);
+            }, []);
+            
+            return (
+                <div style={{padding: '2rem', fontFamily: 'system-ui'}}>
+                    <h1>🤖 AI-Trainer Test</h1>
+                    <p>Status: {status}</p>
+                    <button onClick={() => alert('Button works!')}>
+                        Test Button
+                    </button>
+                </div>
+            );
+        };
+        
+        // Mount component
+        const root = ReactDOM.createRoot(document.getElementById('app-root'));
+        root.render(<TestDashboard />);
+        
+        console.log('✅ Test component mounted');
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 AI-Trainer Dashboard - Template Intelligence Engine</title>
+    
+    <!-- Content Security Policy - Updated for extern        // Load TrainingDashboard component first, then mount app
+        const loadAndMountApp = () => {
+            console.log('🔄 Starting to load TrainingDashboard component...');
+            
+            // Emergency timeout - if nothing happens in 10 seconds, show fallback
+            const emergencyTimeout = setTimeout(() => {
+                console.warn('⏰ Emergency timeout triggered - forcing fallback interface');
+                showFallbackInterface();
+            }, 10000);
+            
+            // Load TrainingDashboard component
+            const script = document.createElement('script');
+            script.type = 'text/babel';
+            script.src = 'src/TrainingDashboard.simple.js';
+            script.onload = () => {
+                console.log('📁 TrainingDashboard.simple.js file loaded');
+                
+                // Clear emergency timeout since we got a response
+                clearTimeout(emergencyTimeout);    // Load TrainingDashboard component
+            const script = document.createElement('script');
+            script.type = 'text/babel';
+            script.src = 'src/TrainingDashboard.simple.js';  // Use simple version
+            script.onload = () => {
+                console.log('📁 TrainingDashboard.simple.js file loaded');-->
+    <meta http-equiv="Content-Secu    <!-- Service Worker COMPLETELY DISABLED and cache cleanup -->
+    <script>
+        // Force unregister ALL Service Workers and clear cache
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister().then(function(success) {
+                        console.log('🗑️ Service Worker unregistered:', success);
+                    });
+                }
+            });
+            
+            // Clear all caches
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    for (let name of names) {
+                        caches.delete(name);
+                        console.log('🧹 Deleted cache:', name);
+                    }
+                });
+            }
+        }
+        
+        console.log('🚫 Service Worker COMPLETELY disabled - CDN access should work now');content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://ai-trainer-production-8fd9.up.railway.app https://unpkg.com; img-src 'self' data: https:; object-src 'none'; base-uri 'self';">
+    
+    <!-- Meta Tags for SEO -->
+    <meta name="description" content="AI-Trainer Dashboard - Advanced training system for intelligent template generation">
+    <meta name="keywords" content="AI, machine learning, template generation, web design, training">
+    <meta name="author" content="VendiOnline.EU">
+    
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="AI-Trainer Dashboard">
+    <meta property="og:description" content="Advanced training system for intelligent template generation">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ai-trainer-production-8fd9.up.railway.app/">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="src/TrainingDashboard.css">
+    
+    <!-- Preload important resources -->
+    <link rel="preload" href="src/TrainingDashboard.simple.js" as="script">
+    
+    <style>
+        /* Critical CSS for initial load */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background-color: #F7FAFC;
+            color: #2D3748;
+        }
+        
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667EEA, #764BA2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 9999;
+        }
+        
+        .loading-screen h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+        
+        .loading-screen p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        .loading-screen.fade-out {
+            animation: fadeOut 0.5s forwards;
+        }
+        
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <h1>🤖</h1>
+        <p>AI-Trainer Dashboard</p>
+        <div class="loading-spinner"></div>
+        <p style="font-size: 0.9rem; margin-top: 1rem;">Inizializzazione sistema training...</p>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-root">
+        <!-- React app will be mounted here -->
+    </div>
+
+    <!-- Error Fallback -->
+    <div id="error-fallback" style="display: none;">
+        <div style="text-align: center; padding: 2rem; max-width: 600px; margin: 2rem auto;">
+            <h1 style="color: #F56565;">⚠️ Errore Sistema</h1>
+            <p style="color: #718096; margin: 1rem 0;">
+                Si è verificato un errore durante il caricamento dell'interfaccia AI-Trainer.
+            </p>
+            <div style="background: #FFF5F5; border: 1px solid #FEB2B2; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+                <h3 style="color: #C53030; margin-top: 0;">Possibili Soluzioni:</h3>
+                <ul style="text-align: left; color: #718096;">
+                    <li>Verifica la connessione internet</li>
+                    <li>Ricarica la pagina (Ctrl+F5)</li>
+                    <li>Controlla che il server AI-Trainer sia operativo</li>
+                    <li>Verifica la configurazione API key</li>
+                </ul>
+            </div>
+            <button onclick="window.location.reload()" style="
+                background: #667EEA; 
+                color: white; 
+                border: none; 
+                padding: 0.75rem 1.5rem; 
+                border-radius: 6px; 
+                cursor: pointer;
+                font-size: 1rem;
+            ">
+                🔄 Ricarica Pagina
+            </button>
+            <p style="font-size: 0.875rem; color: #A0AEC0; margin-top: 1rem;">
+                Status Server: <span id="server-status">Verificando...</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- React Development (CDN) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Main Application Script -->
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Error Boundary Component
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+            
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+            
+            componentDidCatch(error, errorInfo) {
+                console.error('React Error Boundary:', error, errorInfo);
+                document.getElementById('error-fallback').style.display = 'block';
+                document.getElementById('loading-screen').style.display = 'none';
+            }
+            
+            render() {
+                if (this.state.hasError) {
+                    return <div>Errore durante il rendering dell'applicazione.</div>;
+                }
+                
+                return this.props.children;
+            }
+        }
+        
+        // App Wrapper with Error Handling
+        const AppWrapper = () => {
+            const [isLoading, setIsLoading] = useState(true);
+            const [serverStatus, setServerStatus] = useState('Verificando...');
+            
+            useEffect(() => {
+                // Check server status
+                const checkServerStatus = async () => {
+                    try {
+                        const response = await fetch('/training/health', {
+                            headers: {
+                                'Authorization': 'Bearer your-api-key-here'
+                            }
+                        });
+                        if (response.ok) {
+                            setServerStatus('🟢 Online');
+                        } else {
+                            setServerStatus('🟡 Parziale');
+                        }
+                    } catch (error) {
+                        setServerStatus('🔴 Offline');
+                    }
+                };
+                
+                // Initialize app
+                const initApp = async () => {
+                    try {
+                        await checkServerStatus();
+                        
+                        // Simulate initialization time
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // Hide loading screen
+                        const loadingScreen = document.getElementById('loading-screen');
+                        loadingScreen.classList.add('fade-out');
+                        
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                            setIsLoading(false);
+                        }, 500);
+                        
+                    } catch (error) {
+                        console.error('App initialization failed:', error);
+                        setServerStatus('🔴 Errore');
+                        document.getElementById('error-fallback').style.display = 'block';
+                        document.getElementById('loading-screen').style.display = 'none';
+                    }
+                };
+                
+                initApp();
+                
+                // Update server status in error fallback
+                const statusElement = document.getElementById('server-status');
+                if (statusElement) {
+                    const updateStatus = setInterval(() => {
+                        statusElement.textContent = serverStatus;
+                    }, 1000);
+                    
+                    return () => clearInterval(updateStatus);
+                }
+            }, []);
+            
+            if (isLoading) {
+                return null; // Loading screen is handled by HTML
+            }
+            
+            // Import TrainingDashboard component
+            return React.createElement(TrainingDashboard);
+        };
+        
+        // Load TrainingDashboard component first, then mount app
+        const loadAndMountApp = () => {
+            console.log('🔄 Starting to load TrainingDashboard component...');
+            
+            // Load TrainingDashboard component
+            const script = document.createElement('script');
+            script.type = 'text/babel';
+            script.src = 'src/TrainingDashboard.simple.js';
+            script.onload = () => {
+                console.log('� TrainingDashboard.js file loaded');
+                
+                // Wait a moment for Babel to process
+                setTimeout(() => {
+                    if (typeof TrainingDashboard !== 'undefined') {
+                        console.log('✅ TrainingDashboard component available');
+                        // Mount the app after component is loaded
+                        const root = ReactDOM.createRoot(document.getElementById('app-root'));
+                        root.render(
+                            React.createElement(ErrorBoundary, null,
+                                React.createElement(AppWrapper)
+                            )
+                        );
+                        document.getElementById('loading-screen').style.display = 'none';
+                    } else {
+                        console.error('❌ TrainingDashboard component not found after loading');
+                        showFallbackInterface();
+                    }
+                }, 2000); // Increased timeout for Babel processing
+            };
+            script.onerror = () => {
+                console.error('❌ Failed to load TrainingDashboard component');
+                clearTimeout(emergencyTimeout);
+                showFallbackInterface();
+            };
+            document.head.appendChild(script);
+        };
+        
+        // Fallback interface if TrainingDashboard fails to load
+        const showFallbackInterface = () => {
+            console.log('🔄 Showing fallback interface...');
+            
+            // Force refresh once to clear any cached resources
+            if (!sessionStorage.getItem('refreshed')) {
+                sessionStorage.setItem('refreshed', 'true');
+                console.log('🔄 Forcing page refresh to clear cache...');
+                window.location.reload(true);
+                return;
+            }
+            
+            document.getElementById('loading-screen').style.display = 'none';
+            
+            const fallbackHTML = `
+                <div style="padding: 2rem; text-align: center; font-family: system-ui;">
+                    <h1>🤖 AI-Trainer Dashboard</h1>
+                    <div style="background: #f0f0f0; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                        <h3>⚠️ Interface Loading Issue</h3>
+                        <p>The training dashboard is loading...</p>
+                        <button onclick="location.reload()" style="padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            🔄 Reload Interface
+                        </button>
+                        <button onclick="sessionStorage.removeItem('refreshed'); caches.keys().then(names => names.forEach(name => caches.delete(name))); location.reload(true);" 
+                                style="margin-left: 0.5rem; padding: 0.5rem 1rem; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            🧹 Force Clear Cache
+                        </button>
+                    </div>
+                    <div style="margin-top: 2rem;">
+                        <h4>🛠️ Quick Actions</h4>
+                        <button onclick="window.aiTrainerDebug.getServerStatus().then(r => alert(JSON.stringify(r)))" 
+                                style="margin: 0.5rem; padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px;">
+                            📊 Server Status
+                        </button>
+                        <button onclick="window.aiTrainerDebug.testAPI('/health').then(r => alert(JSON.stringify(r)))" 
+                                style="margin: 0.5rem; padding: 0.5rem 1rem; background: #17a2b8; color: white; border: none; border-radius: 4px;">
+                            🧪 Test API
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('app-root').innerHTML = fallbackHTML;
+        };
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadAndMountApp);
+        } else {
+            loadAndMountApp();
+        }
+    </script>
+
+    <!-- Service Worker PERMANENTLY DISABLED -->
+    <script>
+        // Permanently disabled Service Worker - CDN access prioritized
+        console.log('🚫 Service Worker permanently disabled for CDN compatibility');
+    </script>
+
+    <!-- Performance monitoring -->
+    <script>
+        // Performance metrics
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const perfData = performance.getEntriesByType('navigation')[0];
+                console.log('🚀 Performance Metrics:', {
+                    'DNS Lookup': perfData.domainLookupEnd - perfData.domainLookupStart,
+                    'TCP Connection': perfData.connectEnd - perfData.connectStart,
+                    'Request': perfData.responseStart - perfData.requestStart,
+                    'Response': perfData.responseEnd - perfData.responseStart,
+                    'DOM Processing': perfData.domContentLoadedEventStart - perfData.responseEnd,
+                    'Total Load Time': perfData.loadEventEnd - perfData.navigationStart
+                });
+            }, 1000);
+        });
+
+        // Error tracking
+        window.addEventListener('error', (e) => {
+            console.error('Global error:', e.error);
+            // In production, send to error tracking service
+        });
+
+        window.addEventListener('unhandledrejection', (e) => {
+            console.error('Unhandled promise rejection:', e.reason);
+            // In production, send to error tracking service
+        });
+    </script>
+
+    <!-- Development tools (remove in production) -->
+    <script>
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+            // Development helpers
+            window.aiTrainerDebug = {
+                getServerStatus: async () => {
+                    try {
+                        const response = await fetch('/training/health', {
+                            headers: {
+                                'Authorization': 'Bearer your-api-key-here'
+                            }
+                        });
+                        return await response.json();
+                    } catch (error) {
+                        return { error: error.message };
+                    }
+                },
+                testAPI: async (endpoint, options = {}) => {
+                    try {
+                        const response = await fetch(`/training${endpoint}`, {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer your-api-key-here',
+                                ...options.headers
+                            },
+                            ...options
+                        });
+                        return await response.json();
+                    } catch (error) {
+                        return { error: error.message };
+                    }
+                }
+            };
+            
+            console.log('🔧 Development Mode Active');
+            console.log('Available debug functions:', Object.keys(window.aiTrainerDebug));
+        }
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>🤖 AI-Trainer Dashboard</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, sans-serif;
+            background-color: #f7fafc;
+        }
+        
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">🤖 Loading AI-Trainer Dashboard...</div>
+    <div id="app-root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Training Dashboard Component - INLINE (no external files)
+        const TrainingDashboard = () => {
+            const [currentView, setCurrentView] = useState('dashboard');
+            const [status, setStatus] = useState('Connecting...');
+            const [serverStatus, setServerStatus] = useState({});
+            
+            useEffect(() => {
+                console.log('⚡ TrainingDashboard mounted');
+                setStatus('✅ Dashboard Loaded Successfully!');
+                
+                // Test server connection
+                fetch('/api/status', {
+                    headers: { 
+                        'Authorization': 'Bearer your-api-key-here' 
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('📡 Server status:', data);
+                    setServerStatus(data);
+                })
+                .catch(error => {
+                    console.error('❌ Server connection failed:', error);
+                    setServerStatus({ error: error.message });
+                });
+            }, []);
+
+            const navItems = [
+                { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
+                { id: 'samples', label: '🎯 Training Samples', icon: '🎯' },
+                { id: 'collection', label: '📦 Data Collection', icon: '📦' },
+                { id: 'analytics', label: '📈 Analytics', icon: '📈' },
+                { id: 'settings', label: '⚙️ Settings', icon: '⚙️' }
+            ];
+
+            const renderNavigation = () => (
+                <div style={{
+                    background: 'white',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    marginBottom: '2rem',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        gap: '1rem',
+                        overflowX: 'auto'
+                    }}>
+                        {navItems.map(item => (
+                            <button
+                                key={item.id}
+                                onClick={() => setCurrentView(item.id)}
+                                style={{
+                                    background: currentView === item.id ? 'linear-gradient(135deg, #667eea, #764ba2)' : '#f8f9fa',
+                                    color: currentView === item.id ? 'white' : '#333',
+                                    border: 'none',
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    fontWeight: '500',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            const renderDashboard = () => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{ margin: '0 0 1rem 0', color: '#333' }}>🚀 System Status</h3>
+                        <p style={{ margin: '0.5rem 0', color: '#666' }}>Status: {status}</p>
+                        <p style={{ margin: '0.5rem 0', color: '#666' }}>
+                            Server: {serverStatus.status ? '✅ Online' : serverStatus.error ? '❌ Error' : '🔄 Checking...'}
+                        </p>
+                        {serverStatus.error && (
+                            <p style={{ margin: '0.5rem 0', color: '#dc3545', fontSize: '0.9rem' }}>
+                                Error: {serverStatus.error}
+                            </p>
+                        )}
+                    </div>
+                    
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{ margin: '0 0 1rem 0', color: '#333' }}>📊 Quick Stats</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#666' }}>Training Samples:</span>
+                                <span style={{ fontWeight: 'bold', color: '#28a745' }}>
+                                    {serverStatus.samples_count || '0'}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#666' }}>Models:</span>
+                                <span style={{ fontWeight: 'bold', color: '#007bff' }}>
+                                    {serverStatus.models_count || '0'}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#666' }}>Last Training:</span>
+                                <span style={{ fontWeight: 'bold', color: '#6f42c1' }}>
+                                    {serverStatus.last_training || 'Never'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{ margin: '0 0 1rem 0', color: '#333' }}>🛠️ Quick Actions</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <button onClick={() => setCurrentView('samples')} style={{
+                                background: '#28a745',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                            }}>
+                                📝 Add Training Sample
+                            </button>
+                            <button onClick={() => setCurrentView('collection')} style={{
+                                background: '#007bff',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                            }}>
+                                🔄 Start Data Collection
+                            </button>
+                            <button onClick={() => window.location.href = '/debug.html'} style={{
+                                background: '#6c757d',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                            }}>
+                                🛠️ Debug Mode
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const renderView = () => {
+                switch (currentView) {
+                    case 'samples':
+                        return (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                            }}>
+                                <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>🎯 Training Samples</h2>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>
+                                    Manage your training data and samples here.
+                                </p>
+                                <button onClick={() => alert('Feature coming soon!')} style={{
+                                    background: '#28a745',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                }}>
+                                    ➕ Add New Sample
+                                </button>
+                            </div>
+                        );
+                    case 'collection':
+                        return (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                            }}>
+                                <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>📦 Data Collection</h2>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>
+                                    Configure automatic data collection from websites.
+                                </p>
+                                <button onClick={() => alert('Feature coming soon!')} style={{
+                                    background: '#007bff',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                }}>
+                                    🚀 Start Collection
+                                </button>
+                            </div>
+                        );
+                    case 'analytics':
+                        return (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                            }}>
+                                <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>📈 Analytics</h2>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>
+                                    View training performance and model metrics.
+                                </p>
+                                <div style={{ 
+                                    background: '#f8f9fa', 
+                                    padding: '1rem', 
+                                    borderRadius: '8px',
+                                    marginTop: '1rem'
+                                }}>
+                                    <p style={{ margin: 0, color: '#666' }}>📊 Analytics dashboard coming soon...</p>
+                                </div>
+                            </div>
+                        );
+                    case 'settings':
+                        return (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                            }}>
+                                <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>⚙️ Settings</h2>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>
+                                    Configure AI-Trainer system settings.
+                                </p>
+                                <div style={{ 
+                                    background: '#f8f9fa', 
+                                    padding: '1rem', 
+                                    borderRadius: '8px',
+                                    marginTop: '1rem'
+                                }}>
+                                    <p style={{ margin: 0, color: '#666' }}>⚙️ Settings panel coming soon...</p>
+                                </div>
+                            </div>
+                        );
+                    default:
+                        return renderDashboard();
+                }
+            };
+
+            return (
+                <div style={{
+                    fontFamily: 'system-ui, sans-serif',
+                    padding: '2rem',
+                    maxWidth: '1200px',
+                    margin: '0 auto',
+                    minHeight: '100vh'
+                }}>
+                    <header style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        padding: '2rem',
+                        borderRadius: '12px',
+                        marginBottom: '2rem',
+                        textAlign: 'center'
+                    }}>
+                        <h1 style={{ margin: 0, fontSize: '2.5rem' }}>🤖 AI-Trainer Dashboard</h1>
+                        <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9 }}>
+                            Template Intelligence Engine - Training Interface
+                        </p>
+                    </header>
+                    
+                    {renderNavigation()}
+                    {renderView()}
+                </div>
+            );
+        };
+        
+        // Mount the component - SIMPLE & DIRECT like debug.html
+        console.log('🚀 Mounting TrainingDashboard...');
+        const root = ReactDOM.createRoot(document.getElementById('app-root'));
+        root.render(<TrainingDashboard />);
+        
+        // Hide loading screen
+        document.getElementById('loading').style.display = 'none';
+        
+        console.log('✅ AI-Trainer Dashboard mounted successfully!');
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>🤖 AI-Trainer Dashboard</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, sans-serif;
+            background-color: #f7fafc;
+        }
+        
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">🤖 Loading AI-Trainer Dashboard...</div>
+    <div id="app-root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Training Dashboard Component - INLINE (no external files)
+        const TrainingDashboard = () => {
+            const [currentView, setCurrentView] = useState('dashboard');
+            const [status, setStatus] = useState('Connecting...');
+            const [serverStatus, setServerStatus] = useState({});
+            
+            useEffect(() => {
+                console.log('⚡ TrainingDashboard mounted');
+                setStatus('✅ Dashboard Loaded Successfully!');
+                
+                // Test server connection
+                fetch('/api/status', {
+                    headers: { 
+                        'Authorization': 'Bearer your-api-key-here' 
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('📡 Server status:', data);
+                    setServerStatus(data);
+                })
+                .catch(error => {
+                    console.error('❌ Server connection failed:', error);
+                    setServerStatus({ error: error.message });
+                });
+            }, []);
+
+            const navItems = [
+                { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
+                { id: 'samples', label: '🎯 Training Samples', icon: '🎯' },
+                { id: 'collection', label: '📦 Data Collection', icon: '📦' },
+                { id: 'analytics', label: '📈 Analytics', icon: '📈' },
+                { id: 'settings', label: '⚙️ Settings', icon: '⚙️' }
+            ];
+
+            const renderNavigation = () => (
+                <div style={{
+                    background: 'white',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    marginBottom: '2rem',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        gap: '1rem',
+                        overflowX: 'auto'
+                    }}>
+                        {navItems.map(item => (
+                            <button
+                                key={item.id}
+                                onClick={() => setCurrentView(item.id)}
+                                style={{
+                                    background: currentView === item.id ? 'linear-gradient(135deg, #667eea, #764ba2)' : '#f8f9fa',
+                                    color: currentView === item.id ? 'white' : '#333',
+                                    border: 'none',
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    fontWeight: '500',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            const renderDashboard = () => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{ margin: '0 0 1rem 0', color: '#333' }}>🚀 System Status</h3>
+                        <p style={{ margin: '0.5rem 0', color: '#666' }}>Status: {status}</p>
+                        <p style={{ margin: '0.5rem 0', color: '#666' }}>
+                            Server: {serverStatus.status ? '✅ Online' : serverStatus.error ? '❌ Error' : '🔄 Checking...'}
+                        </p>
+                        {serverStatus.error && (
+                            <p style={{ margin: '0.5rem 0', color: '#dc3545', fontSize: '0.9rem' }}>
+                                Error: {serverStatus.error}
+                            </p>
+                        )}
+                        {serverStatus.status && (
+                            <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
+                                <p>Service: {serverStatus.service}</p>
+                                <p>Version: {serverStatus.version}</p>
+                                <p>Environment: {serverStatus.environment}</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{ margin: '0 0 1rem 0', color: '#333' }}>📊 Quick Stats</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#666' }}>Training Samples:</span>
+                                <span style={{ fontWeight: 'bold', color: '#28a745' }}>
+                                    {serverStatus.samples_count || '0'}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#666' }}>Models:</span>
+                                <span style={{ fontWeight: 'bold', color: '#007bff' }}>
+                                    {serverStatus.models_count || '0'}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#666' }}>Last Training:</span>
+                                <span style={{ fontWeight: 'bold', color: '#6f42c1' }}>
+                                    {serverStatus.last_training || 'Never'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{ margin: '0 0 1rem 0', color: '#333' }}>🛠️ Quick Actions</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <button onClick={() => setCurrentView('samples')} style={{
+                                background: '#28a745',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                            }}>
+                                📝 Add Training Sample
+                            </button>
+                            <button onClick={() => setCurrentView('collection')} style={{
+                                background: '#007bff',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                            }}>
+                                🔄 Start Data Collection
+                            </button>
+                            <button onClick={() => window.location.href = '/debug.html'} style={{
+                                background: '#6c757d',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                            }}>
+                                🛠️ Debug Mode
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const renderView = () => {
+                switch (currentView) {
+                    case 'samples':
+                        return (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                            }}>
+                                <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>🎯 Training Samples</h2>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>
+                                    Manage your training data and samples here.
+                                </p>
+                                <button onClick={() => alert('Feature coming soon!')} style={{
+                                    background: '#28a745',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                }}>
+                                    ➕ Add New Sample
+                                </button>
+                            </div>
+                        );
+                    case 'collection':
+                        return (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                            }}>
+                                <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>📦 Data Collection</h2>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>
+                                    Configure automatic data collection from websites.
+                                </p>
+                                <button onClick={() => alert('Feature coming soon!')} style={{
+                                    background: '#007bff',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                }}>
+                                    🚀 Start Collection
+                                </button>
+                            </div>
+                        );
+                    case 'analytics':
+                        return (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                            }}>
+                                <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>📈 Analytics</h2>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>
+                                    View training performance and model metrics.
+                                </p>
+                                <div style={{ 
+                                    background: '#f8f9fa', 
+                                    padding: '1rem', 
+                                    borderRadius: '8px',
+                                    marginTop: '1rem'
+                                }}>
+                                    <p style={{ margin: 0, color: '#666' }}>📊 Analytics dashboard coming soon...</p>
+                                </div>
+                            </div>
+                        );
+                    case 'settings':
+                        return (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                            }}>
+                                <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>⚙️ Settings</h2>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>
+                                    Configure AI-Trainer system settings.
+                                </p>
+                                <div style={{ 
+                                    background: '#f8f9fa', 
+                                    padding: '1rem', 
+                                    borderRadius: '8px',
+                                    marginTop: '1rem'
+                                }}>
+                                    <p style={{ margin: 0, color: '#666' }}>⚙️ Settings panel coming soon...</p>
+                                </div>
+                            </div>
+                        );
+                    default:
+                        return renderDashboard();
+                }
+            };
+
+            return (
+                <div style={{
+                    fontFamily: 'system-ui, sans-serif',
+                    padding: '2rem',
+                    maxWidth: '1200px',
+                    margin: '0 auto',
+                    minHeight: '100vh'
+                }}>
+                    <header style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        padding: '2rem',
+                        borderRadius: '12px',
+                        marginBottom: '2rem',
+                        textAlign: 'center'
+                    }}>
+                        <h1 style={{ margin: 0, fontSize: '2.5rem' }}>🤖 AI-Trainer Dashboard</h1>
+                        <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9 }}>
+                            Template Intelligence Engine - Training Interface
+                        </p>
+                    </header>
+                    
+                    {renderNavigation()}
+                    {renderView()}
+                </div>
+            );
+        };
+        
+        // Mount the component - SIMPLE & DIRECT like debug.html
+        console.log('🚀 Mounting TrainingDashboard...');
+        const root = ReactDOM.createRoot(document.getElementById('app-root'));
+        root.render(<TrainingDashboard />);
+        
+        // Hide loading screen
+        document.getElementById('loading').style.display = 'none';
+        
+        console.log('✅ AI-Trainer Dashboard mounted successfully!');
+    </script>
+    
+    <!-- Debug functions -->
+    <script>
+        window.aiTrainerDebug = {
+            getServerStatus: async () => {
+                try {
+                    const response = await fetch('/api/status', {
+                        headers: { 'Authorization': 'Bearer your-api-key-here' }
+                    });
+                    return await response.json();
+                } catch (error) {
+                    return { error: error.message };
+                }
+            },
+            
+            testAPI: async (endpoint) => {
+                try {
+                    const response = await fetch(endpoint, {
+                        headers: { 'Authorization': 'Bearer your-api-key-here' }
+                    });
+                    return await response.json();
+                } catch (error) {
+                    return { error: error.message };
+                }
+            }
+        };
+        
+        console.log('🔧 Debug functions available:', Object.keys(window.aiTrainerDebug));
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 AI-Trainer Dashboard - Template Intelligence Engine</title>
+    
+    <!-- Progressive Web App Meta -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#667EEA">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="AI-Trainer">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    
+    <!-- React and dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="src/TrainingDashboard.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background-color: #F7FAFC;
+            color: #2D3748;
+        }
+        
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 1000;
+        }
+        
+        .loading-screen h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <h1>🤖</h1>
+        <p>AI-Trainer Dashboard</p>
+        <div class="loading-spinner"></div>
+        <p style="font-size: 0.9rem; margin-top: 1rem;">Caricamento componenti...</p>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-root"></div>
+
+    <!-- Main Application Script -->
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Simple loading component while TrainingDashboard loads
+        const LoadingApp = () => {
+            const [dots, setDots] = useState('');
+            
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setDots(prev => prev.length >= 3 ? '' : prev + '.');
+                }, 500);
+                return () => clearInterval(interval);
+            }, []);
+            
+            return (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    color: 'white',
+                    fontFamily: 'system-ui'
+                }}>
+                    <h1 style={{fontSize: '3rem', margin: '1rem'}}>🤖</h1>
+                    <p style={{fontSize: '1.2rem'}}>AI-Trainer Dashboard</p>
+                    <p style={{fontSize: '1rem', opacity: 0.8}}>Caricamento{dots}</p>
+                </div>
+            );
+        };
+        
+        // Mount loading screen first
+        const root = ReactDOM.createRoot(document.getElementById('app-root'));
+        root.render(<LoadingApp />);
+        
+        // Load TrainingDashboard component
+        console.log('🔄 Loading TrainingDashboard component...');
+        
+        const script = document.createElement('script');
+        script.type = 'text/babel';
+        script.src = 'src/TrainingDashboard.simple.js';
+        
+        script.onload = () => {
+            console.log('✅ TrainingDashboard script loaded');
+            
+            // Wait for Babel to process, then check if component is available
+            setTimeout(() => {
+                if (typeof TrainingDashboard !== 'undefined') {
+                    console.log('✅ TrainingDashboard component available, mounting...');
+                    root.render(<TrainingDashboard />);
+                    document.getElementById('loading-screen').style.display = 'none';
+                } else {
+                    console.error('❌ TrainingDashboard component not found');
+                    showFallback();
+                }
+            }, 1000);
+        };
+        
+        script.onerror = () => {
+            console.error('❌ Failed to load TrainingDashboard script');
+            showFallback();
+        };
+        
+        // Fallback interface
+        const showFallback = () => {
+            root.render(
+                <div style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    fontFamily: 'system-ui',
+                    maxWidth: '600px',
+                    margin: '2rem auto'
+                }}>
+                    <h1>🤖 AI-Trainer Dashboard</h1>
+                    <div style={{
+                        background: '#f0f0f0',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        margin: '1rem 0'
+                    }}>
+                        <h3>⚠️ Loading Issue</h3>
+                        <p>The dashboard component couldn't load properly.</p>
+                        <button onClick={() => window.location.reload()} 
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    background: '#007bff',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    margin: '0.5rem'
+                                }}>
+                            🔄 Reload
+                        </button>
+                        <button onClick={() => window.location.href = '/debug.html'} 
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    background: '#28a745',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    margin: '0.5rem'
+                                }}>
+                            🛠️ Debug Mode
+                        </button>
+                    </div>
+                </div>
+            );
+            document.getElementById('loading-screen').style.display = 'none';
+        };
+        
+        // Emergency timeout
+        setTimeout(() => {
+            if (document.getElementById('loading-screen').style.display !== 'none') {
+                console.warn('⏰ Emergency timeout - showing fallback');
+                showFallback();
+            }
+        }, 15000);
+        
+        // Append script to head
+        document.head.appendChild(script);
+        
+        console.log('🚀 Application initialization complete');
+    </script>
+    
+    <!-- Debug functions -->
+    <script>
+        window.aiTrainerDebug = {
+            getServerStatus: async () => {
+                try {
+                    const response = await fetch('/api/status', {
+                        headers: { 'Authorization': 'Bearer your-api-key-here' }
+                    });
+                    return await response.json();
+                } catch (error) {
+                    return { error: error.message };
+                }
+            },
+            
+            testAPI: async (endpoint) => {
+                try {
+                    const response = await fetch(endpoint, {
+                        headers: { 'Authorization': 'Bearer your-api-key-here' }
+                    });
+                    return await response.json();
+                } catch (error) {
+                    return { error: error.message };
+                }
+            }
+        };
+        
+        console.log('🔧 Debug functions available:', Object.keys(window.aiTrainerDebug));
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>🤖 AI-Trainer Dashboard</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, sans-serif;
+            background-color: #f7fafc;
+        }
+        
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">🤖 Loading AI-Trainer Dashboard...</div>
+    <div id="app-root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Training Dashboard Component - INLINE (no external files)
+        const TrainingDashboard = () => {
+            const [currentView, setCurrentView] = useState('dashboard');
+            const [status, setStatus] = useState('Connecting...');
+            const [serverStatus, setServerStatus] = useState({});
+            
+            useEffect(() => {
+                console.log('⚡ TrainingDashboard mounted');
+                setStatus('✅ Dashboard Loaded Successfully!');
+                
+                // Test server connection
+                fetch('/api/status', {
+                    headers: { 
+                        'Authorization': 'Bearer your-api-key-here' 
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('📡 Server status:', data);
+                    setServerStatus(data);
+                })
+                .catch(error => {
+                    console.error('❌ Server connection failed:', error);
+                    setServerStatus({ error: error.message });
+                });
+            }, []);
+
+            const navItems = [
+                { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
+                { id: 'samples', label: '🎯 Training Samples', icon: '🎯' },
+                { id: 'collection', label: '📦 Data Collection', icon: '📦' },
+                { id: 'analytics', label: '📈 Analytics', icon: '📈' },
+                { id: 'settings', label: '⚙️ Settings', icon: '⚙️' }
+            ];
+
+            const renderNavigation = () => (
+                <div style={{
+                    background: 'white',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    marginBottom: '2rem',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        gap: '1rem',
+                        overflowX: 'auto'
+                    }}>
+                        {navItems.map(item => (
+                            <button
+                                key={item.id}
+                                onClick={() => setCurrentView(item.id)}
+                                style={{
+                                    background: currentView === item.id ? 'linear-gradient(135deg, #667eea, #764ba2)' : '#f8f9fa',
+                                    color: currentView === item.id ? 'white' : '#333',
+                                    border: 'none',
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    fontWeight: '500',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            const renderDashboard = () => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{ margin: '0 0 1rem 0', color: '#333' }}>🚀 System Status</h3>
+                        <p style={{ margin: '0.5rem 0', color: '#666' }}>Status: {status}</p>
+                        <p style={{ margin: '0.5rem 0', color: '#666' }}>
+                            Server: {serverStatus.status ? '✅ Online' : serverStatus.error ? '❌ Error' : '🔄 Checking...'}
+                        </p>
+                        {serverStatus.error && (
+                            <p style={{ margin: '0.5rem 0', color: '#dc3545', fontSize: '0.9rem' }}>
+                                Error: {serverStatus.error}
+                            </p>
+                        )}
+                    </div>
+                    
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{ margin: '0 0 1rem 0', color: '#333' }}>📊 Quick Stats</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#666' }}>Training Samples:</span>
+                                <span style={{ fontWeight: 'bold', color: '#28a745' }}>
+                                    {serverStatus.samples_count || '0'}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#666' }}>Models:</span>
+                                <span style={{ fontWeight: 'bold', color: '#007bff' }}>
+                                    {serverStatus.models_count || '0'}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#666' }}>Last Training:</span>
+                                <span style={{ fontWeight: 'bold', color: '#6f42c1' }}>
+                                    {serverStatus.last_training || 'Never'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{ margin: '0 0 1rem 0', color: '#333' }}>🛠️ Quick Actions</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <button onClick={() => setCurrentView('samples')} style={{
+                                background: '#28a745',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                            }}>
+                                📝 Add Training Sample
+                            </button>
+                            <button onClick={() => setCurrentView('collection')} style={{
+                                background: '#007bff',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                            }}>
+                                🔄 Start Data Collection
+                            </button>
+                            <button onClick={() => window.location.href = '/debug.html'} style={{
+                                background: '#6c757d',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                            }}>
+                                🛠️ Debug Mode
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const renderView = () => {
+                switch (currentView) {
+                    case 'samples':
+                        return (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                            }}>
+                                <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>🎯 Training Samples</h2>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>
+                                    Manage your training data and samples here.
+                                </p>
+                                <button onClick={() => alert('Feature coming soon!')} style={{
+                                    background: '#28a745',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                }}>
+                                    ➕ Add New Sample
+                                </button>
+                            </div>
+                        );
+                    case 'collection':
+                        return (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                            }}>
+                                <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>📦 Data Collection</h2>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>
+                                    Configure automatic data collection from websites.
+                                </p>
+                                <button onClick={() => alert('Feature coming soon!')} style={{
+                                    background: '#007bff',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                }}>
+                                    🚀 Start Collection
+                                </button>
+                            </div>
+                        );
+                    case 'analytics':
+                        return (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                            }}>
+                                <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>📈 Analytics</h2>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>
+                                    View training performance and model metrics.
+                                </p>
+                                <div style={{ 
+                                    background: '#f8f9fa', 
+                                    padding: '1rem', 
+                                    borderRadius: '8px',
+                                    marginTop: '1rem'
+                                }}>
+                                    <p style={{ margin: 0, color: '#666' }}>📊 Analytics dashboard coming soon...</p>
+                                </div>
+                            </div>
+                        );
+                    case 'settings':
+                        return (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                            }}>
+                                <h2 style={{ margin: '0 0 1rem 0', color: '#333' }}>⚙️ Settings</h2>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>
+                                    Configure AI-Trainer system settings.
+                                </p>
+                                <div style={{ 
+                                    background: '#f8f9fa', 
+                                    padding: '1rem', 
+                                    borderRadius: '8px',
+                                    marginTop: '1rem'
+                                }}>
+                                    <p style={{ margin: 0, color: '#666' }}>⚙️ Settings panel coming soon...</p>
+                                </div>
+                            </div>
+                        );
+                    default:
+                        return renderDashboard();
+                }
+            };
+
+            return (
+                <div style={{
+                    fontFamily: 'system-ui, sans-serif',
+                    padding: '2rem',
+                    maxWidth: '1200px',
+                    margin: '0 auto',
+                    minHeight: '100vh'
+                }}>
+                    <header style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        padding: '2rem',
+                        borderRadius: '12px',
+                        marginBottom: '2rem',
+                        textAlign: 'center'
+                    }}>
+                        <h1 style={{ margin: 0, fontSize: '2.5rem' }}>🤖 AI-Trainer Dashboard</h1>
+                        <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9 }}>
+                            Template Intelligence Engine - Training Interface
+                        </p>
+                    </header>
+                    
+                    {renderNavigation()}
+                    {renderView()}
+                </div>
+            );
+        };
+        
+        // Mount the component - SIMPLE & DIRECT like debug.html
+        console.log('🚀 Mounting TrainingDashboard...');
+        const root = ReactDOM.createRoot(document.getElementById('app-root'));
+        root.render(<TrainingDashboard />);
+        
+        // Hide loading screen
+        document.getElementById('loading').style.display = 'none';
+        
+        console.log('✅ AI-Trainer Dashboard mounted successfully!');
+    </script>
+</body>
+</html>
