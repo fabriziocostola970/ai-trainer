@@ -13,6 +13,7 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://unpkg.com", "https://cdnjs.cloudflare.com"],
+      scriptSrcAttr: ["'unsafe-inline'"],  // Allow inline event handlers
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:"],
@@ -122,18 +123,49 @@ app.get('/api/status', authenticateAPI, (req, res) => {
 
 // Serve frontend interface at root
 app.get('/', (req, res) => {
+  const filePath = path.join(__dirname, 'frontend', 'index.clean.html');
   console.log('🔄 Serving clean dashboard interface (no React)');
-  res.sendFile(path.join(__dirname, 'frontend', 'index.clean.html'));
+  console.log('📁 File path:', filePath);
+  
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('❌ Error serving index.clean.html:', err);
+      res.status(500).send(`
+        <h1>🚨 Dashboard Loading Error</h1>
+        <p>Could not load index.clean.html</p>
+        <p>Error: ${err.message}</p>
+        <p><a href="/clean">Try /clean route</a></p>
+        <p><a href="/simple">Try /simple route</a></p>
+      `);
+    }
+  });
 });
 
 // Explicit route for clean interface
 app.get('/clean', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'index.clean.html'));
+  const filePath = path.join(__dirname, 'frontend', 'index.clean.html');
+  console.log('🧹 Serving clean interface explicitly');
+  console.log('📁 File path:', filePath);
+  
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('❌ Error serving clean interface:', err);
+      res.status(500).json({ error: 'Could not load clean interface', details: err.message });
+    }
+  });
 });
 
 // Simple interface fallback
 app.get('/simple', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'index.simple.html'));
+  const filePath = path.join(__dirname, 'frontend', 'index.simple.html');
+  console.log('📱 Serving simple interface fallback');
+  
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('❌ Error serving simple interface:', err);
+      res.status(500).json({ error: 'Could not load simple interface', details: err.message });
+    }
+  });
 });
 
 // Legacy route redirect

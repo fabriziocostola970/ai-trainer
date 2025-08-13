@@ -170,22 +170,22 @@
             <div class="action-card">
                 <h3>🎨 Template Generation</h3>
                 <p>Genera layout intelligenti per business specifici</p>
-                <button class="btn" onclick="testLayoutGeneration()">Test Layout Generation</button>
-                <button class="btn" onclick="testTemplateCreation()">Test Template Creation</button>
+                <button class="btn" id="btn-layout-generation">Test Layout Generation</button>
+                <button class="btn" id="btn-template-creation">Test Template Creation</button>
             </div>
             
             <div class="action-card">
                 <h3>📊 System Monitoring</h3>
                 <p>Controlla stato sistema e performance</p>
-                <button class="btn" onclick="getServerStatus()">Check Server Status</button>
-                <button class="btn" onclick="getHealthCheck()">Health Check</button>
+                <button class="btn" id="btn-server-status">Check Server Status</button>
+                <button class="btn" id="btn-health-check">Health Check</button>
             </div>
             
             <div class="action-card">
                 <h3>🔧 Debug Tools</h3>
                 <p>Strumenti per testing e debug</p>
-                <button class="btn" onclick="testAPI()">Test Full API</button>
-                <button class="btn" onclick="clearLogs()">Clear Logs</button>
+                <button class="btn" id="btn-test-api">Test Full API</button>
+                <button class="btn" id="btn-clear-logs">Clear Logs</button>
             </div>
         </div>
         
@@ -312,6 +312,16 @@
         document.addEventListener('DOMContentLoaded', () => {
             logMessage('🚀 Dashboard initialized successfully', 'success');
             logMessage('📡 No React dependencies - Pure HTML', 'info');
+            
+            // Setup event listeners for buttons (CSP-compliant)
+            document.getElementById('btn-layout-generation').addEventListener('click', testLayoutGeneration);
+            document.getElementById('btn-template-creation').addEventListener('click', testTemplateCreation);
+            document.getElementById('btn-server-status').addEventListener('click', getServerStatus);
+            document.getElementById('btn-health-check').addEventListener('click', getHealthCheck);
+            document.getElementById('btn-test-api').addEventListener('click', testAPI);
+            document.getElementById('btn-clear-logs').addEventListener('click', clearLogs);
+            
+            logMessage('🎛️ Button event listeners attached', 'info');
             
             // Auto check server status
             setTimeout(() => {
