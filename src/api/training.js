@@ -299,11 +299,18 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
       if (i < customSites.length) {
         const currentSite = customSites[i];
         console.log(`🔍 Processing: ${currentSite.url} (${currentSite.businessType})`);
+        console.log(`🔍 Current step: ${i+1}/${customSites.length}`);
         
         try {
           // 📥 Download HTML content from the site
           console.log(`📥 Downloading HTML from: ${currentSite.url}`);
           const htmlContent = await collector.collectHTMLContent(currentSite.url);
+          
+          console.log(`📊 HTML download result:`, {
+            success: !!htmlContent,
+            length: htmlContent ? htmlContent.length : 0,
+            type: typeof htmlContent
+          });
           
           if (htmlContent && htmlContent.length > 0) {
             console.log(`✅ HTML downloaded: ${htmlContent.length} characters`);
@@ -326,21 +333,27 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
               }
             };
             
+            console.log(`💾 Attempting to save training sample:`, sampleId);
             await storage.saveAITrainingSample(trainingSample);
             console.log(`✅ Training sample saved: ${sampleId}`);
             
             // 🔄 Update custom site status to COMPLETED
+            console.log(`🔄 Updating custom site status for: ${currentSite.url}`);
             await storage.updateAICustomSiteStatus(currentSite.url, currentSite.businessType, 'COMPLETED', trainingId);
             console.log(`✅ Custom site status updated to COMPLETED`);
             
           } else {
             console.log(`❌ Failed to download HTML from: ${currentSite.url}`);
+            console.log(`❌ HTML content:`, htmlContent);
           }
         } catch (siteError) {
           console.error(`❌ Error processing site ${currentSite.url}:`, siteError);
+          console.error(`❌ Error stack:`, siteError.stack);
         }
         
         trainingState.samplesCollected = i + 1;
+      } else {
+        console.log(`⚠️ Step ${i} skipped - no more sites to process`);
       }
       
       // 💾 Update progress in database
