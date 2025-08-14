@@ -321,15 +321,23 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
     trainingState.currentStep = 'custom-completed';
     trainingState.accuracy = 89 + Math.round(Math.random() * 8); // Higher accuracy for custom
     
+    console.log(`🎯 Training completed, attempting final update for: ${trainingId}`);
+    console.log(`🎯 Final accuracy: ${trainingState.accuracy}%`);
+    
     // 💾 Update final completion in database
-    await storage.updateAITrainingSession(trainingId, {
-      status: 'COMPLETED',
-      isTraining: false,
-      progress: 100,
-      accuracy: trainingState.accuracy,
-      completionTime: new Date(),
-      currentStep: 'custom-completed'
-    });
+    try {
+      await storage.updateAITrainingSession(trainingId, {
+        status: 'COMPLETED',
+        isTraining: false,
+        progress: 100,
+        accuracy: trainingState.accuracy,
+        completionTime: new Date(),
+        currentStep: 'custom-completed'
+      });
+      console.log(`✅ Final COMPLETED status update successful for: ${trainingId}`);
+    } catch (finalUpdateError) {
+      console.error(`❌ Final update failed for ${trainingId}:`, finalUpdateError);
+    }
     
     // 💾 Save final custom training state
     await storage.saveTrainingState(trainingState);
