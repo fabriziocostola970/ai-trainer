@@ -155,7 +155,7 @@ class DatabaseStorage {
       const query = `
         UPDATE ai_training_sessions 
         SET ${setClause}, "updatedAt" = NOW()
-        WHERE id = $1
+        WHERE "trainingId" = $1
         RETURNING *
       `;
       
