@@ -33,7 +33,7 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       timestamp: new Date().toISOString()
     });
 
-    const { businessType, currentBlocks, preferences, requirements } = req.body;
+    const { businessType, businessName, style, currentBlocks, preferences, requirements } = req.body;
     
     // Validation
     if (!businessType) {
@@ -111,6 +111,8 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     const response = {
       success: true,
       layout: generatedLayout,
+      businessName: businessName || `My ${businessType}`,
+      style: style || 'modern',
       semanticScore: 85 + Math.floor(Math.random() * 15), // 85-99
       designScore: 78 + Math.floor(Math.random() * 20), // 78-97
       recommendations: [

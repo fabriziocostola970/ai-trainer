@@ -670,11 +670,11 @@
                     generatedLayout = data;
                     logMessage(`✅ AI Layout Generated Successfully!`, 'success');
                     logMessage(`🎯 Semantic Score: ${data.semanticScore}/100`, 'info');
-                    logMessage(`🧠 AI Model Used: ${data.modelUsed || 'Trained Model'}`, 'info');
-                    logMessage(`📊 Blocks Generated: ${data.suggestedBlocks?.length || 0}`, 'info');
+                    logMessage(`🧠 AI Model Used: ${data.metadata?.aiModel || 'Trained Model'}`, 'info');
+                    logMessage(`📊 Blocks Generated: ${data.layout?.length || 0}`, 'info');
                     
-                    if (data.suggestedBlocks) {
-                        logMessage(`🔧 Suggested Blocks: ${data.suggestedBlocks.join(', ')}`, 'info');
+                    if (data.layout && data.layout.length > 0) {
+                        logMessage(`🔧 Generated Blocks: ${data.layout.join(', ')}`, 'info');
                     }
                     
                     // Update API calls counter
