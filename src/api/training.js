@@ -287,7 +287,7 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
     });
     
     // Use the actual database ID for foreign key references
-    const sessionDbId = savedSession ? savedSession.id : trainingId;
+    const sessionDbId = (savedSession && savedSession.id) ? savedSession.id : trainingId;
     console.log(`💾 Session saved with DB ID: ${sessionDbId}`);
     
     const steps = [
