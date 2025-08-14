@@ -112,8 +112,8 @@ class DatabaseStorage {
         sessionData.id || this.generateId(),
         sessionData.initiatedBy || sessionData.initiatorId || null,
         sessionData.trainingId || sessionData.id || this.generateId(),
-        sessionData.trainingType || 'GLOBAL_TRAINING',
-        sessionData.status || 'STARTED',
+        sessionData.trainingType || 'GLOBAL',
+        sessionData.status || 'PENDING',
         JSON.stringify(sessionData.metadata || {})
       ];
       
@@ -237,11 +237,12 @@ class DatabaseStorage {
       // Insert new sites
       for (const site of sites) {
         const query = `
-          INSERT INTO ai_custom_sites (url, "businessType", style, metadata)
-          VALUES ($1, $2, $3, $4)
+          INSERT INTO ai_custom_sites (id, url, "businessType", style, metadata)
+          VALUES ($1, $2, $3, $4, $5)
         `;
         
         const values = [
+          this.generateId(),
           site.url,
           site.businessType,
           site.style,
