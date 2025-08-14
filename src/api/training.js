@@ -465,8 +465,17 @@ router.get('/history', async (req, res) => {
 // 🔍 DEBUG: Check training samples in database
 router.get('/debug/samples', async (req, res) => {
   try {
-    const storage = new DatabaseStorage();
-    await storage.connect();
+    console.log('🔍 Checking training samples in database...');
+    
+    // Use existing storage instance
+    if (!storage.pool) {
+      console.log('❌ No database connection available');
+      return res.status(503).json({
+        success: false,
+        error: 'Database not connected',
+        message: 'Storage pool not initialized'
+      });
+    }
     
     // Get all training samples from database
     const result = await storage.pool.query(`
@@ -484,14 +493,16 @@ router.get('/debug/samples', async (req, res) => {
       success: true,
       samples: result.rows,
       count: result.rows.length,
-      query: 'Recent 20 training samples'
+      query: 'Recent 20 training samples',
+      timestamp: new Date().toISOString()
     });
     
   } catch (error) {
     console.error('❌ Error checking samples:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
+      details: error.stack
     });
   }
 });
