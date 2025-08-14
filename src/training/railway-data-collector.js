@@ -342,6 +342,59 @@ class RailwayDataCollector {
       confidence: 0.85
     };
   }
+
+  // 📥 Collect just HTML content (for training samples)
+  async collectHTMLContent(url) {
+    console.log(`📥 Collecting HTML content from: ${url}`);
+    
+    try {
+      if (this.hasPuppeteer) {
+        return await this.fetchHTMLWithPuppeteer(url);
+      } else {
+        return await this.fetchHTML(url);
+      }
+    } catch (error) {
+      console.error(`❌ HTML collection failed for ${url}:`, error.message);
+      return null;
+    }
+  }
+
+  // 🤖 Fetch HTML with Puppeteer (full rendering)
+  async fetchHTMLWithPuppeteer(url) {
+    let page = null;
+    try {
+      if (!browserInstance) {
+        browserInstance = await puppeteer.launch({
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+      }
+
+      page = await browserInstance.newPage();
+      await page.setUserAgent(this.useragent);
+      
+      await page.goto(url, { 
+        waitUntil: 'domcontentloaded',
+        timeout: 30000 
+      });
+
+      // Wait for dynamic content
+      await page.waitForTimeout(2000);
+      
+      const htmlContent = await page.content();
+      console.log(`✅ HTML collected via Puppeteer: ${htmlContent.length} characters`);
+      
+      return htmlContent;
+      
+    } catch (error) {
+      console.error(`❌ Puppeteer HTML collection failed:`, error.message);
+      throw error;
+    } finally {
+      if (page) {
+        await page.close();
+      }
+    }
+  }
 }
 
 module.exports = RailwayDataCollector;

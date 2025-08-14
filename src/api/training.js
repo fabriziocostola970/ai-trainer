@@ -295,10 +295,51 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
       
       console.log(`📈 ${trainingState.progress}%: ${steps[i]}`);
       
-      // Log current site being processed
+      // 🔥 REAL TRAINING: Actually process each custom site
       if (i < customSites.length) {
         const currentSite = customSites[i];
         console.log(`🔍 Processing: ${currentSite.url} (${currentSite.businessType})`);
+        
+        try {
+          // 📥 Download HTML content from the site
+          console.log(`📥 Downloading HTML from: ${currentSite.url}`);
+          const htmlContent = await collector.collectHTMLContent(currentSite.url);
+          
+          if (htmlContent && htmlContent.length > 0) {
+            console.log(`✅ HTML downloaded: ${htmlContent.length} characters`);
+            
+            // 💾 Save training sample to database
+            const sampleId = `sample-${trainingId}-${i}-${Date.now()}`;
+            const trainingSample = {
+              sampleId: sampleId,
+              url: currentSite.url,
+              businessType: currentSite.businessType,
+              trainingSessionId: trainingId,
+              htmlContent: htmlContent,
+              htmlLength: htmlContent.length,
+              collectionMethod: 'PUPPETEER',
+              status: 'COMPLETED',
+              analysisData: {
+                style: currentSite.style,
+                targetAudience: currentSite.targetAudience || 'general',
+                collectedAt: new Date()
+              }
+            };
+            
+            await storage.saveAITrainingSample(trainingSample);
+            console.log(`✅ Training sample saved: ${sampleId}`);
+            
+            // 🔄 Update custom site status to COMPLETED
+            await storage.updateAICustomSiteStatus(currentSite.url, currentSite.businessType, 'COMPLETED', trainingId);
+            console.log(`✅ Custom site status updated to COMPLETED`);
+            
+          } else {
+            console.log(`❌ Failed to download HTML from: ${currentSite.url}`);
+          }
+        } catch (siteError) {
+          console.error(`❌ Error processing site ${currentSite.url}:`, siteError);
+        }
+        
         trainingState.samplesCollected = i + 1;
       }
       

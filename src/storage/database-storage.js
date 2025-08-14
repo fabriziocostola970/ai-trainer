@@ -12,7 +12,73 @@ class DatabaseStorage {
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
     });
     
-    this.isConnected = false;
+      }
+
+  // 💾 Save AI Training Sample
+  async saveAITrainingSample(sampleData) {
+    if (!this.pool) {
+      console.log('⚠️ No database connection, skipping training sample save');
+      return null;
+    }
+
+    try {
+      const result = await this.pool.query(`
+        INSERT INTO ai_training_samples (
+          "sampleId", url, "businessType", "trainingSessionId",
+          "htmlContent", "htmlLength", "collectionMethod", 
+          status, "analysisData", "createdAt"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING id
+      `, [
+        sampleData.sampleId,
+        sampleData.url,
+        sampleData.businessType,
+        sampleData.trainingSessionId,
+        sampleData.htmlContent,
+        sampleData.htmlLength,
+        sampleData.collectionMethod,
+        sampleData.status,
+        JSON.stringify(sampleData.analysisData),
+        new Date()
+      ]);
+
+      console.log(`✅ Training sample saved with ID: ${result.rows[0].id}`);
+      return result.rows[0];
+    } catch (error) {
+      console.error('❌ Error saving training sample:', error);
+      throw error;
+    }
+  }
+
+  // 🔄 Update AI Custom Site Status
+  async updateAICustomSiteStatus(url, businessType, status, trainingSessionId) {
+    if (!this.pool) {
+      console.log('⚠️ No database connection, skipping custom site status update');
+      return null;
+    }
+
+    try {
+      const result = await this.pool.query(`
+        UPDATE ai_custom_sites 
+        SET status = $1, "trainingSessionId" = $2, "lastCollected" = $3, "updatedAt" = $4
+        WHERE url = $5 AND "businessType" = $6
+        RETURNING id
+      `, [status, trainingSessionId, new Date(), new Date(), url, businessType]);
+
+      if (result.rows.length > 0) {
+        console.log(`✅ Custom site status updated: ${url} -> ${status}`);
+        return result.rows[0];
+      } else {
+        console.log(`⚠️ No custom site found to update: ${url} (${businessType})`);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error updating custom site status:', error);
+      throw error;
+    }
+  }
+
+  // 🔄 Close connectionss.isConnected = false;
     this.fallbackToFiles = false;
     this.fileStorage = null;
   }
