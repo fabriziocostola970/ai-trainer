@@ -29,6 +29,7 @@
     "node-fetch": "^3.3.2",
     "openai": "^4.20.1",
     "pg": "^8.11.3",
+    "puppeteer": "^21.5.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
