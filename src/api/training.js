@@ -258,6 +258,27 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
   try {
     console.log(`🎯 Custom Training ${trainingId}: Starting analysis`);
     
+    // 💾 Save initial session to VendiOnline database
+    await storage.saveAITrainingSession({
+      id: trainingId.replace('custom-train-', 'train_') + '_' + Math.random().toString(36).substr(2, 9),
+      trainingId: trainingId,
+      initiatedBy: null,
+      trainingType: 'GLOBAL',
+      status: 'RUNNING',
+      isTraining: true,
+      progress: 0,
+      samplesCollected: 0,
+      totalSamples: customSites.length,
+      currentStep: 'starting',
+      startTime: new Date(),
+      metadata: {
+        customSites: customSites,
+        aiAnalysis: useAI,
+        startTime: new Date(),
+        source: 'ai-trainer-custom'
+      }
+    });
+    
     const steps = [
       'Validating custom URLs...',
       'Collecting HTML from custom sites...',
@@ -281,6 +302,15 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
         trainingState.samplesCollected = i + 1;
       }
       
+      // 💾 Update progress in database
+      await storage.updateAITrainingSession(trainingId, {
+        status: 'RUNNING',
+        isTraining: true,
+        progress: trainingState.progress,
+        samplesCollected: trainingState.samplesCollected,
+        currentStep: trainingState.currentStep
+      });
+      
       // Simulate work time (shorter for custom sites)
       await new Promise(resolve => setTimeout(resolve, 10000)); // 10 seconds per step
     }
@@ -290,6 +320,16 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
     trainingState.progress = 100;
     trainingState.currentStep = 'custom-completed';
     trainingState.accuracy = 89 + Math.round(Math.random() * 8); // Higher accuracy for custom
+    
+    // 💾 Update final completion in database
+    await storage.updateAITrainingSession(trainingId, {
+      status: 'COMPLETED',
+      isTraining: false,
+      progress: 100,
+      accuracy: trainingState.accuracy,
+      completionTime: new Date(),
+      currentStep: 'custom-completed'
+    });
     
     // 💾 Save final custom training state
     await storage.saveTrainingState(trainingState);
