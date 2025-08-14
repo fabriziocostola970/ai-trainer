@@ -78,11 +78,6 @@ class DatabaseStorage {
     }
   }
 
-  // 🔄 Close connectionss.isConnected = false;
-    this.fallbackToFiles = false;
-    this.fileStorage = null;
-  }
-
   // 🆔 Generate unique ID
   generateId() {
     return 'train_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
