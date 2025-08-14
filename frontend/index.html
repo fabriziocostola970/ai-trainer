@@ -206,6 +206,33 @@
             </div>
             
             <div class="action-card">
+                <h3>🎨 Generate New Layout</h3>
+                <p>Testa l'AI allenata - Genera layout con stili appresi</p>
+                <div style="margin: 1rem 0;">
+                    <select id="generated-business-type" style="width: 48%; padding: 0.5rem; margin-right: 4%; margin-bottom: 0.5rem;">
+                        <option value="restaurant">Restaurant</option>
+                        <option value="tech-startup">Tech Startup</option>
+                        <option value="ecommerce">E-commerce</option>
+                        <option value="portfolio">Portfolio</option>
+                        <option value="wellness">Wellness</option>
+                        <option value="real-estate">Real Estate</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <select id="generated-style" style="width: 48%; padding: 0.5rem; margin-bottom: 0.5rem;">
+                        <option value="minimal">Minimal (AI Learned)</option>
+                        <option value="elegant">Elegant (AI Learned)</option>
+                        <option value="casual">Casual (AI Learned)</option>
+                        <option value="creative">Creative (AI Learned)</option>
+                        <option value="professional">Professional (AI Learned)</option>
+                    </select>
+                    <input type="text" id="business-name" placeholder="Nome Business (es: My Restaurant)" 
+                           style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 0.5rem;">
+                </div>
+                <button class="btn" id="btn-generate-layout" style="background: #10b981;">🎨 Generate AI Layout</button>
+                <button class="btn" id="btn-preview-layout">👀 Preview Generated</button>
+            </div>
+
+            <div class="action-card">
                 <h3>🤖 AI Training</h3>
                 <p>Avvia training AI con dataset reale</p>
                 <button class="btn" id="btn-start-training" style="background: #e74c3c;">Start Training Collection</button>
@@ -515,6 +542,10 @@
             document.getElementById('btn-storage-info').addEventListener('click', getStorageInfo);
             document.getElementById('btn-training-history').addEventListener('click', getTrainingHistory);
             
+            // 🎨 AI Layout Generation event listeners
+            document.getElementById('btn-generate-layout').addEventListener('click', generateAILayout);
+            document.getElementById('btn-preview-layout').addEventListener('click', previewGeneratedLayout);
+            
             // 🤖 AI Training event listeners
             document.getElementById('btn-start-training').addEventListener('click', startTraining);
             document.getElementById('btn-training-status').addEventListener('click', getTrainingStatus);
@@ -599,6 +630,138 @@
                 
             } catch (error) {
                 logMessage(`❌ Training History Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // 🎨 AI LAYOUT GENERATION FUNCTIONS
+        let generatedLayout = null;
+        
+        async function generateAILayout() {
+            try {
+                const businessType = document.getElementById('generated-business-type').value;
+                const style = document.getElementById('generated-style').value;
+                const businessName = document.getElementById('business-name').value || `My ${businessType}`;
+                
+                logMessage(`🎨 Generating AI layout for ${businessName} (${businessType} - ${style})...`, 'info');
+                
+                const response = await fetch(`${API_BASE}/api/generate/layout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        businessType: businessType,
+                        style: style,
+                        businessName: businessName,
+                        useTrainedModel: true, // Use the trained AI
+                        currentBlocks: ['hero', 'about', 'services', 'contact'],
+                        requirements: { 
+                            mobileFirst: true,
+                            accessibility: true,
+                            trainedStyle: true
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    generatedLayout = data;
+                    logMessage(`✅ AI Layout Generated Successfully!`, 'success');
+                    logMessage(`🎯 Semantic Score: ${data.semanticScore}/100`, 'info');
+                    logMessage(`🧠 AI Model Used: ${data.modelUsed || 'Trained Model'}`, 'info');
+                    logMessage(`📊 Blocks Generated: ${data.suggestedBlocks?.length || 0}`, 'info');
+                    
+                    if (data.suggestedBlocks) {
+                        logMessage(`🔧 Suggested Blocks: ${data.suggestedBlocks.join(', ')}`, 'info');
+                    }
+                    
+                    // Update API calls counter
+                    document.getElementById('apiCalls').textContent = parseInt(document.getElementById('apiCalls').textContent) + 1;
+                    
+                } else {
+                    logMessage(`❌ Layout Generation Failed: ${data.error || data.message}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ AI Layout Generation Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function previewGeneratedLayout() {
+            if (!generatedLayout) {
+                logMessage('❌ No layout generated yet. Generate a layout first!', 'error');
+                return;
+            }
+            
+            try {
+                logMessage('👀 Opening layout preview...', 'info');
+                
+                // Create a preview HTML
+                const previewHTML = `<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Generated Layout - ${generatedLayout.businessName || 'Preview'}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4rem 0; text-align: center; }
+        .hero h1 { font-size: 3rem; margin-bottom: 1rem; }
+        .hero p { font-size: 1.2rem; opacity: 0.9; }
+        .section { padding: 3rem 0; }
+        .section:nth-child(even) { background: #f8f9fa; }
+        .section h2 { font-size: 2rem; margin-bottom: 2rem; text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
+        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .footer { background: #1a202c; color: white; padding: 2rem 0; text-align: center; }
+        .ai-badge { position: fixed; top: 10px; right: 10px; background: #10b981; color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="ai-badge">🤖 AI Generated (${generatedLayout.style})</div>
+    <section class="hero">
+        <div class="container">
+            <h1>${generatedLayout.businessName || 'AI Generated Business'}</h1>
+            <p>Layout generato dall'AI allenata - Stile: ${generatedLayout.style}</p>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <h2>About</h2>
+            <p>Questo layout è stato generato dall'AI dopo il training con i tuoi siti custom.</p>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <h2>Services</h2>
+            <div class="grid">
+                <div class="card"><h3>AI Generated Service</h3><p>Generated by trained AI with ${generatedLayout.style} style</p></div>
+                <div class="card"><h3>Smart Design</h3><p>Pattern learned from your training data</p></div>
+                <div class="card"><h3>Custom Layout</h3><p>Score: ${generatedLayout.semanticScore}/100</p></div>
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+        <div class="container">
+            <p>🤖 Generated by AI-Trainer | Score: ${generatedLayout.semanticScore}/100</p>
+        </div>
+    </footer>
+</body>
+</html>`;
+                
+                // Open in new window
+                const previewWindow = window.open('', '_blank');
+                previewWindow.document.write(previewHTML);
+                previewWindow.document.close();
+                
+                logMessage('✅ Layout preview opened in new window', 'success');
+                
+            } catch (error) {
+                logMessage(`❌ Preview Error: ${error.message}`, 'error');
             }
         }
     </script>
