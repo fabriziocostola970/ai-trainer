@@ -165,41 +165,8 @@ class DatabaseStorage {
     }
   }
   async saveTrainingState(state) {
-    if (this.fallbackToFiles) {
-      return await this.fileStorage.saveTrainingState(state);
-    }
-
-    try {
-      const query = `
-        INSERT INTO training_sessions (
-          training_id, is_training, progress, samples_collected, 
-          total_samples, current_step, start_time, accuracy, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        ON CONFLICT (training_id) 
-        DO UPDATE SET 
-          is_training = $2, progress = $3, samples_collected = $4,
-          total_samples = $5, current_step = $6, accuracy = $8,
-          metadata = $9, updated_at = CURRENT_TIMESTAMP
-      `;
-      
-      const values = [
-        state.trainingId,
-        state.isTraining,
-        state.progress,
-        state.samplesCollected,
-        state.totalSamples,
-        state.currentStep,
-        state.startTime ? new Date(state.startTime) : null,
-        state.accuracy,
-        JSON.stringify(state)
-      ];
-      
-      await this.pool.query(query, values);
-      console.log(`💾 Training state saved to DB: ${state.trainingId}`);
-      
-    } catch (error) {
-      console.error('❌ Failed to save training state to DB:', error.message);
-    }
+    // Delegate to the proper AI training session save method
+    return await this.saveAITrainingSession(state);
   }
 
   async loadTrainingState() {
@@ -361,11 +328,11 @@ class DatabaseStorage {
     }
 
     try {
-      const sessionsQuery = 'SELECT COUNT(*) as total_sessions FROM training_sessions';
-      const samplesQuery = 'SELECT COUNT(*) as total_samples FROM training_samples';
-      const sitesQuery = 'SELECT COUNT(*) as custom_sites_count FROM custom_sites';
+      const sessionsQuery = 'SELECT COUNT(*) as total_sessions FROM ai_training_sessions';
+      const samplesQuery = 'SELECT COUNT(*) as total_samples FROM ai_training_samples';
+      const sitesQuery = 'SELECT COUNT(*) as custom_sites_count FROM ai_custom_sites';
       const latestQuery = `
-        SELECT * FROM training_sessions 
+        SELECT * FROM ai_training_sessions 
         ORDER BY created_at DESC 
         LIMIT 1
       `;
@@ -378,8 +345,8 @@ class DatabaseStorage {
       ]);
       
       const currentTraining = latest.rows.length > 0 ? {
-        trainingId: latest.rows[0].training_id,
-        isTraining: latest.rows[0].is_training,
+        trainingId: latest.rows[0].session_id,
+        isTraining: latest.rows[0].status === 'running',
         progress: latest.rows[0].progress,
         accuracy: latest.rows[0].accuracy,
         lastUpdated: latest.rows[0].updated_at
@@ -393,9 +360,9 @@ class DatabaseStorage {
         lastTrainingDate: currentTraining?.lastUpdated,
         storageLocation: {
           type: 'postgresql',
-          samples: 'training_samples table',
-          state: 'training_sessions table',
-          customSites: 'custom_sites table'
+          samples: 'ai_training_samples table',
+          state: 'ai_training_sessions table',
+          customSites: 'ai_custom_sites table'
         }
       };
       
@@ -417,7 +384,7 @@ class DatabaseStorage {
         return { status: 'disconnected', storage: 'file_fallback' };
       }
       
-      const result = await this.pool.query('SELECT COUNT(*) as total FROM training_sessions');
+      const result = await this.pool.query('SELECT COUNT(*) as total FROM ai_training_sessions');
       return { 
         status: 'connected', 
         storage: 'postgresql',
