@@ -17,6 +17,16 @@ class DatabaseStorage {
     this.fileStorage = null;
   }
 
+  // 🆔 Generate unique ID
+  generateId() {
+    return 'tr_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
+  }
+
+  // 🆔 Generate unique ID
+  generateId() {
+    return 'train_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+
   // 🔌 Initialize Database Connection
   async initialize() {
     try {
@@ -60,7 +70,76 @@ class DatabaseStorage {
     }
   }
 
-  // 💾 Training State Management
+    // 💾 Save AI Training Session to VendiOnline Database
+  async saveAITrainingSession(sessionData) {
+    if (!this.isConnected) return this.fallbackMethod('saveAITrainingSession');
+    
+    try {
+      const query = `
+        INSERT INTO ai_training_sessions (
+          id,
+          initiator_id,
+          business_id, 
+          training_type,
+          status,
+          metadata
+        ) VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `;
+      
+      const values = [
+        sessionData.id || this.generateId(),
+        sessionData.initiatorId || 'system',
+        sessionData.businessId || null,
+        sessionData.trainingType || 'GLOBAL_TRAINING',
+        sessionData.status || 'STARTED',
+        JSON.stringify(sessionData.metadata || {})
+      ];
+      
+      const result = await this.pool.query(query, values);
+      console.log('✅ AI Training session saved to database:', result.rows[0].id);
+      return result.rows[0];
+    } catch (error) {
+      console.error('❌ Failed to save AI training session:', error.message);
+      return null;
+    }
+  }
+
+  // 🔄 Update AI Training Session
+  async updateAITrainingSession(sessionId, updates) {
+    if (!this.isConnected) return this.fallbackMethod('updateAITrainingSession');
+    
+    try {
+      const setClause = Object.keys(updates).map((key, index) => {
+        const dbColumn = key === 'trainingType' ? 'training_type' :
+                        key === 'businessId' ? 'business_id' :
+                        key === 'initiatorId' ? 'initiator_id' :
+                        key === 'updatedAt' ? 'updated_at' : key;
+        return `${dbColumn} = $${index + 2}`;
+      }).join(', ');
+      
+      const query = `
+        UPDATE ai_training_sessions 
+        SET ${setClause}, updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+      `;
+      
+      const values = [sessionId, ...Object.values(updates)];
+      const result = await this.pool.query(query, values);
+      
+      if (result.rows.length > 0) {
+        console.log('✅ AI Training session updated:', sessionId);
+        return result.rows[0];
+      } else {
+        console.log('⚠️ AI Training session not found:', sessionId);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Failed to update AI training session:', error.message);
+      return null;
+    }
+  }
   async saveTrainingState(state) {
     if (this.fallbackToFiles) {
       return await this.fileStorage.saveTrainingState(state);

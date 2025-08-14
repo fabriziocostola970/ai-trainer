@@ -50,6 +50,21 @@ router.post('/start', async (req, res) => {
 
     // 💾 Save state to persistent storage
     await storage.saveTrainingState(trainingState);
+    
+    // 💾 Save to VendiOnline AITrainingSession table
+    await storage.saveAITrainingSession({
+      id: trainingId,
+      initiatorId: 'ai-trainer-system',
+      businessId: null, // Global training
+      trainingType: 'GLOBAL_TRAINING',
+      status: 'IN_PROGRESS',
+      metadata: {
+        samples: samples,
+        aiAnalysis: aiAnalysis,
+        startTime: new Date(),
+        source: 'ai-trainer-api'
+      }
+    });
 
     console.log(`🚀 Starting AI training: ${trainingId}`);
     console.log(`📊 Samples to collect: ${samples}`);
@@ -215,6 +230,17 @@ async function startTrainingAsync(trainingId, totalSamples, useAI) {
     
     // 💾 Save final state to persistent storage
     await storage.saveTrainingState(trainingState);
+    
+    // 💾 Update VendiOnline AITrainingSession with completion
+    await storage.updateAITrainingSession(trainingId, {
+      status: 'COMPLETED',
+      metadata: {
+        ...trainingState,
+        completedAt: new Date(),
+        accuracy: trainingState.accuracy,
+        finalStep: 'completed'
+      }
+    });
     
     console.log(`🎉 Training ${trainingId} completed with ${trainingState.accuracy}% accuracy`);
     
