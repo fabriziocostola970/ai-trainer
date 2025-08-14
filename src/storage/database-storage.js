@@ -142,6 +142,8 @@ class DatabaseStorage {
       return await this.fileStorage.saveTrainingState(updates);
     }
     
+    console.log(`🔄 Attempting to update session: ${sessionId} with:`, updates);
+    
     try {
       const setClause = Object.keys(updates).map((key, index) => {
         const dbColumn = key === 'trainingType' ? '"trainingType"' :
@@ -158,6 +160,8 @@ class DatabaseStorage {
         return `${dbColumn} = $${index + 2}`;
       }).join(', ');
       
+      console.log(`🔄 SQL Query: UPDATE ai_training_sessions SET ${setClause} WHERE "trainingId" = ${sessionId}`);
+      
       const query = `
         UPDATE ai_training_sessions 
         SET ${setClause}, "updatedAt" = NOW()
@@ -166,6 +170,8 @@ class DatabaseStorage {
       `;
       
       const values = [sessionId, ...Object.values(updates)];
+      console.log(`🔄 Query values:`, values);
+      
       const result = await this.pool.query(query, values);
       
       if (result.rows.length > 0) {
