@@ -58,8 +58,8 @@ class DatabaseStorage {
         INSERT INTO ai_training_samples (
           id, "sampleId", url, "businessType", "trainingSessionId",
           "htmlContent", "htmlLength", "collectionMethod", 
-          status, "analysisData", "createdAt"
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          status, "analysisData", "createdAt", "updatedAt"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING id, "sampleId"
       `, [
         generatedId,
@@ -72,7 +72,8 @@ class DatabaseStorage {
         sampleData.collectionMethod,
         sampleData.status,
         JSON.stringify(sampleData.analysisData),
-        new Date()
+        new Date(),
+        new Date() // Add updatedAt field
       ]);
 
       console.log(`✅ Training sample saved with ID: ${result.rows[0].id}`);
