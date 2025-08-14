@@ -724,6 +724,9 @@
                 // Generate HTML from AI blocks
                 const sectionsHTML = generatedLayout.layout.map(block => generateSectionHTML(block)).join('\n');
                 
+                console.log('🔍 Generated sections HTML:', sectionsHTML.substring(0, 500) + '...');
+                logMessage(`🔧 Generated ${generatedLayout.layout.length} dynamic sections`, 'info');
+                
                 // Create a preview HTML
                 const previewHTML = `<!DOCTYPE html>
 <html lang="it">
@@ -755,10 +758,13 @@
 </body>
 </html>`;
                 
-                // Open in new window
-                const previewWindow = window.open('', '_blank');
-                previewWindow.document.write(previewHTML);
-                previewWindow.document.close();
+                // Open in new window with blob URL
+                const blob = new Blob([previewHTML], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const previewWindow = window.open(url, '_blank');
+                
+                // Clean up blob URL after a delay
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
                 
                 logMessage('✅ Layout preview opened in new window', 'success');
                 
