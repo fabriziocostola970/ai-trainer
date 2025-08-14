@@ -295,65 +295,67 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
       
       console.log(`📈 ${trainingState.progress}%: ${steps[i]}`);
       
-      // 🔥 REAL TRAINING: Actually process each custom site
-      if (i < customSites.length) {
-        const currentSite = customSites[i];
-        console.log(`🔍 Processing: ${currentSite.url} (${currentSite.businessType})`);
-        console.log(`🔍 Current step: ${i+1}/${customSites.length}`);
+      // 🔥 REAL TRAINING: Process custom sites during specific steps
+      if (i === 1 && customSites.length > 0) { // Step 1: "Collecting HTML from custom sites..."
+        console.log(`� STARTING HTML COLLECTION FROM ${customSites.length} SITES`);
         
-        try {
-          // 📥 Download HTML content from the site
-          console.log(`📥 Downloading HTML from: ${currentSite.url}`);
-          const htmlContent = await collector.collectHTMLContent(currentSite.url);
+        for (let siteIndex = 0; siteIndex < customSites.length; siteIndex++) {
+          const currentSite = customSites[siteIndex];
+          console.log(`🔍 Processing site ${siteIndex + 1}/${customSites.length}: ${currentSite.url} (${currentSite.businessType})`);
           
-          console.log(`📊 HTML download result:`, {
-            success: !!htmlContent,
-            length: htmlContent ? htmlContent.length : 0,
-            type: typeof htmlContent
-          });
-          
-          if (htmlContent && htmlContent.length > 0) {
-            console.log(`✅ HTML downloaded: ${htmlContent.length} characters`);
+          try {
+            // 📥 Download HTML content from the site
+            console.log(`📥 Downloading HTML from: ${currentSite.url}`);
+            const htmlContent = await collector.collectHTMLContent(currentSite.url);
             
-            // 💾 Save training sample to database
-            const sampleId = `sample-${trainingId}-${i}-${Date.now()}`;
-            const trainingSample = {
-              sampleId: sampleId,
-              url: currentSite.url,
-              businessType: currentSite.businessType,
-              trainingSessionId: trainingId,
-              htmlContent: htmlContent,
-              htmlLength: htmlContent.length,
-              collectionMethod: 'PUPPETEER',
-              status: 'COMPLETED',
-              analysisData: {
-                style: currentSite.style,
-                targetAudience: currentSite.targetAudience || 'general',
-                collectedAt: new Date()
-              }
-            };
+            console.log(`📊 HTML download result:`, {
+              success: !!htmlContent,
+              length: htmlContent ? htmlContent.length : 0,
+              type: typeof htmlContent
+            });
             
-            console.log(`💾 Attempting to save training sample:`, sampleId);
-            await storage.saveAITrainingSample(trainingSample);
-            console.log(`✅ Training sample saved: ${sampleId}`);
-            
-            // 🔄 Update custom site status to COMPLETED
-            console.log(`🔄 Updating custom site status for: ${currentSite.url}`);
-            await storage.updateAICustomSiteStatus(currentSite.url, currentSite.businessType, 'COMPLETED', trainingId);
-            console.log(`✅ Custom site status updated to COMPLETED`);
-            
-          } else {
-            console.log(`❌ Failed to download HTML from: ${currentSite.url}`);
-            console.log(`❌ HTML content:`, htmlContent);
+            if (htmlContent && htmlContent.length > 0) {
+              console.log(`✅ HTML downloaded: ${htmlContent.length} characters`);
+              
+              // 💾 Save training sample to database
+              const sampleId = `sample-${trainingId}-${siteIndex}-${Date.now()}`;
+              const trainingSample = {
+                sampleId: sampleId,
+                url: currentSite.url,
+                businessType: currentSite.businessType,
+                trainingSessionId: trainingId,
+                htmlContent: htmlContent,
+                htmlLength: htmlContent.length,
+                collectionMethod: 'PUPPETEER',
+                status: 'COMPLETED',
+                analysisData: {
+                  style: currentSite.style,
+                  targetAudience: currentSite.targetAudience || 'general',
+                  collectedAt: new Date()
+                }
+              };
+              
+              console.log(`💾 Attempting to save training sample:`, sampleId);
+              await storage.saveAITrainingSample(trainingSample);
+              console.log(`✅ Training sample saved: ${sampleId}`);
+              
+              // 🔄 Update custom site status to COMPLETED
+              console.log(`🔄 Updating custom site status for: ${currentSite.url}`);
+              await storage.updateAICustomSiteStatus(currentSite.url, currentSite.businessType, 'COMPLETED', trainingId);
+              console.log(`✅ Custom site status updated to COMPLETED`);
+              
+            } else {
+              console.log(`❌ Failed to download HTML from: ${currentSite.url}`);
+              console.log(`❌ HTML content:`, htmlContent);
+            }
+          } catch (siteError) {
+            console.error(`❌ Error processing site ${currentSite.url}:`, siteError);
+            console.error(`❌ Error stack:`, siteError.stack);
           }
-        } catch (siteError) {
-          console.error(`❌ Error processing site ${currentSite.url}:`, siteError);
-          console.error(`❌ Error stack:`, siteError.stack);
         }
         
-        trainingState.samplesCollected = i + 1;
-      } else {
-        console.log(`⚠️ Step ${i} skipped - no more sites to process`);
+        trainingState.samplesCollected = customSites.length;
+        console.log(`🎯 HTML collection completed: ${trainingState.samplesCollected} samples collected`);
       }
       
       // 💾 Update progress in database
