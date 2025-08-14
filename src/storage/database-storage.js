@@ -22,9 +22,10 @@ class DatabaseStorage {
     }
 
     try {
-      // Generate cuid-like id using native Node.js crypto
-      const crypto = require('crypto');
-      const generatedId = 'c' + crypto.randomUUID().replace(/-/g, ''); // cuid-like format
+      // Generate simple unique ID without crypto dependencies
+      const timestamp = Date.now().toString(36);
+      const random = Math.random().toString(36).substring(2, 15);
+      const generatedId = `c${timestamp}${random}`;
       
       const result = await this.pool.query(`
         INSERT INTO ai_training_samples (
