@@ -311,8 +311,8 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
         currentStep: trainingState.currentStep
       });
       
-      // Simulate work time (shorter for custom sites)
-      await new Promise(resolve => setTimeout(resolve, 10000)); // 10 seconds per step
+      // SHORTER DELAY - 3 seconds instead of 10 to avoid timeouts
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
     
     // Custom training completed
