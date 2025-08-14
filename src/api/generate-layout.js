@@ -49,7 +49,7 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       try {
         // Connetti al database per leggere i dati di training
         const storage = new DatabaseStorage();
-        await storage.connect();
+        await storage.initialize(); // Usa initialize invece di connect
         
         // 1. Cerca sessioni di training completate per il business type
         console.log(`🔍 Searching for completed training sessions for: ${businessType}`);
@@ -254,7 +254,16 @@ router.post('/layout', authenticateAPI, async (req, res) => {
         ]
       };
       
-      return fallbackLayouts[businessType] || fallbackLayouts.default;
+      return {
+        blocks: fallbackLayouts[businessType] || fallbackLayouts.default,
+        confidence: 75, // Score fisso per fallback
+        trainingData: {
+          sessionsAnalyzed: 0,
+          samplesAnalyzed: 0,
+          sitesAnalyzed: 0,
+          patternsFound: ['fallback-mode']
+        }
+      };
     };
 
     // 🚀 CHIAMATA PRINCIPALE: Usa la vera AI basata sui dati di training
