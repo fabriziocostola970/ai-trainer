@@ -349,8 +349,8 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
       console.error(`❌ Update error details:`, finalUpdateError.message);
     }
     
-    // 💾 Save final custom training state
-    await storage.saveTrainingState(trainingState);
+    // ❌ RIMOSSO: Save final custom training state - redundant and overwrites status
+    // await storage.saveTrainingState(trainingState);
     
     console.log(`🎉 Custom Training ${trainingId} completed with ${trainingState.accuracy}% accuracy`);
     console.log(`🔗 Learned patterns from ${customSites.length} custom sites`);
