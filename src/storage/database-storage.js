@@ -14,6 +14,30 @@ class DatabaseStorage {
     
       }
 
+  // 🧹 Sanitize HTML content for PostgreSQL UTF-8 storage
+  sanitizeHTMLContent(htmlContent) {
+    if (!htmlContent || typeof htmlContent !== 'string') {
+      return '';
+    }
+    
+    try {
+      // Remove null bytes and other problematic characters
+      let sanitized = htmlContent
+        .replace(/\x00/g, '') // Remove null bytes (0x00)
+        .replace(/[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove control characters except \t, \n, \r
+        .replace(/\uFFFD/g, ''); // Remove replacement characters
+      
+      // Ensure it's valid UTF-8 by encoding/decoding
+      sanitized = Buffer.from(sanitized, 'utf8').toString('utf8');
+      
+      console.log(`🧹 HTML sanitized: ${htmlContent.length} → ${sanitized.length} characters`);
+      return sanitized;
+    } catch (error) {
+      console.error('❌ Error sanitizing HTML:', error.message);
+      return htmlContent.replace(/\x00/g, ''); // Fallback: just remove null bytes
+    }
+  }
+
   // 💾 Save AI Training Sample
   async saveAITrainingSample(sampleData) {
     if (!this.pool) {
@@ -26,6 +50,9 @@ class DatabaseStorage {
       const timestamp = Date.now().toString(36);
       const random = Math.random().toString(36).substring(2, 15);
       const generatedId = `c${timestamp}${random}`;
+      
+      // Sanitize HTML content before saving
+      const sanitizedHTML = this.sanitizeHTMLContent(sampleData.htmlContent);
       
       const result = await this.pool.query(`
         INSERT INTO ai_training_samples (
@@ -40,8 +67,8 @@ class DatabaseStorage {
         sampleData.url,
         sampleData.businessType,
         sampleData.trainingSessionId,
-        sampleData.htmlContent,
-        sampleData.htmlLength,
+        sanitizedHTML,
+        sanitizedHTML.length, // Use sanitized length
         sampleData.collectionMethod,
         sampleData.status,
         JSON.stringify(sampleData.analysisData),
