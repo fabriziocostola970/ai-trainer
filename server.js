@@ -92,6 +92,7 @@ app.use('/training', authenticateAPI, require('./src/training/training-interface
 app.use('/api/generate', authenticateAPI, require('./src/api/generate-layout'));
 app.use('/api/optimize', authenticateAPI, require('./src/api/optimize-blocks'));
 app.use('/api/validate', authenticateAPI, require('./src/api/validate-template'));
+app.use('/api/training', authenticateAPI, require('./src/api/training'));
 
 // API Status endpoint (with authentication)
 app.get('/api/status', authenticateAPI, (req, res) => {

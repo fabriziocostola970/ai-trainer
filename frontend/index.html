@@ -187,6 +187,57 @@
                 <button class="btn" id="btn-test-api">Test Full API</button>
                 <button class="btn" id="btn-clear-logs">Clear Logs</button>
             </div>
+            
+            <div class="action-card">
+                <h3>🗄️ Storage Analytics</h3>
+                <p>Visualizza informazioni su dati e storage</p>
+                <button class="btn" id="btn-storage-info">Storage Stats</button>
+                <button class="btn" id="btn-training-history">Training History</button>
+                <div style="margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <div style="text-align: center; padding: 0.5rem; background: #f8f9fa; border-radius: 4px;">
+                        <div style="font-weight: bold; color: #667EEA;" id="totalSamples">-</div>
+                        <div style="font-size: 0.8rem; color: #666;">Total Samples</div>
+                    </div>
+                    <div style="text-align: center; padding: 0.5rem; background: #f8f9fa; border-radius: 4px;">
+                        <div style="font-weight: bold; color: #667EEA;" id="customSitesCount">-</div>
+                        <div style="font-size: 0.8rem; color: #666;">Custom Sites</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-card">
+                <h3>🤖 AI Training</h3>
+                <p>Avvia training AI con dataset reale</p>
+                <button class="btn" id="btn-start-training" style="background: #e74c3c;">Start Training Collection</button>
+                <button class="btn" id="btn-training-status">Training Status</button>
+            </div>
+            
+            <div class="action-card">
+                <h3>🔗 Custom Training</h3>
+                <p>Allena l'AI con i tuoi siti preferiti</p>
+                <div style="margin: 1rem 0;">
+                    <input type="url" id="custom-url" placeholder="https://example.com" 
+                           style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 0.5rem;">
+                    <select id="business-type" style="width: 48%; padding: 0.5rem; margin-right: 4%;">
+                        <option value="restaurant">Restaurant</option>
+                        <option value="tech-startup">Tech Startup</option>
+                        <option value="ecommerce">E-commerce</option>
+                        <option value="portfolio">Portfolio</option>
+                        <option value="wellness">Wellness</option>
+                        <option value="real-estate">Real Estate</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <select id="style-type" style="width: 48%; padding: 0.5rem;">
+                        <option value="minimal">Minimal</option>
+                        <option value="elegant">Elegant</option>
+                        <option value="casual">Casual</option>
+                        <option value="creative">Creative</option>
+                        <option value="professional">Professional</option>
+                    </select>
+                </div>
+                <button class="btn" id="btn-add-custom-site">Add Site to Training</button>
+                <button class="btn" id="btn-train-custom" style="background: #27ae60;">Train with Custom Sites</button>
+            </div>
         </div>
         
         <div class="action-card" style="margin-top: 2rem;">
@@ -308,6 +359,145 @@
             document.getElementById('logs').innerHTML = '<div class="info">🧹 Logs cleared</div>';
         }
         
+        // 🤖 AI TRAINING FUNCTIONS
+        async function startTraining() {
+            try {
+                logMessage('🚀 Starting AI training collection...', 'info');
+                logMessage('⚠️ This will take 10-15 minutes and cost $30-80', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/training/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        samples: 8, // Start with 8 samples
+                        aiAnalysis: true,
+                        saveLocal: true
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    logMessage(`🎯 Training started: ${data.trainingId}`, 'success');
+                    logMessage(`📊 Collecting ${data.samplesCount} samples`, 'info');
+                    // Poll for progress updates
+                    pollTrainingProgress(data.trainingId);
+                } else {
+                    logMessage(`❌ Training start failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                logMessage(`❌ Training Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function getTrainingStatus() {
+            try {
+                logMessage('📊 Checking training status...', 'info');
+                const response = await fetch(`${API_BASE}/api/training/status`, {
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                });
+                const data = await response.json();
+                
+                if (data.isTraining) {
+                    logMessage(`🔄 Training in progress: ${data.progress}%`, 'info');
+                    logMessage(`📈 Samples collected: ${data.samplesCollected}/${data.totalSamples}`, 'info');
+                } else {
+                    logMessage(`✅ Training completed: ${data.modelAccuracy}% accuracy`, 'success');
+                }
+            } catch (error) {
+                logMessage(`❌ Status check failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function pollTrainingProgress(trainingId) {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/training/progress/${trainingId}`, {
+                        headers: { 'Authorization': `Bearer ${API_KEY}` }
+                    });
+                    const data = await response.json();
+                    
+                    logMessage(`📈 Progress: ${data.progress}% - ${data.currentStep}`, 'info');
+                    
+                    if (data.completed) {
+                        clearInterval(interval);
+                        logMessage('🎉 Training completed successfully!', 'success');
+                        logMessage(`🎯 Final accuracy: ${data.accuracy}%`, 'success');
+                    }
+                } catch (error) {
+                    clearInterval(interval);
+                    logMessage(`❌ Progress polling failed: ${error.message}`, 'error');
+                }
+            }, 10000); // Poll every 10 seconds
+        }
+        
+        // 🔗 CUSTOM TRAINING FUNCTIONS
+        let customSites = [];
+        
+        function addCustomSite() {
+            const url = document.getElementById('custom-url').value;
+            const businessType = document.getElementById('business-type').value;
+            const styleType = document.getElementById('style-type').value;
+            
+            if (!url) {
+                logMessage('❌ Please enter a valid URL', 'error');
+                return;
+            }
+            
+            const customSite = {
+                url: url,
+                businessType: businessType,
+                style: styleType,
+                targetAudience: 'custom-defined',
+                addedAt: new Date().toISOString()
+            };
+            
+            customSites.push(customSite);
+            logMessage(`✅ Added: ${url} (${businessType} - ${styleType})`, 'success');
+            logMessage(`📊 Custom sites queue: ${customSites.length}`, 'info');
+            
+            // Clear inputs
+            document.getElementById('custom-url').value = '';
+        }
+        
+        async function trainWithCustomSites() {
+            if (customSites.length === 0) {
+                logMessage('❌ No custom sites added. Add some sites first!', 'error');
+                return;
+            }
+            
+            try {
+                logMessage(`🚀 Starting custom training with ${customSites.length} sites...`, 'info');
+                
+                const response = await fetch(`${API_BASE}/api/training/custom`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        customSites: customSites,
+                        aiAnalysis: true,
+                        saveLocal: true
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    logMessage(`🎯 Custom training started: ${data.trainingId}`, 'success');
+                    logMessage(`📊 Processing ${data.sitesCount} custom sites`, 'info');
+                    pollTrainingProgress(data.trainingId);
+                    customSites = []; // Clear queue after starting
+                } else {
+                    logMessage(`❌ Custom training failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                logMessage(`❌ Custom Training Error: ${error.message}`, 'error');
+            }
+        }
+        
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', () => {
             logMessage('🚀 Dashboard initialized successfully', 'success');
@@ -321,6 +511,18 @@
             document.getElementById('btn-test-api').addEventListener('click', testAPI);
             document.getElementById('btn-clear-logs').addEventListener('click', clearLogs);
             
+            // 🗄️ Storage Analytics event listeners
+            document.getElementById('btn-storage-info').addEventListener('click', getStorageInfo);
+            document.getElementById('btn-training-history').addEventListener('click', getTrainingHistory);
+            
+            // 🤖 AI Training event listeners
+            document.getElementById('btn-start-training').addEventListener('click', startTraining);
+            document.getElementById('btn-training-status').addEventListener('click', getTrainingStatus);
+            
+            // 🔗 Custom Training event listeners
+            document.getElementById('btn-add-custom-site').addEventListener('click', addCustomSite);
+            document.getElementById('btn-train-custom').addEventListener('click', trainWithCustomSites);
+            
             logMessage('🎛️ Button event listeners attached', 'info');
             
             // Auto check server status
@@ -328,6 +530,77 @@
                 getServerStatus();
             }, 1000);
         });
+        
+        // 🗄️ STORAGE ANALYTICS FUNCTIONS
+        async function getStorageInfo() {
+            try {
+                logMessage('🗄️ Getting storage information...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/training/history`, {
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('totalSamples').textContent = data.totalSamples || 0;
+                    document.getElementById('customSitesCount').textContent = data.customSitesCount || 0;
+                    
+                    logMessage(`📊 Storage Stats Retrieved:`, 'success');
+                    logMessage(`  📁 Total Samples: ${data.totalSamples}`, 'info');
+                    logMessage(`  🔗 Custom Sites: ${data.customSitesCount}`, 'info');
+                    logMessage(`  🏠 Storage Location: ${data.storageLocation?.samples || 'N/A'}`, 'info');
+                    
+                    if (data.lastTrainingDate) {
+                        const lastDate = new Date(data.lastTrainingDate).toLocaleDateString();
+                        logMessage(`  📅 Last Training: ${lastDate}`, 'info');
+                    }
+                } else {
+                    logMessage(`❌ Failed to get storage info: ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Storage Info Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function getTrainingHistory() {
+            try {
+                logMessage('📈 Getting training history...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/training/history`, {
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    logMessage(`📈 Training History:`, 'success');
+                    logMessage(`  🎯 Current Training ID: ${data.currentTraining?.trainingId || 'None'}`, 'info');
+                    logMessage(`  ⚡ Training Status: ${data.currentTraining?.isTraining ? 'Active' : 'Idle'}`, 'info');
+                    logMessage(`  📊 Progress: ${data.currentTraining?.progress || 0}%`, 'info');
+                    logMessage(`  🎯 Accuracy: ${data.currentTraining?.accuracy || 'N/A'}%`, 'info');
+                    
+                    if (data.samplesCollected && data.samplesCollected.length > 0) {
+                        logMessage(`  📁 Sample IDs: ${data.samplesCollected.slice(0, 3).join(', ')}${data.samplesCollected.length > 3 ? '...' : ''}`, 'info');
+                    }
+                    
+                    // Update UI counters
+                    document.getElementById('totalSamples').textContent = data.totalSamples || 0;
+                    document.getElementById('customSitesCount').textContent = data.customSitesCount || 0;
+                    
+                } else {
+                    logMessage(`❌ Failed to get training history: ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Training History Error: ${error.message}`, 'error');
+            }
+        }
     </script>
 </body>
 </html>
