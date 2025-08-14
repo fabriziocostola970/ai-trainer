@@ -462,4 +462,38 @@ router.get('/history', async (req, res) => {
   }
 });
 
+// 🔍 DEBUG: Check training samples in database
+router.get('/debug/samples', async (req, res) => {
+  try {
+    const storage = new DatabaseStorage();
+    await storage.connect();
+    
+    // Get all training samples from database
+    const result = await storage.pool.query(`
+      SELECT 
+        id, "sampleId", url, "businessType", "trainingSessionId",
+        "htmlLength", "collectionMethod", status, "createdAt"
+      FROM ai_training_samples 
+      ORDER BY "createdAt" DESC 
+      LIMIT 20
+    `);
+    
+    console.log(`🔍 Found ${result.rows.length} training samples in database`);
+    
+    res.json({
+      success: true,
+      samples: result.rows,
+      count: result.rows.length,
+      query: 'Recent 20 training samples'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error checking samples:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
