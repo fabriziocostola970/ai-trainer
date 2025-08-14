@@ -267,7 +267,7 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
     
     // 💾 Save initial session to VendiOnline database and get DB ID
     const savedSession = await storage.saveAITrainingSession({
-      id: trainingId.replace('custom-train-', 'train_') + '_' + Math.random().toString(36).substr(2, 9),
+      id: trainingId.replace('custom-train-', 'train_') + '_' + Math.random().toString(36).substring(2, 11),
       trainingId: trainingId,
       initiatedBy: null,
       trainingType: 'GLOBAL',
