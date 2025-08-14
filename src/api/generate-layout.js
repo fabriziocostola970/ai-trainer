@@ -90,7 +90,7 @@ router.post('/layout', authenticateAPI, async (req, res) => {
         // 2. Estrai pattern dai dati di training
         const trainingSamples = await storage.pool.query(`
           SELECT * FROM ai_training_samples 
-          WHERE "sessionId" IN (${completedSessions.rows.map((_, i) => `$${i + 1}`).join(',')})
+          WHERE "trainingSessionId" IN (${completedSessions.rows.map((_, i) => `$${i + 1}`).join(',')})
           AND status = 'COMPLETED'
         `, completedSessions.rows.map(session => session.id));
         
