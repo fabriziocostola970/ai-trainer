@@ -19,27 +19,22 @@ class DatabaseStorage {
 
   // 🆔 Generate unique ID
   generateId() {
-    return 'tr_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
-  }
-
-  // 🆔 Generate unique ID
-  generateId() {
     return 'train_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
 
   // 🔌 Initialize Database Connection
   async initialize() {
     try {
-      // Test connection
+      // Test connection to VendiOnline PostgreSQL
       const client = await this.pool.connect();
       await client.query('SELECT NOW()');
       client.release();
       
       this.isConnected = true;
-      console.log('✅ PostgreSQL connected successfully');
+      console.log('✅ PostgreSQL connected to VendiOnline database');
       
-      // Run schema setup
-      await this.setupSchema();
+      // Verify VendiOnline AI training tables exist
+      await this.verifyVendiOnlineTables();
       
     } catch (error) {
       console.error('❌ PostgreSQL connection failed:', error.message);
@@ -55,24 +50,50 @@ class DatabaseStorage {
     }
   }
 
-  // 📋 Setup Database Schema
-  async setupSchema() {
+  // 📋 Verify VendiOnline AI Training Tables
+  async verifyVendiOnlineTables() {
     try {
-      const schemaPath = path.join(__dirname, '../database/schema.sql');
-      const schemaSql = await fs.readFile(schemaPath, 'utf8');
+      const requiredTables = [
+        'ai_training_sessions',
+        'ai_custom_sites', 
+        'ai_training_samples'
+      ];
       
-      await this.pool.query(schemaSql);
-      console.log('📋 Database schema initialized');
+      for (const table of requiredTables) {
+        const result = await this.pool.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_name = $1
+          )
+        `, [table]);
+        
+        if (!result.rows[0].exists) {
+          throw new Error(`Table ${table} not found in VendiOnline database`);
+        }
+      }
+      
+      console.log('✅ VendiOnline AI training tables verified');
       
     } catch (error) {
-      console.error('❌ Schema setup failed:', error.message);
-      // Don't fall back here, schema issues are critical
+      console.error('❌ VendiOnline table verification failed:', error.message);
+      console.log('🔄 Falling back to file storage...');
+      
+      this.fallbackToFiles = true;
+      this.isConnected = false;
+      
+      // Initialize file storage as fallback
+      const TrainingStorage = require('./training-storage');
+      this.fileStorage = new TrainingStorage();
+      await this.fileStorage.initialize();
     }
   }
 
     // 💾 Save AI Training Session to VendiOnline Database
   async saveAITrainingSession(sessionData) {
-    if (!this.isConnected) return this.fallbackMethod('saveAITrainingSession');
+    if (!this.isConnected || this.fallbackToFiles) {
+      console.log('🔄 Using file storage fallback for saveAITrainingSession');
+      return await this.fileStorage.saveTrainingState(sessionData);
+    }
     
     try {
       const query = `
@@ -107,7 +128,10 @@ class DatabaseStorage {
 
   // 🔄 Update AI Training Session
   async updateAITrainingSession(sessionId, updates) {
-    if (!this.isConnected) return this.fallbackMethod('updateAITrainingSession');
+    if (!this.isConnected || this.fallbackToFiles) {
+      console.log('🔄 Using file storage fallback for updateAITrainingSession');
+      return await this.fileStorage.saveTrainingState(updates);
+    }
     
     try {
       const setClause = Object.keys(updates).map((key, index) => {
