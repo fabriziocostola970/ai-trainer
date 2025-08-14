@@ -108,6 +108,13 @@ router.post('/custom', async (req, res) => {
       });
     }
 
+    // 🔧 Normalize custom sites data - handle both business_type and businessType
+    const normalizedSites = customSites.map(site => ({
+      url: site.url,
+      businessType: site.businessType || site.business_type || 'unknown',
+      style: site.style || 'default'
+    }));
+
     const trainingId = `custom-train-${Date.now()}`;
     
     trainingState = {
@@ -115,31 +122,31 @@ router.post('/custom', async (req, res) => {
       trainingId,
       progress: 0,
       samplesCollected: 0,
-      totalSamples: customSites.length,
+      totalSamples: normalizedSites.length,
       currentStep: 'analyzing-custom-sites',
       startTime: new Date(),
       accuracy: null,
-      customSites: customSites
+      customSites: normalizedSites
     };
 
     // 💾 Save state and custom sites to persistent storage
     await storage.saveTrainingState(trainingState);
-    await storage.saveCustomSites(customSites);
+    await storage.saveCustomSites(normalizedSites);
 
     console.log(`🔗 Starting custom training: ${trainingId}`);
-    console.log(`📊 Custom sites: ${customSites.length}`);
-    customSites.forEach(site => {
+    console.log(`📊 Custom sites: ${normalizedSites.length}`);
+    normalizedSites.forEach(site => {
       console.log(`  - ${site.url} (${site.businessType}, ${site.style})`);
     });
     
     // Start custom training asynchronously
-    startCustomTrainingAsync(trainingId, customSites, aiAnalysis);
+    startCustomTrainingAsync(trainingId, normalizedSites, aiAnalysis);
     
     res.json({
       success: true,
       trainingId,
-      sitesCount: customSites.length,
-      estimatedTime: `${customSites.length * 2} minutes`,
+      sitesCount: normalizedSites.length,
+      estimatedTime: `${normalizedSites.length * 2} minutes`,
       message: 'Custom training started with your selected sites'
     });
 
