@@ -1,7 +1,15 @@
 // 🤖 Automated Data Collection System
 // Raccoglie HTML + Screenshots + Business Analysis
 
-const puppeteer = require('puppeteer');
+// Safe Puppeteer loading with fallback
+let puppeteer = null;
+try {
+  puppeteer = require('puppeteer');
+  console.log('✅ Puppeteer loaded in data-collector');
+} catch (error) {
+  console.log('⚠️ Puppeteer not available in data-collector, using fallback mode');
+}
+
 const fs = require('fs').promises;
 const path = require('path');
 
