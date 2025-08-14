@@ -378,8 +378,8 @@ class RailwayDataCollector {
         timeout: 30000 
       });
 
-      // Wait for dynamic content
-      await page.waitForTimeout(2000);
+      // Wait for dynamic content (fixed for modern Puppeteer)
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       const htmlContent = await page.content();
       console.log(`✅ HTML collected via Puppeteer: ${htmlContent.length} characters`);
