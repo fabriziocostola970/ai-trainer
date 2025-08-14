@@ -99,9 +99,9 @@ class DatabaseStorage {
       const query = `
         INSERT INTO ai_training_sessions (
           id,
-          initiator_id,
-          business_id, 
-          training_type,
+          "initiatedBy",
+          "trainingId",
+          "trainingType",
           status,
           metadata
         ) VALUES ($1, $2, $3, $4, $5, $6)
@@ -110,8 +110,8 @@ class DatabaseStorage {
       
       const values = [
         sessionData.id || this.generateId(),
-        sessionData.initiatorId || 'system',
-        sessionData.businessId || null,
+        sessionData.initiatedBy || sessionData.initiatorId || null,
+        sessionData.trainingId || sessionData.id || this.generateId(),
         sessionData.trainingType || 'GLOBAL_TRAINING',
         sessionData.status || 'STARTED',
         JSON.stringify(sessionData.metadata || {})
@@ -135,16 +135,17 @@ class DatabaseStorage {
     
     try {
       const setClause = Object.keys(updates).map((key, index) => {
-        const dbColumn = key === 'trainingType' ? 'training_type' :
-                        key === 'businessId' ? 'business_id' :
-                        key === 'initiatorId' ? 'initiator_id' :
-                        key === 'updatedAt' ? 'updated_at' : key;
+        const dbColumn = key === 'trainingType' ? '"trainingType"' :
+                        key === 'businessId' ? '"businessId"' :
+                        key === 'initiatorId' || key === 'initiatedBy' ? '"initiatedBy"' :
+                        key === 'updatedAt' ? '"updatedAt"' : 
+                        key === 'trainingId' ? '"trainingId"' : `"${key}"`;
         return `${dbColumn} = $${index + 2}`;
       }).join(', ');
       
       const query = `
         UPDATE ai_training_sessions 
-        SET ${setClause}, updated_at = NOW()
+        SET ${setClause}, "updatedAt" = NOW()
         WHERE id = $1
         RETURNING *
       `;
@@ -176,8 +177,8 @@ class DatabaseStorage {
 
     try {
       const query = `
-        SELECT * FROM training_sessions 
-        ORDER BY created_at DESC 
+        SELECT * FROM ai_training_sessions 
+        ORDER BY "createdAt" DESC 
         LIMIT 1
       `;
       
@@ -186,15 +187,15 @@ class DatabaseStorage {
       if (result.rows.length > 0) {
         const row = result.rows[0];
         const state = {
-          isTraining: row.is_training,
-          trainingId: row.training_id,
+          isTraining: row.isTraining,
+          trainingId: row.trainingId,
           progress: row.progress,
-          samplesCollected: row.samples_collected,
-          totalSamples: row.total_samples,
-          currentStep: row.current_step,
-          startTime: row.start_time,
+          samplesCollected: row.samplesCollected,
+          totalSamples: row.totalSamples,
+          currentStep: row.currentStep,
+          startTime: row.startTime,
           accuracy: row.accuracy,
-          lastUpdated: row.updated_at
+          lastUpdated: row.updatedAt
         };
         
         console.log(`📖 Training state loaded from DB: ${state.trainingId}`);
@@ -231,12 +232,12 @@ class DatabaseStorage {
 
     try {
       // Clear existing sites (or implement smarter merge logic)
-      await this.pool.query('DELETE FROM custom_sites');
+      await this.pool.query('DELETE FROM ai_custom_sites');
       
       // Insert new sites
       for (const site of sites) {
         const query = `
-          INSERT INTO custom_sites (url, business_type, style, metadata)
+          INSERT INTO ai_custom_sites (url, "businessType", style, metadata)
           VALUES ($1, $2, $3, $4)
         `;
         
@@ -263,16 +264,16 @@ class DatabaseStorage {
     }
 
     try {
-      const query = 'SELECT * FROM custom_sites ORDER BY created_at DESC';
+      const query = 'SELECT * FROM ai_custom_sites ORDER BY "createdAt" DESC';
       const result = await this.pool.query(query);
       
       const sites = result.rows.map(row => ({
         url: row.url,
-        businessType: row.business_type,
+        businessType: row.businessType,
         style: row.style,
         priority: row.priority,
         status: row.status,
-        lastCollected: row.last_collected,
+        lastCollected: row.lastCollected,
         metadata: row.metadata
       }));
       
@@ -333,7 +334,7 @@ class DatabaseStorage {
       const sitesQuery = 'SELECT COUNT(*) as custom_sites_count FROM ai_custom_sites';
       const latestQuery = `
         SELECT * FROM ai_training_sessions 
-        ORDER BY created_at DESC 
+        ORDER BY "createdAt" DESC 
         LIMIT 1
       `;
       
@@ -345,11 +346,11 @@ class DatabaseStorage {
       ]);
       
       const currentTraining = latest.rows.length > 0 ? {
-        trainingId: latest.rows[0].session_id,
-        isTraining: latest.rows[0].status === 'running',
+        trainingId: latest.rows[0].trainingId,
+        isTraining: latest.rows[0].status === 'RUNNING',
         progress: latest.rows[0].progress,
         accuracy: latest.rows[0].accuracy,
-        lastUpdated: latest.rows[0].updated_at
+        lastUpdated: latest.rows[0].updatedAt
       } : null;
       
       return {
