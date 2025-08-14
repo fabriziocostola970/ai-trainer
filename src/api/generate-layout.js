@@ -95,6 +95,15 @@ router.post('/layout', authenticateAPI, async (req, res) => {
         `, completedSessions.rows.map(session => session.id));
         
         console.log(`🎯 Found ${trainingSamples.rows.length} training samples`);
+        console.log(`📊 [AI DEBUG] Training samples data:`, trainingSamples.rows.map(sample => ({
+          id: sample.id,
+          sampleId: sample.sampleId,
+          url: sample.url,
+          businessType: sample.businessType,
+          status: sample.status,
+          htmlLength: sample.htmlLength,
+          hasHtml: !!sample.htmlContent
+        })));
         
         // 3. Analizza i custom sites usati per il training
         const customSites = await storage.pool.query(`
@@ -106,6 +115,14 @@ router.post('/layout', authenticateAPI, async (req, res) => {
         `, [businessType]);
         
         console.log(`🌐 Found ${customSites.rows.length} custom sites for analysis`);
+        console.log(`🏗️ [AI DEBUG] Custom sites data:`, customSites.rows.map(site => ({
+          id: site.id,
+          url: site.url,
+          businessType: site.businessType,
+          style: site.style,
+          status: site.status,
+          trainingSessionId: site.trainingSessionId
+        })));
         
         // 4. Genera layout basato sui pattern reali
         const aiGeneratedLayout = await analyzeTrainingPatternsAndGenerate({
