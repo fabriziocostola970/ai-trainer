@@ -22,10 +22,9 @@ class DatabaseStorage {
     }
 
     try {
-      // Generate cuid for id (matching Prisma @default(cuid()))
-      const { customAlphabet } = require('nanoid');
-      const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 21);
-      const generatedId = 'c' + nanoid(); // Simple cuid-like format
+      // Generate cuid-like id using native Node.js crypto
+      const crypto = require('crypto');
+      const generatedId = 'c' + crypto.randomUUID().replace(/-/g, ''); // cuid-like format
       
       const result = await this.pool.query(`
         INSERT INTO ai_training_samples (
