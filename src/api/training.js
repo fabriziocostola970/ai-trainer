@@ -265,8 +265,8 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
   try {
     console.log(`🎯 Custom Training ${trainingId}: Starting analysis`);
     
-    // 💾 Save initial session to VendiOnline database
-    await storage.saveAITrainingSession({
+    // 💾 Save initial session to VendiOnline database and get DB ID
+    const savedSession = await storage.saveAITrainingSession({
       id: trainingId.replace('custom-train-', 'train_') + '_' + Math.random().toString(36).substr(2, 9),
       trainingId: trainingId,
       initiatedBy: null,
@@ -285,6 +285,10 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
         source: 'ai-trainer-custom'
       }
     });
+    
+    // Use the actual database ID for foreign key references
+    const sessionDbId = savedSession ? savedSession.id : trainingId;
+    console.log(`💾 Session saved with DB ID: ${sessionDbId}`);
     
     const steps = [
       'Validating custom URLs...',
@@ -330,7 +334,7 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
                 sampleId: sampleId,
                 url: currentSite.url,
                 businessType: currentSite.businessType,
-                trainingSessionId: trainingId,
+                trainingSessionId: sessionDbId, // ✅ Use actual database session ID
                 htmlContent: htmlContent,
                 htmlLength: htmlContent.length,
                 collectionMethod: 'PUPPETEER',
@@ -348,7 +352,7 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
               
               // 🔄 Update custom site status to COMPLETED
               console.log(`🔄 Updating custom site status for: ${currentSite.url}`);
-              await storage.updateAICustomSiteStatus(currentSite.url, currentSite.businessType, 'COMPLETED', trainingId);
+              await storage.updateAICustomSiteStatus(currentSite.url, currentSite.businessType, 'COMPLETED', sessionDbId);
               console.log(`✅ Custom site status updated to COMPLETED`);
               
             } else {
