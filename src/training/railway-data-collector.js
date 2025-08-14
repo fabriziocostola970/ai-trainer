@@ -107,7 +107,7 @@ class RailwayDataCollector {
   async collectWithPuppeteer(url, businessType, metadata, sampleId) {
     console.log(`🎭 Using Puppeteer collection for ${url}`);
     
-    const sampleDir = path.join(sampleDir, sampleId);
+    const sampleDir = path.join(this.outputDir, sampleId);
     await fs.mkdir(sampleDir, { recursive: true });
 
     let browser = null;
