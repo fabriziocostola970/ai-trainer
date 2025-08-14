@@ -107,13 +107,20 @@ class DatabaseStorage {
           "createdAt",
           "updatedAt"
         ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        ON CONFLICT ("trainingId") 
+        DO UPDATE SET 
+          status = $5,
+          metadata = $6,
+          "updatedAt" = NOW()
         RETURNING *
       `;
+      
+      const trainingId = sessionData.trainingId || sessionData.id || this.generateId();
       
       const values = [
         sessionData.id || this.generateId(),
         sessionData.initiatedBy || sessionData.initiatorId || null,
-        sessionData.trainingId || sessionData.id || this.generateId(),
+        trainingId,
         sessionData.trainingType || 'GLOBAL',
         sessionData.status || 'PENDING',
         JSON.stringify(sessionData.metadata || {})
