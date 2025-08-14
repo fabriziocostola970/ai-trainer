@@ -90,8 +90,11 @@ class DatabaseStorage {
 
     // 💾 Save AI Training Session to VendiOnline Database
   async saveAITrainingSession(sessionData) {
+    console.log(`🔍 DEBUG SAVE: isConnected=${this.isConnected}, fallbackToFiles=${this.fallbackToFiles}`);
+    
     if (!this.isConnected || this.fallbackToFiles) {
       console.log('🔄 Using file storage fallback for saveAITrainingSession');
+      console.log('❌ DATABASE SAVE SKIPPED - Using file storage instead!');
       return await this.fileStorage.saveTrainingState(sessionData);
     }
     
@@ -137,8 +140,11 @@ class DatabaseStorage {
 
   // 🔄 Update AI Training Session
   async updateAITrainingSession(sessionId, updates) {
+    console.log(`🔍 DEBUG: isConnected=${this.isConnected}, fallbackToFiles=${this.fallbackToFiles}`);
+    
     if (!this.isConnected || this.fallbackToFiles) {
       console.log('🔄 Using file storage fallback for updateAITrainingSession');
+      console.log('❌ DATABASE UPDATE SKIPPED - Using file storage instead!');
       return await this.fileStorage.saveTrainingState(updates);
     }
     
