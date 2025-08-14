@@ -100,7 +100,7 @@ router.post('/layout', authenticateAPI, async (req, res) => {
         const customSites = await storage.pool.query(`
           SELECT * FROM ai_custom_sites 
           WHERE "businessType" = $1 
-          AND status = 'APPROVED'
+          AND status = 'COMPLETED'
           ORDER BY "createdAt" DESC 
           LIMIT 10
         `, [businessType]);
