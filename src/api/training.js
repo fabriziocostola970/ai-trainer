@@ -327,16 +327,26 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
     // 💾 Update final completion in database
     try {
       await storage.updateAITrainingSession(trainingId, {
-        status: 'COMPLETED',
+        status: 'RUNNING', // TEST: Use RUNNING instead of COMPLETED
         isTraining: false,
         progress: 100,
         accuracy: trainingState.accuracy,
         completionTime: new Date(),
         currentStep: 'custom-completed'
       });
-      console.log(`✅ Final COMPLETED status update successful for: ${trainingId}`);
+      console.log(`✅ Final RUNNING status update successful for: ${trainingId}`);
+      
+      // 🔍 VERIFICARE UPDATE - Double check by reading back
+      console.log(`🔍 Double checking status update by reading back from DB...`);
+      const readBackSession = await storage.getAITrainingSession(trainingId);
+      if (readBackSession) {
+        console.log(`🔍 Database readback shows status: "${readBackSession.status}"`);
+        console.log(`🔍 Database readback shows progress: ${readBackSession.progress}`);
+      }
+      
     } catch (finalUpdateError) {
       console.error(`❌ Final update failed for ${trainingId}:`, finalUpdateError);
+      console.error(`❌ Update error details:`, finalUpdateError.message);
     }
     
     // 💾 Save final custom training state

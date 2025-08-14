@@ -157,6 +157,13 @@ class DatabaseStorage {
                         key === 'currentStep' ? '"currentStep"' :
                         key === 'startTime' ? '"startTime"' :
                         key === 'completionTime' ? '"completionTime"' : `"${key}"`;
+        
+        // 🎯 Special handling for enum status
+        if (key === 'status') {
+          console.log(`🎯 Processing status enum: "${updates[key]}"`);
+          return `${dbColumn} = $${index + 2}::"AITrainingStatus"`;
+        }
+        
         return `${dbColumn} = $${index + 2}`;
       }).join(', ');
       
@@ -176,6 +183,7 @@ class DatabaseStorage {
       
       if (result.rows.length > 0) {
         console.log('✅ AI Training session updated:', sessionId);
+        console.log('📋 Updated record status:', result.rows[0].status);
         return result.rows[0];
       } else {
         console.log('⚠️ AI Training session not found:', sessionId);
@@ -183,6 +191,7 @@ class DatabaseStorage {
       }
     } catch (error) {
       console.error('❌ Failed to update AI training session:', error.message);
+      console.error('❌ Full error details:', error);
       return null;
     }
   }
@@ -430,7 +439,43 @@ class DatabaseStorage {
     }
   }
 
-  // 🔄 Close connections
+  // � Read AI training session by ID
+  async getAITrainingSession(trainingId) {
+    if (!this.isConnected || this.fallbackToFiles) {
+      console.log('🔄 Using file storage fallback for getAITrainingSession');
+      return null;
+    }
+
+    try {
+      const result = await this.pool.query(
+        `SELECT * FROM ai_training_sessions WHERE id = $1`,
+        [trainingId]
+      );
+      
+      if (result.rows.length === 0) {
+        console.log(`❌ Training session ${trainingId} not found`);
+        return null;
+      }
+      
+      const session = result.rows[0];
+      console.log(`🔍 Read training session ${trainingId}:`, {
+        id: session.id,
+        status: session.status,
+        progress: session.progress,
+        accuracy: session.accuracy,
+        isTraining: session.is_training,
+        currentStep: session.current_step,
+        completionTime: session.completion_time
+      });
+      
+      return session;
+    } catch (error) {
+      console.error(`❌ Failed to read training session ${trainingId}:`, error);
+      throw error;
+    }
+  }
+
+  // �🔄 Close connections
   async close() {
     if (this.pool) {
       await this.pool.end();
