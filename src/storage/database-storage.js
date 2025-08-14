@@ -148,7 +148,13 @@ class DatabaseStorage {
                         key === 'businessId' ? '"businessId"' :
                         key === 'initiatorId' || key === 'initiatedBy' ? '"initiatedBy"' :
                         key === 'updatedAt' ? '"updatedAt"' : 
-                        key === 'trainingId' ? '"trainingId"' : `"${key}"`;
+                        key === 'trainingId' ? '"trainingId"' :
+                        key === 'isTraining' ? '"isTraining"' :
+                        key === 'samplesCollected' ? '"samplesCollected"' :
+                        key === 'totalSamples' ? '"totalSamples"' :
+                        key === 'currentStep' ? '"currentStep"' :
+                        key === 'startTime' ? '"startTime"' :
+                        key === 'completionTime' ? '"completionTime"' : `"${key}"`;
         return `${dbColumn} = $${index + 2}`;
       }).join(', ');
       
