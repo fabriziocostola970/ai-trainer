@@ -56,7 +56,7 @@ router.post('/start', async (req, res) => {
       id: trainingId,
       initiatorId: 'ai-trainer-system',
       businessId: null, // Global training
-      trainingType: 'GLOBAL_TRAINING',
+      trainingType: 'GLOBAL', // ✅ Fixed: Use correct enum value
       status: 'IN_PROGRESS',
       metadata: {
         samples: samples,
