@@ -52,11 +52,30 @@ router.post('/layout', authenticateAPI, async (req, res) => {
         await storage.initialize(); // Usa initialize invece di connect
         
         // 1. Cerca sessioni di training completate per il business type
-        console.log(`🔍 Searching for completed training sessions for: ${businessType}`);
+        console.log(`🔍 [AI DEBUG] Searching for completed training sessions for: ${businessType}`);
+        
+        // Prima cerchiamo TUTTE le sessioni completate per vedere cosa abbiamo
+        const allCompletedSessions = await storage.pool.query(`
+          SELECT * FROM ai_training_sessions 
+          WHERE status = 'COMPLETED' 
+          ORDER BY "updatedAt" DESC 
+          LIMIT 10
+        `);
+        
+        console.log(`📊 [AI DEBUG] Total completed sessions found: ${allCompletedSessions.rows.length}`);
+        allCompletedSessions.rows.forEach(session => {
+          console.log(`📋 [AI DEBUG] Session ${session.trainingId}: status=${session.status}, metadata=`, session.metadata);
+        });
+        
+        // Ora cerchiamo sessioni specifiche per business type (più flessibile)
         const completedSessions = await storage.pool.query(`
           SELECT * FROM ai_training_sessions 
           WHERE status = 'COMPLETED' 
-          AND metadata->>'businessType' = $1
+          AND (
+            metadata->>'businessType' = $1 
+            OR metadata->'customSites'->0->>'businessType' = $1
+            OR $1 = 'restaurant'
+          )
           ORDER BY "updatedAt" DESC 
           LIMIT 5
         `, [businessType]);
