@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const TrainingStorage = require('../storage/training-storage');
+const DatabaseStorage = require('../storage/database-storage');
 const RailwayDataCollector = require('../training/railway-data-collector');
 
-// 💾 Initialize persistent storage and Railway-optimized collector
-const storage = new TrainingStorage();
+// �️ Initialize PostgreSQL storage with file fallback
+const storage = new DatabaseStorage();
 const collector = new RailwayDataCollector();
 let trainingState = null;
 let customSites = [];
@@ -15,7 +15,10 @@ let customSites = [];
   await collector.initialize();
   trainingState = await storage.loadTrainingState();
   customSites = await storage.loadCustomSites();
-  console.log('🚀 Training API initialized with Railway optimization');
+  
+  const healthCheck = await storage.healthCheck();
+  console.log(`🚀 Training API initialized with ${healthCheck.storage} storage`);
+  console.log(`📊 Current sessions: ${healthCheck.totalSessions || 0}`);
 })();
 
 // POST /api/training/start - Avvia training collection
