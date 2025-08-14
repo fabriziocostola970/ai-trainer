@@ -94,6 +94,9 @@ app.use('/api/optimize', authenticateAPI, require('./src/api/optimize-blocks'));
 app.use('/api/validate', authenticateAPI, require('./src/api/validate-template'));
 app.use('/api/training', authenticateAPI, require('./src/api/training'));
 
+// 🔧 DEBUG: Training endpoint WITHOUT authentication for testing
+app.use('/debug/training', require('./src/api/training'));
+
 // API Status endpoint (with authentication)
 app.get('/api/status', authenticateAPI, (req, res) => {
   res.json({
