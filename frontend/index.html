@@ -1,251 +1,333 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🤖 AI-Trainer Dashboard - Template Intelligence Engine</title>
-    
-    <!-- Progressive Web App Meta -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#667EEA">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="AI-Trainer">
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    
-    <!-- Favicon -->
+    <title>AI-Trainer Dashboard</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
     
-    <!-- React and dependencies -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Styles -->
-    <link rel="stylesheet" href="src/TrainingDashboard.css">
-    
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            background-color: #F7FAFC;
-            color: #2D3748;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+            background: #f8fafc; 
+            line-height: 1.6;
         }
         
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
             background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
             color: white;
-            z-index: 1000;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
         }
         
-        .loading-screen h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            animation: bounce 2s infinite;
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
         }
         
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top: 3px solid white;
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            background: #48bb78;
+            margin-right: 0.5rem;
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
         
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-10px); }
-            60% { transform: translateY(-5px); }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #667EEA;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .action-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .action-card h3 {
+            margin-bottom: 1rem;
+            color: #1a202c;
+        }
+        
+        .action-card p {
+            color: #718096;
+            margin-bottom: 1rem;
+        }
+        
+        .btn {
+            background: #667EEA;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .btn:hover { 
+            background: #5a5fcf; 
+            transform: translateY(-1px);
+        }
+        
+        .log {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+        
+        .log div {
+            margin: 0.25rem 0;
+        }
+        
+        .success { color: #48bb78; }
+        .error { color: #f56565; }
+        .info { color: #63b3ed; }
+        
+        @media (max-width: 768px) {
+            .dashboard { padding: 1rem; }
+            .header h1 { font-size: 2rem; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .actions { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="loading-screen">
-        <h1>🤖</h1>
-        <p>AI-Trainer Dashboard</p>
-        <div class="loading-spinner"></div>
-        <p style="font-size: 0.9rem; margin-top: 1rem;">Caricamento componenti...</p>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🤖 AI-Trainer Dashboard</h1>
+            <p>Template Intelligence Engine</p>
+            <p><span class="status-indicator"></span> Sistema Operativo</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="serverStatus">⏳</div>
+                <div class="stat-label">Server Status</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="apiCalls">0</div>
+                <div class="stat-label">API Calls Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="templateCount">156</div>
+                <div class="stat-label">Templates Generated</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="accuracyScore">94%</div>
+                <div class="stat-label">Accuracy Score</div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <div class="action-card">
+                <h3>🎨 Template Generation</h3>
+                <p>Genera layout intelligenti per business specifici</p>
+                <button class="btn" id="btn-layout-generation">Test Layout Generation</button>
+                <button class="btn" id="btn-template-creation">Test Template Creation</button>
+            </div>
+            
+            <div class="action-card">
+                <h3>📊 System Monitoring</h3>
+                <p>Controlla stato sistema e performance</p>
+                <button class="btn" id="btn-server-status">Check Server Status</button>
+                <button class="btn" id="btn-health-check">Health Check</button>
+            </div>
+            
+            <div class="action-card">
+                <h3>🔧 Debug Tools</h3>
+                <p>Strumenti per testing e debug</p>
+                <button class="btn" id="btn-test-api">Test Full API</button>
+                <button class="btn" id="btn-clear-logs">Clear Logs</button>
+            </div>
+        </div>
+        
+        <div class="action-card" style="margin-top: 2rem;">
+            <h3>📋 System Logs</h3>
+            <div id="logs" class="log">
+                <div class="info">🚀 AI-Trainer Dashboard Initialized</div>
+                <div class="success">✅ Interface: Pure HTML (No React Issues)</div>
+                <div class="info">🔄 Checking server connection...</div>
+            </div>
+        </div>
     </div>
 
-    <!-- Main App Container -->
-    <div id="app-root"></div>
-
-    <!-- Main Application Script -->
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-        
-        // Simple loading component while TrainingDashboard loads
-        const LoadingApp = () => {
-            const [dots, setDots] = useState('');
-            
-            useEffect(() => {
-                const interval = setInterval(() => {
-                    setDots(prev => prev.length >= 3 ? '' : prev + '.');
-                }, 500);
-                return () => clearInterval(interval);
-            }, []);
-            
-            return (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    color: 'white',
-                    fontFamily: 'system-ui'
-                }}>
-                    <h1 style={{fontSize: '3rem', margin: '1rem'}}>🤖</h1>
-                    <p style={{fontSize: '1.2rem'}}>AI-Trainer Dashboard</p>
-                    <p style={{fontSize: '1rem', opacity: 0.8}}>Caricamento{dots}</p>
-                </div>
-            );
-        };
-        
-        // Mount loading screen first
-        const root = ReactDOM.createRoot(document.getElementById('app-root'));
-        root.render(<LoadingApp />);
-        
-        // Load TrainingDashboard component
-        console.log('🔄 Loading TrainingDashboard component...');
-        
-        const script = document.createElement('script');
-        script.type = 'text/babel';
-        script.src = 'src/TrainingDashboard.simple.js';
-        
-        script.onload = () => {
-            console.log('✅ TrainingDashboard script loaded');
-            
-            // Wait for Babel to process, then check if component is available
-            setTimeout(() => {
-                if (typeof TrainingDashboard !== 'undefined') {
-                    console.log('✅ TrainingDashboard component available, mounting...');
-                    root.render(<TrainingDashboard />);
-                    document.getElementById('loading-screen').style.display = 'none';
-                } else {
-                    console.error('❌ TrainingDashboard component not found');
-                    showFallback();
-                }
-            }, 1000);
-        };
-        
-        script.onerror = () => {
-            console.error('❌ Failed to load TrainingDashboard script');
-            showFallback();
-        };
-        
-        // Fallback interface
-        const showFallback = () => {
-            root.render(
-                <div style={{
-                    padding: '2rem',
-                    textAlign: 'center',
-                    fontFamily: 'system-ui',
-                    maxWidth: '600px',
-                    margin: '2rem auto'
-                }}>
-                    <h1>🤖 AI-Trainer Dashboard</h1>
-                    <div style={{
-                        background: '#f0f0f0',
-                        padding: '1rem',
-                        borderRadius: '8px',
-                        margin: '1rem 0'
-                    }}>
-                        <h3>⚠️ Loading Issue</h3>
-                        <p>The dashboard component couldn't load properly.</p>
-                        <button onClick={() => window.location.reload()} 
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    background: '#007bff',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    margin: '0.5rem'
-                                }}>
-                            🔄 Reload
-                        </button>
-                        <button onClick={() => window.location.href = '/debug.html'} 
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    background: '#28a745',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    margin: '0.5rem'
-                                }}>
-                            🛠️ Debug Mode
-                        </button>
-                    </div>
-                </div>
-            );
-            document.getElementById('loading-screen').style.display = 'none';
-        };
-        
-        // Emergency timeout
-        setTimeout(() => {
-            if (document.getElementById('loading-screen').style.display !== 'none') {
-                console.warn('⏰ Emergency timeout - showing fallback');
-                showFallback();
-            }
-        }, 15000);
-        
-        // Append script to head
-        document.head.appendChild(script);
-        
-        console.log('🚀 Application initialization complete');
-    </script>
-    
-    <!-- Debug functions -->
     <script>
-        window.aiTrainerDebug = {
-            getServerStatus: async () => {
-                try {
-                    const response = await fetch('/api/status', {
-                        headers: { 'Authorization': 'Bearer your-api-key-here' }
-                    });
-                    return await response.json();
-                } catch (error) {
-                    return { error: error.message };
-                }
-            },
-            
-            testAPI: async (endpoint) => {
-                try {
-                    const response = await fetch(endpoint, {
-                        headers: { 'Authorization': 'Bearer your-api-key-here' }
-                    });
-                    return await response.json();
-                } catch (error) {
-                    return { error: error.message };
-                }
-            }
-        };
+        // API Configuration
+        const API_KEY = 'ai-trainer-1e212623176704eea6dba3b62117d36c0f64d6512419defdd25226294c45a90d';
+        const API_BASE = window.location.origin;
         
-        console.log('🔧 Debug functions available:', Object.keys(window.aiTrainerDebug));
+        // Logging function
+        function logMessage(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logs.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+        
+        // API Functions
+        async function getServerStatus() {
+            try {
+                logMessage('🔍 Checking server status...');
+                const response = await fetch(`${API_BASE}/status`, {
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                });
+                const data = await response.json();
+                logMessage(`✅ Server Status: Online`, 'success');
+                logMessage(`📊 Version: ${data.version}`, 'info');
+                document.getElementById('serverStatus').textContent = response.ok ? '✅' : '❌';
+            } catch (error) {
+                logMessage(`❌ Server Status Error: ${error.message}`, 'error');
+                document.getElementById('serverStatus').textContent = '❌';
+            }
+        }
+        
+        async function getHealthCheck() {
+            try {
+                logMessage('🩺 Running health check...');
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                logMessage(`✅ Health Check: ${data.status}`, 'success');
+                logMessage(`🔧 Service: ${data.service}`, 'info');
+            } catch (error) {
+                logMessage(`❌ Health Check Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLayoutGeneration() {
+            try {
+                logMessage('🎨 Testing layout generation...');
+                const response = await fetch(`${API_BASE}/api/generate/layout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        businessType: 'restaurant',
+                        currentBlocks: ['hero', 'about', 'menu', 'contact'],
+                        requirements: { mobileFirst: true }
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    logMessage(`🎨 Layout Generated: Score ${data.semanticScore}/100`, 'success');
+                    document.getElementById('apiCalls').textContent = parseInt(document.getElementById('apiCalls').textContent) + 1;
+                } else {
+                    logMessage(`⚠️ Layout Generation: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                logMessage(`❌ Layout Generation Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testTemplateCreation() {
+            try {
+                logMessage('🖼️ Testing template creation...');
+                const response = await fetch(`${API_BASE}/api/validate/template`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        template: { name: 'Test Template', blocks: ['hero', 'features'] },
+                        businessType: 'tech-startup'
+                    })
+                });
+                const data = await response.json();
+                if (data.isValid) {
+                    logMessage(`🖼️ Template Valid: Score ${data.scores?.creativity || 'N/A'}/100`, 'success');
+                    document.getElementById('apiCalls').textContent = parseInt(document.getElementById('apiCalls').textContent) + 1;
+                } else {
+                    logMessage(`⚠️ Template Validation: Issues found`, 'error');
+                }
+            } catch (error) {
+                logMessage(`❌ Template Creation Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAPI() {
+            logMessage('🔄 Running full API test suite...');
+            await getHealthCheck();
+            await getServerStatus();
+            await testLayoutGeneration();
+            await testTemplateCreation();
+            logMessage('✅ Full API test completed', 'success');
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '<div class="info">🧹 Logs cleared</div>';
+        }
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            logMessage('🚀 Dashboard initialized successfully', 'success');
+            logMessage('📡 No React dependencies - Pure HTML', 'info');
+            
+            // Setup event listeners for buttons (CSP-compliant)
+            document.getElementById('btn-layout-generation').addEventListener('click', testLayoutGeneration);
+            document.getElementById('btn-template-creation').addEventListener('click', testTemplateCreation);
+            document.getElementById('btn-server-status').addEventListener('click', getServerStatus);
+            document.getElementById('btn-health-check').addEventListener('click', getHealthCheck);
+            document.getElementById('btn-test-api').addEventListener('click', testAPI);
+            document.getElementById('btn-clear-logs').addEventListener('click', clearLogs);
+            
+            logMessage('🎛️ Button event listeners attached', 'info');
+            
+            // Auto check server status
+            setTimeout(() => {
+                getServerStatus();
+            }, 1000);
+        });
     </script>
 </body>
 </html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 AI-Trainer Dashboard - Template Intelligence Engine</title>
+    
+    <!-- Progressive Web App Meta -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#667EEA">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="AI-Trainer">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    
+    <!-- React and dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="src/TrainingDashboard.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background-color: #F7FAFC;
+            color: #2D3748;
+        }
+        
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 1000;
+        }
+        
+        .loading-screen h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <h1>🤖</h1>
+        <p>AI-Trainer Dashboard</p>
+        <div class="loading-spinner"></div>
+        <p style="font-size: 0.9rem; margin-top: 1rem;">Caricamento componenti...</p>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-root"></div>
+
+    <!-- Main Application Script -->
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Simple loading component while TrainingDashboard loads
+        const LoadingApp = () => {
+            const [dots, setDots] = useState('');
+            
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setDots(prev => prev.length >= 3 ? '' : prev + '.');
+                }, 500);
+                return () => clearInterval(interval);
+            }, []);
+            
+            return (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    color: 'white',
+                    fontFamily: 'system-ui'
+                }}>
+                    <h1 style={{fontSize: '3rem', margin: '1rem'}}>🤖</h1>
+                    <p style={{fontSize: '1.2rem'}}>AI-Trainer Dashboard</p>
+                    <p style={{fontSize: '1rem', opacity: 0.8}}>Caricamento{dots}</p>
+                </div>
+            );
+        };
+        
+        // Mount loading screen first
+        const root = ReactDOM.createRoot(document.getElementById('app-root'));
+        root.render(<LoadingApp />);
+        
+        // Load TrainingDashboard component
+        console.log('🔄 Loading TrainingDashboard component...');
+        
+        const script = document.createElement('script');
+        script.type = 'text/babel';
+        script.src = 'src/TrainingDashboard.simple.js';
+        
+        script.onload = () => {
+            console.log('✅ TrainingDashboard script loaded');
+            
+            // Wait for Babel to process, then check if component is available
+            setTimeout(() => {
+                if (typeof TrainingDashboard !== 'undefined') {
+                    console.log('✅ TrainingDashboard component available, mounting...');
+                    root.render(<TrainingDashboard />);
+                    document.getElementById('loading-screen').style.display = 'none';
+                } else {
+                    console.error('❌ TrainingDashboard component not found');
+                    showFallback();
+                }
+            }, 1000);
+        };
+        
+        script.onerror = () => {
+            console.error('❌ Failed to load TrainingDashboard script');
+            showFallback();
+        };
+        
+        // Fallback interface
+        const showFallback = () => {
+            root.render(
+                <div style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    fontFamily: 'system-ui',
+                    maxWidth: '600px',
+                    margin: '2rem auto'
+                }}>
+                    <h1>🤖 AI-Trainer Dashboard</h1>
+                    <div style={{
+                        background: '#f0f0f0',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        margin: '1rem 0'
+                    }}>
+                        <h3>⚠️ Loading Issue</h3>
+                        <p>The dashboard component couldn't load properly.</p>
+                        <button onClick={() => window.location.reload()} 
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    background: '#007bff',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    margin: '0.5rem'
+                                }}>
+                            🔄 Reload
+                        </button>
+                        <button onClick={() => window.location.href = '/debug.html'} 
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    background: '#28a745',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    margin: '0.5rem'
+                                }}>
+                            🛠️ Debug Mode
+                        </button>
+                    </div>
+                </div>
+            );
+            document.getElementById('loading-screen').style.display = 'none';
+        };
+        
+        // Emergency timeout
+        setTimeout(() => {
+            if (document.getElementById('loading-screen').style.display !== 'none') {
+                console.warn('⏰ Emergency timeout - showing fallback');
+                showFallback();
+            }
+        }, 15000);
+        
+        // Append script to head
+        document.head.appendChild(script);
+        
+        console.log('🚀 Application initialization complete');
+    </script>
+    
+    <!-- Debug functions -->
+    <script>
+        window.aiTrainerDebug = {
+            getServerStatus: async () => {
+                try {
+                    const response = await fetch('/api/status', {
+                        headers: { 'Authorization': 'Bearer your-api-key-here' }
+                    });
+                    return await response.json();
+                } catch (error) {
+                    return { error: error.message };
+                }
+            },
+            
+            testAPI: async (endpoint) => {
+                try {
+                    const response = await fetch(endpoint, {
+                        headers: { 'Authorization': 'Bearer your-api-key-here' }
+                    });
+                    return await response.json();
+                } catch (error) {
+                    return { error: error.message };
+                }
+            }
+        };
+        
+        console.log('🔧 Debug functions available:', Object.keys(window.aiTrainerDebug));
+    </script>
+</body>
+</html>

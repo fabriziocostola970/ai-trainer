@@ -123,16 +123,16 @@ app.get('/api/status', authenticateAPI, (req, res) => {
 
 // Serve frontend interface at root
 app.get('/', (req, res) => {
-  const filePath = path.join(__dirname, 'frontend', 'index.clean.html');
+  const filePath = path.join(__dirname, 'frontend', 'index.html');
   console.log('🔄 Serving clean dashboard interface (no React)');
   console.log('📁 File path:', filePath);
   
   res.sendFile(filePath, (err) => {
     if (err) {
-      console.error('❌ Error serving index.clean.html:', err);
+      console.error('❌ Error serving index.html:', err);
       res.status(500).send(`
         <h1>🚨 Dashboard Loading Error</h1>
-        <p>Could not load index.clean.html</p>
+        <p>Could not load clean dashboard</p>
         <p>Error: ${err.message}</p>
         <p><a href="/clean">Try /clean route</a></p>
         <p><a href="/simple">Try /simple route</a></p>
@@ -141,9 +141,9 @@ app.get('/', (req, res) => {
   });
 });
 
-// Explicit route for clean interface
+// Explicit route for clean interface (now same as main)
 app.get('/clean', (req, res) => {
-  const filePath = path.join(__dirname, 'frontend', 'index.clean.html');
+  const filePath = path.join(__dirname, 'frontend', 'index.html');
   console.log('🧹 Serving clean interface explicitly');
   console.log('📁 File path:', filePath);
   
@@ -254,8 +254,9 @@ app.use('/training/*', (req, res) => {
   });
 });
 
-// Catch-all: serve frontend for SPA routing
+// Catch-all: serve clean dashboard for SPA routing
 app.get('*', (req, res) => {
+  console.log('🔄 Catch-all route: serving clean dashboard');
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
