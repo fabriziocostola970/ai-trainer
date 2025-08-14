@@ -347,8 +347,25 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
     
   } catch (error) {
     console.error(`❌ Custom Training ${trainingId} failed:`, error);
+    console.error(`❌ Error stack:`, error.stack);
+    console.error(`❌ Error occurred during training step`);
+    
     trainingState.isTraining = false;
     trainingState.currentStep = 'failed';
+    
+    // 💾 Update failed status in database
+    try {
+      await storage.updateAITrainingSession(trainingId, {
+        status: 'FAILED',
+        isTraining: false,
+        currentStep: 'failed',
+        errorMessage: error.message
+      });
+      console.log(`✅ Error status updated in database for: ${trainingId}`);
+    } catch (updateError) {
+      console.error(`❌ Failed to update error status:`, updateError);
+    }
+    
     // 💾 Save error state
     await storage.saveTrainingState(trainingState);
   }
