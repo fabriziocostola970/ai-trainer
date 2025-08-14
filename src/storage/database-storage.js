@@ -164,10 +164,10 @@ class DatabaseStorage {
                         key === 'startTime' ? '"startTime"' :
                         key === 'completionTime' ? '"completionTime"' : `"${key}"`;
         
-        // 🎯 Special handling for enum status
+        // 🎯 RIMOSSO IL CASTING ESPLICITO PER STATUS
         if (key === 'status') {
-          console.log(`🎯 Processing status enum: "${updates[key]}"`);
-          return `${dbColumn} = $${index + 2}::"AITrainingStatus"`;
+          console.log(`🎯 Processing status WITHOUT casting: "${updates[key]}"`);
+          return `${dbColumn} = $${index + 2}`;
         }
         
         return `${dbColumn} = $${index + 2}`;
@@ -454,7 +454,7 @@ class DatabaseStorage {
 
     try {
       const result = await this.pool.query(
-        `SELECT * FROM ai_training_sessions WHERE id = $1`,
+        `SELECT * FROM ai_training_sessions WHERE "trainingId" = $1`,
         [trainingId]
       );
       

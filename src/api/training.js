@@ -327,14 +327,14 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
     // 💾 Update final completion in database
     try {
       await storage.updateAITrainingSession(trainingId, {
-        status: 'RUNNING', // TEST: Use RUNNING instead of COMPLETED
+        status: 'COMPLETED', // Ripristinato il valore corretto
         isTraining: false,
         progress: 100,
         accuracy: trainingState.accuracy,
         completionTime: new Date(),
         currentStep: 'custom-completed'
       });
-      console.log(`✅ Final RUNNING status update successful for: ${trainingId}`);
+      console.log(`✅ Final COMPLETED status update successful for: ${trainingId}`);
       
       // 🔍 VERIFICARE UPDATE - Double check by reading back
       console.log(`🔍 Double checking status update by reading back from DB...`);
