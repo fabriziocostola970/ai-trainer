@@ -103,8 +103,10 @@ class DatabaseStorage {
           "trainingId",
           "trainingType",
           status,
-          metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6)
+          metadata,
+          "createdAt",
+          "updatedAt"
+        ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
         RETURNING *
       `;
       
@@ -237,8 +239,15 @@ class DatabaseStorage {
       // Insert new sites
       for (const site of sites) {
         const query = `
-          INSERT INTO ai_custom_sites (id, url, "businessType", style, metadata)
-          VALUES ($1, $2, $3, $4, $5)
+          INSERT INTO ai_custom_sites (
+            id, 
+            url, 
+            "businessType", 
+            style, 
+            metadata,
+            "createdAt",
+            "updatedAt"
+          ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
         `;
         
         const values = [
