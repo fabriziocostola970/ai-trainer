@@ -49,14 +49,11 @@ class DatabaseStorage {
 
     // 🚨 CRITICAL FIX: Check for fallback mode like other save methods
     if (!this.isConnected || this.fallbackToFiles) {
-      console.log('🔄 Using file storage fallback for saveAITrainingSample');
-      console.log('❌ DATABASE SAMPLE SAVE SKIPPED - System in fallback mode!');
-      // Return mock success to prevent training from failing
-      return { 
-        id: `fallback-${Date.now()}`, 
-        sampleId: sampleData.sampleId,
-        saved: 'file_fallback'
-      };
+      console.log('🔄 FORCING ERROR instead of fallback for debugging');
+      console.log('❌ DATABASE SAMPLE SAVE FAILED - System in fallback mode!');
+      console.log(`❌ isConnected: ${this.isConnected}, fallbackToFiles: ${this.fallbackToFiles}`);
+      // FORCE FAILURE instead of silent fallback
+      throw new Error(`Database not available: isConnected=${this.isConnected}, fallback=${this.fallbackToFiles}`);
     }
 
     try {
