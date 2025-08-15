@@ -265,7 +265,14 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
   try {
     console.log(`🎯 Custom Training ${trainingId}: Starting analysis`);
     
-    // 💾 Save initial session to VendiOnline database and get DB ID
+    // � DIAGNOSTIC: Check customSites parameter
+    console.log(`🔍 CUSTOM SITES DIAGNOSTIC:`);
+    console.log(`  - customSites parameter:`, customSites);
+    console.log(`  - customSites.length:`, customSites ? customSites.length : 'undefined');
+    console.log(`  - typeof customSites:`, typeof customSites);
+    console.log(`  - Array.isArray(customSites):`, Array.isArray(customSites));
+    
+    // �💾 Save initial session to VendiOnline database and get DB ID
     const savedSession = await storage.saveAITrainingSession({
       id: trainingId.replace('custom-train-', 'train_') + '_' + Math.random().toString(36).substring(2, 11),
       trainingId: trainingId,
@@ -306,9 +313,18 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
       
       console.log(`📈 ${trainingState.progress}%: ${steps[i]}`);
       
+      // 🔍 DIAGNOSTIC LOGGING FOR STEP 1
+      if (i === 1) {
+        console.log(`🔍 STEP 1 DIAGNOSTIC:`);
+        console.log(`  - customSites.length: ${customSites.length}`);
+        console.log(`  - customSites:`, customSites);
+        console.log(`  - Condition (i === 1 && customSites.length > 0): ${i === 1 && customSites.length > 0}`);
+      }
+      
       // 🔥 REAL TRAINING: Process custom sites during specific steps
       if (i === 1 && customSites.length > 0) { // Step 1: "Collecting HTML from custom sites..."
-        console.log(`� STARTING HTML COLLECTION FROM ${customSites.length} SITES`);
+        console.log(`🔥 STARTING HTML COLLECTION FROM ${customSites.length} SITES`);
+        console.log(`🔥 This message should appear if the loop executes!`);
         
         for (let siteIndex = 0; siteIndex < customSites.length; siteIndex++) {
           const currentSite = customSites[siteIndex];
