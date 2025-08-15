@@ -347,8 +347,15 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
               };
               
               console.log(`💾 Attempting to save training sample:`, sampleId);
-              await storage.saveAITrainingSample(trainingSample);
-              console.log(`✅ Training sample saved: ${sampleId}`);
+              const saveResult = await storage.saveAITrainingSample(trainingSample);
+              
+              if (saveResult && saveResult.id) {
+                console.log(`✅ Training sample saved successfully: ${sampleId} -> DB ID: ${saveResult.id}`);
+              } else {
+                console.error(`❌ CRITICAL: Training sample save FAILED for ${sampleId}`);
+                console.error(`❌ Save result:`, saveResult);
+                throw new Error(`Failed to save sample for ${currentSite.url}`);
+              }
               
               // 🔄 Update custom site status to COMPLETED
               console.log(`🔄 Updating custom site status for: ${currentSite.url}`);
