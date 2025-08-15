@@ -50,9 +50,9 @@ class DatabaseStorage {
         .replace(/\$/g, ''); // Remove dollar signs (can interfere with PostgreSQL)
       
       // 5️⃣ Limit length to prevent oversized content
-      if (sanitized.length > 100000) { // 100KB limit
-        console.log(`⚠️ HTML content too large (${sanitized.length}), truncating to 100KB`);
-        sanitized = sanitized.substring(0, 100000) + '...[TRUNCATED]';
+      if (sanitized.length > 1000000) { // 1MB limit (increased from 100KB)
+        console.log(`⚠️ HTML content too large (${sanitized.length}), truncating to 1MB`);
+        sanitized = sanitized.substring(0, 1000000) + '...[TRUNCATED]';
       }
       
       // 6️⃣ Final validation - NO Buffer conversion to prevent corruption
@@ -71,7 +71,7 @@ class DatabaseStorage {
       return htmlContent
         .replace(/[\x00-\x1F\x7F]/g, '') // Remove all control characters
         .replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, '') // Keep only printable ASCII + Unicode
-        .substring(0, 50000); // Limit to 50KB as emergency fallback
+        .substring(0, 500000); // Limit to 500KB as emergency fallback (increased from 50KB)
     }
   }
 
