@@ -525,4 +525,25 @@ router.get('/debug/samples', async (req, res) => {
   }
 });
 
+// 🔍 DEBUG: Check database storage status
+router.get('/debug/storage', async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      storage: {
+        isConnected: storage.isConnected,
+        fallbackToFiles: storage.fallbackToFiles,
+        poolStatus: !!storage.pool,
+        hasFileStorage: !!storage.fileStorage
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
