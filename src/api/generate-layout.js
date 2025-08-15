@@ -125,7 +125,8 @@ router.post('/layout', authenticateAPI, async (req, res) => {
           businessType: sample.businessType,
           status: sample.status,
           htmlLength: sample.htmlLength,
-          hasHtml: !!sample.htmlContent
+          hasHtml: !!sample.htmlContent,
+          htmlPreview: sample.htmlContent ? sample.htmlContent.substring(0, 100) + '...' : 'NO HTML'
         })));
         
         // 3. Analizza i custom sites usati per il training
