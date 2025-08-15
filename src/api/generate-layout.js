@@ -2,6 +2,20 @@ const express = require('express');
 const router = express.Router();
 const DatabaseStorage = require('../storage/database-storage');
 
+// 🔄 MAPPING BUSINESS TYPES (Italiano → Inglese per training data)
+const BUSINESS_TYPE_MAPPING = {
+  'alimentare': ['restaurant', 'food', 'catering', 'cafe'],
+  'restaurant': ['restaurant', 'food', 'catering'],
+  'ristorante': ['restaurant', 'food', 'catering'],
+  'cibo': ['restaurant', 'food', 'catering'],
+  'tecnologia': ['technology', 'tech', 'software', 'startup'],
+  'moda': ['fashion', 'clothing', 'style'],
+  'ecommerce': ['ecommerce', 'shop', 'store'],
+  'portfolio': ['portfolio', 'personal', 'freelance'],
+  'azienda': ['business', 'corporate', 'company'],
+  'servizi': ['services', 'consulting', 'professional']
+};
+
 // Middleware per autenticazione API
 const authenticateAPI = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -54,6 +68,12 @@ router.post('/layout', authenticateAPI, async (req, res) => {
         // 1. Cerca sessioni di training completate per il business type
         console.log(`🔍 [AI DEBUG] Searching for completed training sessions for: ${businessType}`);
         
+        // 🔄 MAPPING BUSINESS TYPE per maggior compatibilità
+        const possibleTypes = BUSINESS_TYPE_MAPPING[businessType.toLowerCase()] || [businessType];
+        possibleTypes.push(businessType); // Aggiungi anche il tipo originale
+        
+        console.log(`🎯 [AI DEBUG] Searching for types: ${possibleTypes.join(', ')}`);
+        
         // Prima cerchiamo TUTTE le sessioni completate per vedere cosa abbiamo
         const allCompletedSessions = await storage.pool.query(`
           SELECT * FROM ai_training_sessions 
@@ -67,18 +87,21 @@ router.post('/layout', authenticateAPI, async (req, res) => {
           console.log(`📋 [AI DEBUG] Session ${session.trainingId}: status=${session.status}, metadata=`, session.metadata);
         });
         
-        // Ora cerchiamo sessioni specifiche per business type (più flessibile)
+        // Ora cerchiamo sessioni specifiche per business type (con mapping migliorato)
+        const typeConditions = possibleTypes.map((type, index) => `
+          (metadata->>'businessType' = $${index + 1} 
+           OR metadata->'customSites'->0->>'businessType' = $${index + 1}
+           OR metadata->'customSites'->1->>'businessType' = $${index + 1}
+           OR metadata->'customSites'->2->>'businessType' = $${index + 1}
+          )`).join(' OR ');
+        
         const completedSessions = await storage.pool.query(`
           SELECT * FROM ai_training_sessions 
           WHERE status = 'COMPLETED' 
-          AND (
-            metadata->>'businessType' = $1 
-            OR metadata->'customSites'->0->>'businessType' = $1
-            OR $1 = 'restaurant'
-          )
+          AND (${typeConditions})
           ORDER BY "updatedAt" DESC 
           LIMIT 5
-        `, [businessType]);
+        `, possibleTypes);
         
         console.log(`📊 Found ${completedSessions.rows.length} completed training sessions`);
         
