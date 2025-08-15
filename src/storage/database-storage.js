@@ -50,9 +50,9 @@ class DatabaseStorage {
         .replace(/\$/g, ''); // Remove dollar signs (can interfere with PostgreSQL)
       
       // 5️⃣ Limit length to prevent oversized content
-      if (sanitized.length > 1000000) { // 1MB limit (increased from 100KB)
-        console.log(`⚠️ HTML content too large (${sanitized.length}), truncating to 1MB`);
-        sanitized = sanitized.substring(0, 1000000) + '...[TRUNCATED]';
+      if (sanitized.length > 3000000) { // 3MB limit (increased from 1MB)
+        console.log(`⚠️ HTML content too large (${sanitized.length}), truncating to 3MB`);
+        sanitized = sanitized.substring(0, 3000000) + '...[TRUNCATED]';
       }
       
       // 6️⃣ Final validation - NO Buffer conversion to prevent corruption
@@ -71,7 +71,7 @@ class DatabaseStorage {
       return htmlContent
         .replace(/[\x00-\x1F\x7F]/g, '') // Remove all control characters
         .replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, '') // Keep only printable ASCII + Unicode
-        .substring(0, 500000); // Limit to 500KB as emergency fallback (increased from 50KB)
+        .substring(0, 1500000); // Limit to 1.5MB as emergency fallback (increased from 500KB)
     }
   }
 
@@ -571,6 +571,76 @@ class DatabaseStorage {
     }
   }
 
+  // 🎯 Filter sites that need update for batch training
+  async filterSitesForTraining(sites) {
+    if (this.fallbackToFiles) {
+      return sites; // Return all sites for file storage
+    }
+
+    try {
+      const sitesNeedingUpdate = [];
+      
+      for (const site of sites) {
+        // Create a consistent sample ID from URL
+        const sampleId = site.url.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const needsUpdate = await this.needsUpdate(sampleId);
+        
+        if (needsUpdate) {
+          sitesNeedingUpdate.push(site);
+        } else {
+          console.log(`⏭️ Skipping ${site.url} - updated recently`);
+        }
+      }
+      
+      console.log(`🎯 Filtered sites: ${sitesNeedingUpdate.length}/${sites.length} need update`);
+      return sitesNeedingUpdate;
+      
+    } catch (error) {
+      console.error(`❌ Error filtering sites for training:`, error.message);
+      return sites; // Return all sites on error
+    }
+  }
+
+  // 🔍 Check if a site needs to be updated (based on 1 month rule)
+  async needsUpdate(sampleId) {
+    if (this.fallbackToFiles) {
+      return true; // Always update for file storage
+    }
+
+    try {
+      const checkQuery = `
+        SELECT updated_at, created_at
+        FROM training_samples 
+        WHERE sample_id = $1
+      `;
+      
+      const result = await this.pool.query(checkQuery, [sampleId]);
+      
+      if (result.rows.length === 0) {
+        console.log(`🆕 Sample ${sampleId} not found, needs creation`);
+        return true; // Sample doesn't exist, needs to be created
+      }
+      
+      const lastUpdated = new Date(result.rows[0].updated_at);
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      
+      const needsUpdate = lastUpdated <= oneMonthAgo;
+      
+      if (needsUpdate) {
+        console.log(`🔄 Sample ${sampleId} needs update (last updated: ${lastUpdated.toISOString()})`);
+      } else {
+        console.log(`✅ Sample ${sampleId} is recent (last updated: ${lastUpdated.toISOString()})`);
+      }
+      
+      return needsUpdate;
+      
+    } catch (error) {
+      console.error(`❌ Error checking update status for ${sampleId}:`, error.message);
+      return true; // Default to allowing update on error
+    }
+  }
+
   // 📊 Training Sample Storage
   async saveSample(sampleId, sampleData) {
     if (this.fallbackToFiles) {
@@ -578,6 +648,32 @@ class DatabaseStorage {
     }
 
     try {
+      // 🔍 Check if sample exists and if it was updated recently (less than 1 month)
+      const checkQuery = `
+        SELECT updated_at 
+        FROM training_samples 
+        WHERE sample_id = $1
+      `;
+      
+      const existingResult = await this.pool.query(checkQuery, [sampleId]);
+      
+      if (existingResult.rows.length > 0) {
+        const lastUpdated = new Date(existingResult.rows[0].updated_at);
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        
+        if (lastUpdated > oneMonthAgo) {
+          console.log(`⏰ Sample ${sampleId} was updated recently (${lastUpdated.toISOString()}), skipping update`);
+          return { 
+            skipped: true, 
+            reason: 'Updated less than 1 month ago',
+            lastUpdated: lastUpdated.toISOString()
+          };
+        }
+        
+        console.log(`🔄 Sample ${sampleId} is older than 1 month (${lastUpdated.toISOString()}), updating...`);
+      }
+
       const query = `
         INSERT INTO training_samples (
           sample_id, url, business_type, collection_method, 
@@ -602,8 +698,11 @@ class DatabaseStorage {
       await this.pool.query(query, values);
       console.log(`📊 Sample saved to DB: ${sampleId}`);
       
+      return { saved: true, sampleId };
+      
     } catch (error) {
       console.error(`❌ Failed to save sample ${sampleId} to DB:`, error.message);
+      throw error;
     }
   }
 
