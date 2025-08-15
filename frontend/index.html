@@ -268,16 +268,16 @@
             
             <div class="action-card">
                 <h3>🚀 Batch Auto-Training</h3>
-                <p>Training automatico con 5 siti diversi - Test classificazione business</p>
+                <p>Training automatico con 50 siti diversi - Dataset completo per AI training</p>
                 <div style="margin: 1rem 0;">
                     <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #495057;">Siti di Test:</h4>
+                        <h4 style="margin: 0 0 0.5rem 0; color: #495057;">Dataset Completo:</h4>
                         <div style="font-size: 0.85rem; color: #6c757d; line-height: 1.4;">
-                            🍕 <strong>Restaurant:</strong> https://www.pizzahut.com<br>
-                            🛍️ <strong>E-commerce:</strong> https://www.etsy.com<br>
-                            🏠 <strong>Real Estate:</strong> https://www.remax.com<br>
-                            ✈️ <strong>Travel:</strong> https://www.booking.com<br>
-                            💼 <strong>Services:</strong> https://www.squarespace.com
+                            🍕 <strong>Restaurants:</strong> 10 siti (McDonald's, Starbucks, KFC, ecc.)<br>
+                            🛍️ <strong>E-commerce:</strong> 15 siti (Amazon, eBay, Nike, Zara, ecc.)<br>
+                            🏠 <strong>Real Estate:</strong> 10 siti (Zillow, Century21, Coldwell Banker, ecc.)<br>
+                            ✈️ <strong>Travel:</strong> 10 siti (Expedia, Airbnb, Marriott, Delta, ecc.)<br>
+                            💼 <strong>Services:</strong> 5 siti (Wix, WordPress, Shopify, ecc.)
                         </div>
                     </div>
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
@@ -928,18 +928,72 @@
         
         // 🚀 BATCH AUTO-TRAINING FUNCTIONS
         
-        // Test sites for batch training
+        // Test sites for batch training - 50 diverse sites for comprehensive AI training
         const testSites = [
+            // 🍕 RESTAURANTS (10 sites)
             { url: 'https://www.pizzahut.com', expectedType: 'restaurant', description: 'Pizza restaurant chain' },
+            { url: 'https://www.mcdonalds.com', expectedType: 'restaurant', description: 'Fast food restaurant' },
+            { url: 'https://www.starbucks.com', expectedType: 'restaurant', description: 'Coffee shop chain' },
+            { url: 'https://www.kfc.com', expectedType: 'restaurant', description: 'Fried chicken restaurant' },
+            { url: 'https://www.subway.com', expectedType: 'restaurant', description: 'Sandwich restaurant' },
+            { url: 'https://www.burgerking.com', expectedType: 'restaurant', description: 'Burger restaurant' },
+            { url: 'https://www.dominos.com', expectedType: 'restaurant', description: 'Pizza delivery' },
+            { url: 'https://www.tacobellglobal.com', expectedType: 'restaurant', description: 'Mexican fast food' },
+            { url: 'https://www.dunkindonuts.com', expectedType: 'restaurant', description: 'Donuts and coffee' },
+            { url: 'https://www.chipotle.com', expectedType: 'restaurant', description: 'Mexican grill' },
+
+            // 🛒 ECOMMERCE (15 sites)
             { url: 'https://www.etsy.com', expectedType: 'ecommerce', description: 'Handmade marketplace' },
+            { url: 'https://www.amazon.com', expectedType: 'ecommerce', description: 'Online marketplace' },
+            { url: 'https://www.ebay.com', expectedType: 'ecommerce', description: 'Auction marketplace' },
+            { url: 'https://www.walmart.com', expectedType: 'ecommerce', description: 'Retail store' },
+            { url: 'https://www.target.com', expectedType: 'ecommerce', description: 'Department store' },
+            { url: 'https://www.bestbuy.com', expectedType: 'ecommerce', description: 'Electronics retailer' },
+            { url: 'https://www.homedepot.com', expectedType: 'ecommerce', description: 'Home improvement' },
+            { url: 'https://www.lowes.com', expectedType: 'ecommerce', description: 'Hardware store' },
+            { url: 'https://www.costco.com', expectedType: 'ecommerce', description: 'Wholesale retailer' },
+            { url: 'https://www.macys.com', expectedType: 'ecommerce', description: 'Department store' },
+            { url: 'https://www.nike.com', expectedType: 'ecommerce', description: 'Sportswear brand' },
+            { url: 'https://www.adidas.com', expectedType: 'ecommerce', description: 'Athletic apparel' },
+            { url: 'https://www.zara.com', expectedType: 'ecommerce', description: 'Fashion retailer' },
+            { url: 'https://www.hm.com', expectedType: 'ecommerce', description: 'Fashion chain' },
+            { url: 'https://www.ikea.com', expectedType: 'ecommerce', description: 'Furniture retailer' },
+
+            // 🏠 REAL ESTATE (10 sites)
             { url: 'https://www.remax.com', expectedType: 'real_estate', description: 'Real estate agency' },
+            { url: 'https://www.zillow.com', expectedType: 'real_estate', description: 'Real estate platform' },
+            { url: 'https://www.realtor.com', expectedType: 'real_estate', description: 'Property listings' },
+            { url: 'https://www.coldwellbanker.com', expectedType: 'real_estate', description: 'Real estate brokerage' },
+            { url: 'https://www.century21.com', expectedType: 'real_estate', description: 'Real estate franchise' },
+            { url: 'https://www.kw.com', expectedType: 'real_estate', description: 'Keller Williams Realty' },
+            { url: 'https://www.sothebysrealty.com', expectedType: 'real_estate', description: 'Luxury real estate' },
+            { url: 'https://www.cbcommercial.com', expectedType: 'real_estate', description: 'Commercial real estate' },
+            { url: 'https://www.cushmanwakefield.com', expectedType: 'real_estate', description: 'Commercial real estate services' },
+            { url: 'https://www.cbre.com', expectedType: 'real_estate', description: 'Commercial real estate' },
+
+            // ✈️ TRAVEL (10 sites)
             { url: 'https://www.booking.com', expectedType: 'travel', description: 'Hotel booking platform' },
-            { url: 'https://www.squarespace.com', expectedType: 'services', description: 'Website building service' }
+            { url: 'https://www.expedia.com', expectedType: 'travel', description: 'Travel booking site' },
+            { url: 'https://www.airbnb.com', expectedType: 'travel', description: 'Vacation rentals' },
+            { url: 'https://www.hotels.com', expectedType: 'travel', description: 'Hotel reservations' },
+            { url: 'https://www.priceline.com', expectedType: 'travel', description: 'Travel deals' },
+            { url: 'https://www.kayak.com', expectedType: 'travel', description: 'Travel search engine' },
+            { url: 'https://www.tripadvisor.com', expectedType: 'travel', description: 'Travel reviews' },
+            { url: 'https://www.marriott.com', expectedType: 'travel', description: 'Hotel chain' },
+            { url: 'https://www.hilton.com', expectedType: 'travel', description: 'Hotel group' },
+            { url: 'https://www.delta.com', expectedType: 'travel', description: 'Airline company' },
+
+            // 🔧 SERVICES (5 sites)
+            { url: 'https://www.squarespace.com', expectedType: 'services', description: 'Website building service' },
+            { url: 'https://www.wix.com', expectedType: 'services', description: 'Website builder' },
+            { url: 'https://www.wordpress.com', expectedType: 'services', description: 'Blog platform' },
+            { url: 'https://www.shopify.com', expectedType: 'services', description: 'Ecommerce platform' },
+            { url: 'https://www.godaddy.com', expectedType: 'services', description: 'Domain and hosting' }
         ];
         
         async function testAutoClassification() {
             try {
-                logMessage('🧠 Testing auto-classification on 5 test sites...', 'info');
+                logMessage('🧠 Testing auto-classification on 50 diverse test sites...', 'info');
                 
                 for (let i = 0; i < testSites.length; i++) {
                     const site = testSites[i];
@@ -995,7 +1049,7 @@
                 statusDiv.textContent = 'Starting batch training...';
                 progressBar.style.width = '0%';
                 
-                logMessage('🚀 Starting batch training with 5 diverse sites...', 'info');
+                logMessage('🚀 Starting batch training with 50 diverse sites...', 'info');
                 
                 // Start training session
                 const trainingResponse = await fetch(`${API_BASE}/api/training/custom`, {
