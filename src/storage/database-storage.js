@@ -55,8 +55,10 @@ class DatabaseStorage {
         sanitized = sanitized.substring(0, 100000) + '...[TRUNCATED]';
       }
       
-      // 6️⃣ Ensure it's valid UTF-8 by encoding/decoding
-      sanitized = Buffer.from(sanitized, 'utf8').toString('utf8');
+      // 6️⃣ Final validation - NO Buffer conversion to prevent corruption
+      if (typeof sanitized !== 'string') {
+        sanitized = String(sanitized);
+      }
       
       console.log(`🧹 HTML sanitized: ${htmlContent.length} → ${sanitized.length} characters`);
       console.log(`🔍 Sample of sanitized content: "${sanitized.substring(0, 200)}..."`);
