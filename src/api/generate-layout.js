@@ -193,7 +193,7 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       });
       
       // Genera blocchi basati sui pattern analizzati
-      const aiBlocks = generateIntelligentBlocks(businessType, Array.from(layoutElements), trainingUrls);
+      const aiBlocks = generateIntelligentBlocks(businessType, Array.from(layoutElements), trainingUrls, samples);
       
       return {
         blocks: aiBlocks,
@@ -208,35 +208,92 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     };
     
     // 🎨 Genera blocchi intelligenti basati sui pattern reali
-    const generateIntelligentBlocks = (businessType, patterns, trainingUrls) => {
+    const generateIntelligentBlocks = (businessType, patterns, trainingUrls, samples = []) => {
       console.log(`🎨 Generating intelligent blocks for ${businessType} with patterns:`, patterns);
+      console.log(`🔍 [AI DEBUG] Analyzing ${samples.length} HTML samples for real pattern extraction`);
       
-      // Base blocks per business type (derivati dall'analisi)
-      const baseBlocks = {
-        restaurant: ['navigation', 'hero', 'menu', 'about', 'contact'],
-        ecommerce: ['navigation', 'hero', 'products', 'categories', 'footer'],
-        portfolio: ['navigation', 'hero', 'gallery', 'about', 'contact'],
-        business: ['navigation', 'hero', 'services', 'team', 'contact']
-      };
+      // 🧠 ANALISI REALE HTML per estrarre pattern
+      const extractedBlocks = new Set();
+      const commonSections = new Set();
       
-      let blocks = baseBlocks[businessType] || baseBlocks.business;
+      samples.forEach((sample, index) => {
+        if (sample.htmlContent && sample.htmlContent.length > 500) {
+          console.log(`📄 [AI DEBUG] Analyzing sample ${index + 1}: ${sample.url}`);
+          
+          // Analizza struttura HTML reale
+          const html = sample.htmlContent.toLowerCase();
+          
+          // Detect common sections from real HTML
+          if (html.includes('<header') || html.includes('class="header"') || html.includes('navigation')) {
+            extractedBlocks.add('navigation');
+          }
+          if (html.includes('hero') || html.includes('banner') || html.includes('jumbotron')) {
+            extractedBlocks.add('hero');
+          }
+          if (html.includes('menu') && businessType.includes('restaurant')) {
+            extractedBlocks.add('menu');
+          }
+          if (html.includes('services') || html.includes('service')) {
+            extractedBlocks.add('services');
+          }
+          if (html.includes('about') || html.includes('chi-siamo')) {
+            extractedBlocks.add('about');
+          }
+          if (html.includes('team') || html.includes('staff')) {
+            extractedBlocks.add('team');
+          }
+          if (html.includes('contact') || html.includes('contatti')) {
+            extractedBlocks.add('contact');
+          }
+          if (html.includes('gallery') || html.includes('photos')) {
+            extractedBlocks.add('gallery');
+          }
+          if (html.includes('testimonial') || html.includes('review')) {
+            extractedBlocks.add('testimonials');
+          }
+          if (html.includes('product') && businessType.includes('ecommerce')) {
+            extractedBlocks.add('products');
+          }
+          if (html.includes('footer')) {
+            extractedBlocks.add('footer');
+          }
+          
+          // Detect layout style from real CSS classes
+          if (html.includes('minimal') || html.includes('clean')) {
+            commonSections.add('minimal-style');
+          }
+          if (html.includes('elegant') || html.includes('premium')) {
+            commonSections.add('elegant-style');
+          }
+          if (html.includes('modern')) {
+            commonSections.add('modern-style');
+          }
+        }
+      });
       
-      // Modifica blocks basandosi sui pattern di training
-      if (patterns.includes('minimal-style')) {
-        blocks = blocks.map(block => `${block}-minimal`);
+      console.log(`🎯 [AI DEBUG] Extracted blocks from HTML:`, Array.from(extractedBlocks));
+      console.log(`🎨 [AI DEBUG] Detected styles:`, Array.from(commonSections));
+      
+      // Use extracted blocks if we have enough data, otherwise fallback to smart defaults
+      let blocks;
+      if (extractedBlocks.size >= 3) {
+        blocks = Array.from(extractedBlocks);
+        console.log(`✅ [AI DEBUG] Using HTML-extracted blocks: ${blocks.length} blocks`);
+      } else {
+        // Smart fallback based on business type
+        const smartDefaults = {
+          restaurant: ['navigation', 'hero', 'menu', 'about', 'contact'],
+          ecommerce: ['navigation', 'hero', 'products', 'categories', 'footer'],
+          portfolio: ['navigation', 'hero', 'gallery', 'about', 'contact'],
+          business: ['navigation', 'hero', 'services', 'team', 'contact']
+        };
+        blocks = smartDefaults[businessType] || smartDefaults.business;
+        console.log(`⚠️ [AI DEBUG] Using smart defaults: insufficient HTML data`);
       }
       
-      if (patterns.includes('elegant-style')) {
-        blocks = blocks.map(block => `${block}-elegant`);
-      }
-      
-      // Aggiungi blocchi specifici basati sulle URL di training
-      if (trainingUrls.some(url => url.includes('demo') || url.includes('template'))) {
-        blocks.push('showcase-demo');
-      }
-      
-      if (businessType === 'restaurant' && patterns.length > 0) {
-        blocks.splice(2, 0, 'gallery-food', 'reviews-customers');
+      // Apply style modifications based on detected patterns
+      if (commonSections.has('minimal-style') || patterns.includes('minimal-style')) {
+        console.log(`🎨 [AI DEBUG] Applying minimal style modifications`);
       }
       
       return blocks;
