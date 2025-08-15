@@ -282,6 +282,117 @@
         const API_KEY = 'ai-trainer-1e212623176704eea6dba3b62117d36c0f64d6512419defdd25226294c45a90d';
         const API_BASE = window.location.origin;
         
+        // 🚨 ALERT SYSTEM
+        let alertCheckInterval = null;
+        
+        async function checkForCriticalAlerts() {
+            try {
+                const response = await fetch(`${API_BASE}/api/training/alerts`, {
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                });
+                const data = await response.json();
+                
+                if (data.success && data.hasAlert && data.alert) {
+                    showCriticalAlert(data.alert);
+                }
+            } catch (error) {
+                console.error('Failed to check for alerts:', error);
+            }
+        }
+        
+        function showCriticalAlert(alertData) {
+            // Create alert modal
+            const alertModal = document.createElement('div');
+            alertModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.8);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            
+            alertModal.innerHTML = `
+                <div style="
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 1rem;
+                    max-width: 600px;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+                ">
+                    <h2 style="color: #dc2626; margin-bottom: 1rem; font-size: 1.5rem;">
+                        🚨 Critical Error Alert
+                    </h2>
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Type:</strong> ${alertData.type}<br>
+                        <strong>Time:</strong> ${new Date(alertData.timestamp).toLocaleString()}<br>
+                        <strong>Message:</strong> ${alertData.message}
+                    </div>
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; max-height: 200px; overflow-y: auto;">
+                        <strong>Error Details:</strong><br>
+                        <pre style="font-size: 0.8rem; white-space: pre-wrap;">${JSON.stringify(alertData.details, null, 2)}</pre>
+                    </div>
+                    <div style="text-align: right;">
+                        <button onclick="clearCriticalAlert()" style="
+                            background: #dc2626;
+                            color: white;
+                            border: none;
+                            padding: 0.75rem 1.5rem;
+                            border-radius: 0.5rem;
+                            cursor: pointer;
+                            margin-right: 0.5rem;
+                        ">Close & Clear Alert</button>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="
+                            background: #6b7280;
+                            color: white;
+                            border: none;
+                            padding: 0.75rem 1.5rem;
+                            border-radius: 0.5rem;
+                            cursor: pointer;
+                        ">Close Only</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(alertModal);
+            
+            // Log the error
+            logMessage(`🚨 CRITICAL ERROR: ${alertData.type} - ${alertData.message}`, 'error');
+        }
+        
+        async function clearCriticalAlert() {
+            try {
+                await fetch(`${API_BASE}/api/training/alerts/clear`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                });
+                
+                // Remove all alert modals
+                document.querySelectorAll('[style*="position: fixed"]').forEach(modal => {
+                    if (modal.style.zIndex === '10000') {
+                        modal.remove();
+                    }
+                });
+                
+                logMessage('✅ Critical alert cleared', 'success');
+            } catch (error) {
+                logMessage(`❌ Failed to clear alert: ${error.message}`, 'error');
+            }
+        }
+        
+        // Start alert checking when page loads
+        function startAlertMonitoring() {
+            if (alertCheckInterval) clearInterval(alertCheckInterval);
+            alertCheckInterval = setInterval(checkForCriticalAlerts, 10000); // Check every 10 seconds
+            checkForCriticalAlerts(); // Check immediately
+        }
+        
         // Logging function
         function logMessage(message, type = 'info') {
             const logs = document.getElementById('logs');
@@ -560,6 +671,12 @@
             setTimeout(() => {
                 getServerStatus();
             }, 1000);
+            
+            // 🚨 Start alert monitoring
+            setTimeout(() => {
+                startAlertMonitoring();
+                logMessage('🚨 Critical alert monitoring started', 'info');
+            }, 2000);
         });
         
         // 🗄️ STORAGE ANALYTICS FUNCTIONS

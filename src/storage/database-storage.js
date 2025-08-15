@@ -21,24 +21,86 @@ class DatabaseStorage {
     }
     
     try {
-      // Remove null bytes and other problematic characters
+      console.log(`🧹 BEFORE SANITIZATION: ${htmlContent.length} characters`);
+      
+      // 1️⃣ Remove null bytes and control characters
       let sanitized = htmlContent
         .replace(/\x00/g, '') // Remove null bytes (0x00)
         .replace(/[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove control characters except \t, \n, \r
         .replace(/\uFFFD/g, ''); // Remove replacement characters
       
-      // Ensure it's valid UTF-8 by encoding/decoding
+      // 2️⃣ Fix common HTML encoding issues
+      sanitized = sanitized
+        .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width spaces
+        .replace(/[\u2028\u2029]/g, ' ') // Replace line/paragraph separators with spaces
+        .replace(/\r\n/g, '\n') // Normalize line endings
+        .replace(/\r/g, '\n'); // Convert remaining \r to \n
+      
+      // 3️⃣ Handle problematic quotes and special characters
+      sanitized = sanitized
+        .replace(/[""]/g, '"') // Normalize smart quotes
+        .replace(/['']/g, "'") // Normalize smart apostrophes
+        .replace(/…/g, '...') // Replace ellipsis
+        .replace(/–/g, '-') // Replace en-dash
+        .replace(/—/g, '--'); // Replace em-dash
+      
+      // 4️⃣ Remove or escape potentially problematic SQL characters
+      sanitized = sanitized
+        .replace(/\\/g, '\\\\') // Escape backslashes
+        .replace(/\$/g, ''); // Remove dollar signs (can interfere with PostgreSQL)
+      
+      // 5️⃣ Limit length to prevent oversized content
+      if (sanitized.length > 100000) { // 100KB limit
+        console.log(`⚠️ HTML content too large (${sanitized.length}), truncating to 100KB`);
+        sanitized = sanitized.substring(0, 100000) + '...[TRUNCATED]';
+      }
+      
+      // 6️⃣ Ensure it's valid UTF-8 by encoding/decoding
       sanitized = Buffer.from(sanitized, 'utf8').toString('utf8');
       
       console.log(`🧹 HTML sanitized: ${htmlContent.length} → ${sanitized.length} characters`);
+      console.log(`🔍 Sample of sanitized content: "${sanitized.substring(0, 200)}..."`);
+      
       return sanitized;
     } catch (error) {
       console.error('❌ Error sanitizing HTML:', error.message);
-      return htmlContent.replace(/\x00/g, ''); // Fallback: just remove null bytes
+      console.error('❌ Problematic content sample:', htmlContent.substring(0, 500));
+      // Fallback: aggressive cleanup
+      return htmlContent
+        .replace(/[\x00-\x1F\x7F]/g, '') // Remove all control characters
+        .replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, '') // Keep only printable ASCII + Unicode
+        .substring(0, 50000); // Limit to 50KB as emergency fallback
     }
   }
 
-  // 💾 Save AI Training Sample
+  // � Alert System for Critical Errors
+  logCriticalError(errorType, errorMessage, errorDetails = {}) {
+    const errorLog = {
+      timestamp: new Date().toISOString(),
+      type: errorType,
+      message: errorMessage,
+      details: errorDetails,
+      alert: true
+    };
+    
+    console.error('🚨🚨🚨 CRITICAL ERROR ALERT 🚨🚨🚨');
+    console.error('❌ TYPE:', errorType);
+    console.error('❌ MESSAGE:', errorMessage);
+    console.error('❌ DETAILS:', errorDetails);
+    console.error('🚨🚨🚨 END CRITICAL ERROR 🚨🚨🚨');
+    
+    // Store error for API to retrieve
+    this.lastCriticalError = errorLog;
+    
+    return errorLog;
+  }
+
+  // 🔍 Get Last Critical Error (for API alerts)
+  getLastCriticalError() {
+    return this.lastCriticalError || null;
+  }
+
+  // �💾 Save AI Training Sample
   async saveAITrainingSample(sampleData) {
     console.log(`🔍 DEBUG SAMPLE SAVE: isConnected=${this.isConnected}, fallbackToFiles=${this.fallbackToFiles}`);
     
@@ -65,19 +127,44 @@ class DatabaseStorage {
       const random = Math.random().toString(36).substring(2, 15);
       const generatedId = `c${timestamp}${random}`;
       
+      // 🔍 VALIDATE AND SANITIZE ALL FIELDS
+      const sanitizedData = {
+        id: generatedId,
+        sampleId: (sampleData.sampleId || '').toString().trim().substring(0, 255),
+        url: (sampleData.url || '').toString().trim().substring(0, 500),
+        businessType: (sampleData.businessType || '').toString().trim().substring(0, 100),
+        trainingSessionId: (sampleData.trainingSessionId || '').toString().trim().substring(0, 255),
+        collectionMethod: (sampleData.collectionMethod || 'web').toString().trim().substring(0, 50),
+        status: (sampleData.status || 'collected').toString().trim().substring(0, 50)
+      };
+      
       // Sanitize HTML content before saving
       const sanitizedHTML = this.sanitizeHTMLContent(sampleData.htmlContent);
       
-      // 🔍 DETAILED LOGGING: Show all data before INSERT
-      console.log(`📋 SAMPLE INSERT DATA:`, {
-        generatedId,
-        sampleId: sampleData.sampleId,
-        url: sampleData.url,
-        businessType: sampleData.businessType,
-        trainingSessionId: sampleData.trainingSessionId,
+      // 🚨 VALIDATE REQUIRED FIELDS
+      if (!sanitizedData.sampleId || !sanitizedData.url || !sanitizedData.businessType) {
+        throw new Error(`Missing required fields: sampleId="${sanitizedData.sampleId}", url="${sanitizedData.url}", businessType="${sanitizedData.businessType}"`);
+      }
+      
+      // 🔍 SANITIZE analysisData JSON
+      let analysisDataJSON = '{}';
+      try {
+        if (sampleData.analysisData && typeof sampleData.analysisData === 'object') {
+          analysisDataJSON = JSON.stringify(sampleData.analysisData);
+        } else if (typeof sampleData.analysisData === 'string') {
+          JSON.parse(sampleData.analysisData); // Validate it's valid JSON
+          analysisDataJSON = sampleData.analysisData;
+        }
+      } catch (jsonError) {
+        console.error('⚠️ Invalid analysisData JSON, using empty object:', jsonError.message);
+        analysisDataJSON = '{}';
+      }
+      
+      // 🔍 DETAILED LOGGING: Show all sanitized data before INSERT
+      console.log(`📋 SANITIZED SAMPLE INSERT DATA:`, {
+        ...sanitizedData,
         htmlLength: sanitizedHTML.length,
-        collectionMethod: sampleData.collectionMethod,
-        status: sampleData.status
+        analysisDataLength: analysisDataJSON.length
       });
       
       const result = await this.pool.query(`
@@ -88,23 +175,39 @@ class DatabaseStorage {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING id, "sampleId"
       `, [
-        generatedId,
-        sampleData.sampleId,
-        sampleData.url,
-        sampleData.businessType,
-        sampleData.trainingSessionId,
+        sanitizedData.id,
+        sanitizedData.sampleId,
+        sanitizedData.url,
+        sanitizedData.businessType,
+        sanitizedData.trainingSessionId,
         sanitizedHTML,
-        sanitizedHTML.length, // Use sanitized length
-        sampleData.collectionMethod,
-        sampleData.status,
-        JSON.stringify(sampleData.analysisData),
+        sanitizedHTML.length,
+        sanitizedData.collectionMethod,
+        sanitizedData.status,
+        analysisDataJSON,
         new Date(),
-        new Date() // Add updatedAt field
+        new Date()
       ]);
 
       console.log(`✅ Training sample saved with ID: ${result.rows[0].id}`);
       return result.rows[0];
     } catch (error) {
+      // 🚨 CRITICAL ERROR ALERT - Log with alert system
+      const errorAlert = this.logCriticalError(
+        'SQL_SAMPLE_SAVE_FAILED',
+        `Failed to save training sample: ${error.message}`,
+        {
+          sqlErrorCode: error.code,
+          sqlErrorDetail: error.detail,
+          sampleId: sampleData.sampleId,
+          url: sampleData.url,
+          businessType: sampleData.businessType,
+          trainingSessionId: sampleData.trainingSessionId,
+          htmlLength: sampleData.htmlContent ? sampleData.htmlContent.length : 0,
+          errorStack: error.stack
+        }
+      );
+      
       console.error('❌ CRITICAL: Error saving training sample:', error.message);
       console.error('❌ SQL Error code:', error.code);
       console.error('❌ SQL Error detail:', error.detail);
@@ -115,6 +218,9 @@ class DatabaseStorage {
         trainingSessionId: sampleData.trainingSessionId
       });
       console.error('❌ Full error stack:', error.stack);
+      
+      // Include alert info in thrown error
+      error.criticalAlert = errorAlert;
       throw error;
     }
   }

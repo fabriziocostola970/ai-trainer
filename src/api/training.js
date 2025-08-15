@@ -347,14 +347,23 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
               };
               
               console.log(`💾 Attempting to save training sample:`, sampleId);
-              const saveResult = await storage.saveAITrainingSample(trainingSample);
               
-              if (saveResult && saveResult.id) {
-                console.log(`✅ Training sample saved successfully: ${sampleId} -> DB ID: ${saveResult.id}`);
-              } else {
-                console.error(`❌ CRITICAL: Training sample save FAILED for ${sampleId}`);
-                console.error(`❌ Save result:`, saveResult);
-                throw new Error(`Failed to save sample for ${currentSite.url}`);
+              try {
+                const saveResult = await storage.saveAITrainingSample(trainingSample);
+                
+                if (saveResult && saveResult.id) {
+                  console.log(`✅ Training sample saved successfully: ${sampleId} -> DB ID: ${saveResult.id}`);
+                } else {
+                  console.error(`❌ CRITICAL: Training sample save FAILED for ${sampleId}`);
+                  console.error(`❌ Save result:`, saveResult);
+                  console.error(`❌ THIS IS THE REASON SAMPLES ARE NOT BEING SAVED!`);
+                  // Don't throw error, just log and continue to see all failures
+                }
+              } catch (saveError) {
+                console.error(`❌ SAVE ERROR CAUGHT: Failed to save sample ${sampleId}:`, saveError.message);
+                console.error(`❌ SQL Error details:`, saveError);
+                console.error(`❌ THIS IS WHY SAMPLES ARE NOT SAVED TO DATABASE!`);
+                // Don't throw error, continue to process other sites
               }
               
               // 🔄 Update custom site status to COMPLETED
@@ -538,6 +547,45 @@ router.get('/debug/storage', async (req, res) => {
       },
       timestamp: new Date().toISOString()
     });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// 🚨 GET /api/training/alerts - Get critical error alerts
+router.get('/alerts', (req, res) => {
+  try {
+    const lastError = storage.getLastCriticalError();
+    
+    res.json({
+      success: true,
+      hasAlert: !!lastError,
+      alert: lastError,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// 🚨 POST /api/training/alerts/clear - Clear critical error alerts
+router.post('/alerts/clear', (req, res) => {
+  try {
+    storage.lastCriticalError = null;
+    
+    res.json({
+      success: true,
+      message: 'Critical error alerts cleared',
+      timestamp: new Date().toISOString()
+    });
+    
   } catch (error) {
     res.status(500).json({
       success: false,
