@@ -265,6 +265,38 @@
                 <button class="btn" id="btn-add-custom-site">Add Site to Training</button>
                 <button class="btn" id="btn-train-custom" style="background: #27ae60;">Train with Custom Sites</button>
             </div>
+            
+            <div class="action-card">
+                <h3>🚀 Batch Auto-Training</h3>
+                <p>Training automatico con 5 siti diversi - Test classificazione business</p>
+                <div style="margin: 1rem 0;">
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #495057;">Siti di Test:</h4>
+                        <div style="font-size: 0.85rem; color: #6c757d; line-height: 1.4;">
+                            🍕 <strong>Restaurant:</strong> https://www.dominos.com<br>
+                            🛍️ <strong>E-commerce:</strong> https://www.asos.com<br>
+                            🏠 <strong>Real Estate:</strong> https://www.zillow.com<br>
+                            ✈️ <strong>Travel:</strong> https://www.airbnb.com<br>
+                            💼 <strong>Services:</strong> https://www.mailchimp.com
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                        <button class="btn" id="btn-auto-classify" style="background: #6f42c1; flex: 1;">
+                            🧠 Test Auto-Classification
+                        </button>
+                        <button class="btn" id="btn-batch-train" style="background: #fd7e14; flex: 1;">
+                            🚀 Batch Train (5 Sites)
+                        </button>
+                    </div>
+                    <div id="batch-progress" style="display: none; background: #e3f2fd; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
+                        <div style="font-weight: bold; margin-bottom: 0.5rem;">📊 Training Progress:</div>
+                        <div id="batch-status">Initializing...</div>
+                        <div style="background: #fff; border-radius: 3px; height: 8px; margin-top: 0.5rem; overflow: hidden;">
+                            <div id="batch-progress-bar" style="background: #2196f3; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="action-card" style="margin-top: 2rem;">
@@ -665,6 +697,10 @@
             document.getElementById('btn-add-custom-site').addEventListener('click', addCustomSite);
             document.getElementById('btn-train-custom').addEventListener('click', trainWithCustomSites);
             
+            // 🚀 Batch Auto-Training event listeners
+            document.getElementById('btn-auto-classify').addEventListener('click', testAutoClassification);
+            document.getElementById('btn-batch-train').addEventListener('click', startBatchTraining);
+            
             logMessage('🎛️ Button event listeners attached', 'info');
             
             // Auto check server status
@@ -887,6 +923,158 @@
                 
             } catch (error) {
                 logMessage(`❌ Preview Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // 🚀 BATCH AUTO-TRAINING FUNCTIONS
+        
+        // Test sites for batch training
+        const testSites = [
+            { url: 'https://www.dominos.com', expectedType: 'restaurant', description: 'Pizza delivery chain' },
+            { url: 'https://www.asos.com', expectedType: 'ecommerce', description: 'Fashion e-commerce' },
+            { url: 'https://www.zillow.com', expectedType: 'real_estate', description: 'Real estate marketplace' },
+            { url: 'https://www.airbnb.com', expectedType: 'travel', description: 'Travel accommodation' },
+            { url: 'https://www.mailchimp.com', expectedType: 'services', description: 'Email marketing service' }
+        ];
+        
+        async function testAutoClassification() {
+            try {
+                logMessage('🧠 Testing auto-classification on 5 test sites...', 'info');
+                
+                for (let i = 0; i < testSites.length; i++) {
+                    const site = testSites[i];
+                    logMessage(`🔍 Analyzing ${site.url} (expected: ${site.expectedType})...`, 'info');
+                    
+                    try {
+                        // Simulate classification API call
+                        const response = await fetch(`${API_BASE}/api/training/classify`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${API_KEY}`
+                            },
+                            body: JSON.stringify({
+                                url: site.url,
+                                expectedType: site.expectedType
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            const accuracy = result.detectedType === site.expectedType ? '✅ CORRECT' : '❌ WRONG';
+                            logMessage(`  📊 Detected: ${result.detectedType} ${accuracy} (confidence: ${result.confidence}%)`, 
+                                      result.detectedType === site.expectedType ? 'success' : 'error');
+                        } else {
+                            logMessage(`  ❌ Classification failed: ${result.error}`, 'error');
+                        }
+                        
+                    } catch (error) {
+                        logMessage(`  ❌ Error analyzing ${site.url}: ${error.message}`, 'error');
+                    }
+                    
+                    // Small delay between requests
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+                logMessage('🎯 Auto-classification test completed!', 'success');
+                
+            } catch (error) {
+                logMessage(`❌ Auto-classification test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function startBatchTraining() {
+            try {
+                const progressDiv = document.getElementById('batch-progress');
+                const statusDiv = document.getElementById('batch-status');
+                const progressBar = document.getElementById('batch-progress-bar');
+                
+                // Show progress UI
+                progressDiv.style.display = 'block';
+                statusDiv.textContent = 'Starting batch training...';
+                progressBar.style.width = '0%';
+                
+                logMessage('🚀 Starting batch training with 5 diverse sites...', 'info');
+                
+                // Start training session
+                const trainingResponse = await fetch(`${API_BASE}/api/training/custom`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        customSites: testSites.map(site => ({
+                            url: site.url,
+                            businessType: site.expectedType,
+                            style: 'modern',
+                            description: site.description
+                        })),
+                        aiAnalysis: true,
+                        batchMode: true
+                    })
+                });
+                
+                const trainingData = await trainingResponse.json();
+                
+                if (trainingData.success) {
+                    logMessage(`✅ Batch training initiated! Session ID: ${trainingData.trainingId}`, 'success');
+                    statusDiv.textContent = 'Training in progress...';
+                    progressBar.style.width = '20%';
+                    
+                    // Monitor training progress
+                    const monitorTraining = async () => {
+                        try {
+                            const statusResponse = await fetch(`${API_BASE}/api/training/status/${trainingData.trainingId}`, {
+                                headers: { 'Authorization': `Bearer ${API_KEY}` }
+                            });
+                            
+                            const status = await statusResponse.json();
+                            
+                            if (status.success) {
+                                const progress = Math.min((status.progress || 0), 100);
+                                progressBar.style.width = `${progress}%`;
+                                statusDiv.textContent = `Training: ${status.currentStep || 'Processing'} (${progress}%)`;
+                                
+                                if (status.status === 'COMPLETED') {
+                                    logMessage(`🎉 Batch training completed! Accuracy: ${status.accuracy}%`, 'success');
+                                    statusDiv.textContent = `✅ Completed! ${status.samplesCollected} samples collected`;
+                                    progressBar.style.width = '100%';
+                                    progressBar.style.background = '#28a745';
+                                    
+                                    // Update counters
+                                    document.getElementById('totalSamples').textContent = status.totalSamples || 0;
+                                    document.getElementById('customSitesCount').textContent = status.customSitesCount || 0;
+                                    
+                                } else if (status.status === 'FAILED') {
+                                    logMessage(`❌ Batch training failed: ${status.error}`, 'error');
+                                    statusDiv.textContent = `❌ Training failed: ${status.error}`;
+                                    progressBar.style.background = '#dc3545';
+                                } else {
+                                    // Continue monitoring
+                                    setTimeout(monitorTraining, 3000);
+                                }
+                            }
+                            
+                        } catch (error) {
+                            logMessage(`⚠️ Training monitoring error: ${error.message}`, 'error');
+                            setTimeout(monitorTraining, 5000); // Retry
+                        }
+                    };
+                    
+                    // Start monitoring after initial delay
+                    setTimeout(monitorTraining, 2000);
+                    
+                } else {
+                    logMessage(`❌ Failed to start batch training: ${trainingData.error}`, 'error');
+                    statusDiv.textContent = `❌ Failed: ${trainingData.error}`;
+                    progressBar.style.background = '#dc3545';
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Batch training error: ${error.message}`, 'error');
+                document.getElementById('batch-status').textContent = `❌ Error: ${error.message}`;
             }
         }
     </script>
