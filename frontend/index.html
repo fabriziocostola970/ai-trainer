@@ -1019,7 +1019,17 @@
                 const trainingData = await trainingResponse.json();
                 
                 if (trainingData.success) {
-                    logMessage(`✅ Batch training initiated! Session ID: ${trainingData.trainingId}`, 'success');
+                    if (trainingData.sitesCount === 0) {
+                        logMessage(`ℹ️ All sites are up to date! ${trainingData.skippedSitesCount || trainingData.originalSitesCount} sites skipped (updated within last month)`, 'info');
+                        statusDiv.textContent = 'All sites are current';
+                        progressBar.style.width = '100%';
+                        progressBar.style.background = '#17a2b8';
+                        return;
+                    }
+                    
+                    const skippedInfo = trainingData.skippedSitesCount > 0 ? ` (${trainingData.skippedSitesCount} sites skipped as recent)` : '';
+                    logMessage(`✅ Batch training initiated! Session ID: ${trainingData.trainingId}${skippedInfo}`, 'success');
+                    logMessage(`📊 Processing ${trainingData.sitesCount}/${trainingData.originalSitesCount || trainingData.sitesCount} sites`, 'info');
                     statusDiv.textContent = 'Training in progress...';
                     progressBar.style.width = '20%';
                     

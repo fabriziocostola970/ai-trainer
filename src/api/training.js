@@ -115,6 +115,21 @@ router.post('/custom', async (req, res) => {
       style: site.style || 'default'
     }));
 
+    // 🕒 Filter sites that need update (not updated in last month)
+    console.log(`🔍 Filtering ${normalizedSites.length} sites for recent updates...`);
+    const sitesNeedingUpdate = await storage.filterSitesForTraining(normalizedSites);
+    
+    if (sitesNeedingUpdate.length === 0) {
+      return res.json({
+        success: true,
+        message: 'All sites are up to date (updated within last month)',
+        skipped: normalizedSites.length,
+        sitesNeedingUpdate: 0
+      });
+    }
+    
+    console.log(`📊 Sites needing update: ${sitesNeedingUpdate.length}/${normalizedSites.length}`);
+
     const trainingId = `custom-train-${Date.now()}`;
     
     trainingState = {
@@ -122,32 +137,36 @@ router.post('/custom', async (req, res) => {
       trainingId,
       progress: 0,
       samplesCollected: 0,
-      totalSamples: normalizedSites.length,
+      totalSamples: sitesNeedingUpdate.length,
+      originalSitesCount: normalizedSites.length,
+      skippedSitesCount: normalizedSites.length - sitesNeedingUpdate.length,
       currentStep: 'analyzing-custom-sites',
       startTime: new Date(),
       accuracy: null,
-      customSites: normalizedSites
+      customSites: sitesNeedingUpdate
     };
 
     // 💾 Save state and custom sites to persistent storage
     await storage.saveTrainingState(trainingState);
-    await storage.saveCustomSites(normalizedSites);
+    await storage.saveCustomSites(sitesNeedingUpdate);
 
     console.log(`🔗 Starting custom training: ${trainingId}`);
-    console.log(`📊 Custom sites: ${normalizedSites.length}`);
-    normalizedSites.forEach(site => {
+    console.log(`📊 Sites to process: ${sitesNeedingUpdate.length} (${trainingState.skippedSitesCount} skipped as recent)`);
+    sitesNeedingUpdate.forEach(site => {
       console.log(`  - ${site.url} (${site.businessType}, ${site.style})`);
     });
     
     // Start custom training asynchronously
-    startCustomTrainingAsync(trainingId, normalizedSites, aiAnalysis);
+    startCustomTrainingAsync(trainingId, sitesNeedingUpdate, aiAnalysis);
     
     res.json({
       success: true,
       trainingId,
-      sitesCount: normalizedSites.length,
-      estimatedTime: `${normalizedSites.length * 2} minutes`,
-      message: 'Custom training started with your selected sites'
+      sitesCount: sitesNeedingUpdate.length,
+      originalSitesCount: normalizedSites.length,
+      skippedSitesCount: trainingState.skippedSitesCount,
+      estimatedTime: `${sitesNeedingUpdate.length * 2} minutes`,
+      message: `Custom training started with ${sitesNeedingUpdate.length} sites (${trainingState.skippedSitesCount} skipped as recent)`
     });
 
   } catch (error) {
