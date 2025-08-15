@@ -363,12 +363,33 @@ async function startCustomTrainingAsync(trainingId, customSites, useAI) {
               };
               
               console.log(`💾 Attempting to save training sample:`, sampleId);
+              console.log(`🔍 FULL TRAINING SAMPLE DATA BEFORE SAVE:`, JSON.stringify(trainingSample, null, 2));
               
               try {
                 const saveResult = await storage.saveAITrainingSample(trainingSample);
                 
+                console.log(`🔍 SAVE RESULT RAW:`, saveResult);
+                console.log(`🔍 SAVE RESULT TYPE:`, typeof saveResult);
+                console.log(`🔍 SAVE RESULT HAS ID:`, saveResult && saveResult.id);
+                
                 if (saveResult && saveResult.id) {
                   console.log(`✅ Training sample saved successfully: ${sampleId} -> DB ID: ${saveResult.id}`);
+                  
+                  // 🧪 IMMEDIATE VERIFICATION: Check if it's really in the database
+                  console.log(`🧪 IMMEDIATE VERIFICATION: Checking if sample ${saveResult.id} exists in database...`);
+                  try {
+                    const verifyQuery = await storage.pool.query(
+                      'SELECT id, "sampleId", url FROM ai_training_samples WHERE id = $1',
+                      [saveResult.id]
+                    );
+                    if (verifyQuery.rows.length > 0) {
+                      console.log(`✅ VERIFIED: Sample ${saveResult.id} exists in database!`);
+                    } else {
+                      console.error(`❌ CRITICAL PHANTOM SAVE: Sample ${saveResult.id} was returned but NOT found in database!`);
+                    }
+                  } catch (verifyError) {
+                    console.error(`❌ VERIFICATION ERROR:`, verifyError.message);
+                  }
                 } else {
                   console.error(`❌ CRITICAL: Training sample save FAILED for ${sampleId}`);
                   console.error(`❌ Save result:`, saveResult);

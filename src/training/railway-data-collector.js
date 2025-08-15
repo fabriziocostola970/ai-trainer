@@ -225,7 +225,8 @@ class RailwayDataCollector {
           'User-Agent': this.useragent,
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.5',
-          'Accept-Encoding': 'gzip, deflate',
+          // ❌ REMOVED GZIP: Causa corruzione binary
+          // 'Accept-Encoding': 'gzip, deflate',
           'Connection': 'keep-alive'
         },
         timeout: 15000
@@ -243,6 +244,7 @@ class RailwayDataCollector {
         
         res.on('end', () => {
           if (res.statusCode >= 200 && res.statusCode < 300) {
+            console.log(`✅ HTML fetched successfully: ${data.length} chars (uncompressed)`);
             resolve(data);
           } else {
             reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));

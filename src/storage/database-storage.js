@@ -192,6 +192,9 @@ class DatabaseStorage {
       ]);
 
       console.log(`✅ Training sample saved with ID: ${result.rows[0].id}`);
+      console.log(`🔍 FULL SQL RESULT:`, JSON.stringify(result.rows[0], null, 2));
+      console.log(`🔍 SQL RESULT ROWS LENGTH:`, result.rows.length);
+      console.log(`🔍 RETURNING FROM saveAITrainingSample:`, result.rows[0]);
       return result.rows[0];
     } catch (error) {
       // 🚨 CRITICAL ERROR ALERT - Log with alert system
