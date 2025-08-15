@@ -234,6 +234,9 @@ class RailwayDataCollector {
       const req = client.get(url, options, (res) => {
         let data = '';
         
+        // 🔧 Fix encoding per evitare corruzione HTML
+        res.setEncoding('utf8');
+        
         res.on('data', (chunk) => {
           data += chunk;
         });
