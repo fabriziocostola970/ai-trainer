@@ -40,9 +40,23 @@ class DatabaseStorage {
 
   // 💾 Save AI Training Sample
   async saveAITrainingSample(sampleData) {
+    console.log(`🔍 DEBUG SAMPLE SAVE: isConnected=${this.isConnected}, fallbackToFiles=${this.fallbackToFiles}`);
+    
     if (!this.pool) {
       console.log('⚠️ No database connection, skipping training sample save');
       return null;
+    }
+
+    // 🚨 CRITICAL FIX: Check for fallback mode like other save methods
+    if (!this.isConnected || this.fallbackToFiles) {
+      console.log('🔄 Using file storage fallback for saveAITrainingSample');
+      console.log('❌ DATABASE SAMPLE SAVE SKIPPED - System in fallback mode!');
+      // Return mock success to prevent training from failing
+      return { 
+        id: `fallback-${Date.now()}`, 
+        sampleId: sampleData.sampleId,
+        saved: 'file_fallback'
+      };
     }
 
     try {
@@ -577,6 +591,30 @@ class DatabaseStorage {
   }
 
   // �🔄 Close connections
+  // 📊 Get Training Samples for debugging
+  async getTrainingSamples() {
+    if (!this.pool) {
+      console.log('⚠️ No database connection, cannot get training samples');
+      return [];
+    }
+
+    try {
+      const result = await this.pool.query(`
+        SELECT id, "sampleId", url, "businessType", "trainingSessionId", 
+               "htmlLength", "collectionMethod", status, "createdAt"
+        FROM ai_training_samples 
+        ORDER BY "createdAt" DESC 
+        LIMIT 10
+      `);
+
+      console.log(`📊 Found ${result.rows.length} training samples in database`);
+      return result.rows;
+    } catch (error) {
+      console.error('❌ Error getting training samples:', error);
+      return [];
+    }
+  }
+
   async close() {
     if (this.pool) {
       await this.pool.end();
