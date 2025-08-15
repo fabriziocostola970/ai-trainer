@@ -273,11 +273,11 @@
                     <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
                         <h4 style="margin: 0 0 0.5rem 0; color: #495057;">Siti di Test:</h4>
                         <div style="font-size: 0.85rem; color: #6c757d; line-height: 1.4;">
-                            🍕 <strong>Restaurant:</strong> https://www.dominos.com<br>
-                            🛍️ <strong>E-commerce:</strong> https://www.asos.com<br>
-                            🏠 <strong>Real Estate:</strong> https://www.zillow.com<br>
-                            ✈️ <strong>Travel:</strong> https://www.airbnb.com<br>
-                            💼 <strong>Services:</strong> https://www.mailchimp.com
+                            🍕 <strong>Restaurant:</strong> https://www.pizzahut.com<br>
+                            🛍️ <strong>E-commerce:</strong> https://www.etsy.com<br>
+                            🏠 <strong>Real Estate:</strong> https://www.remax.com<br>
+                            ✈️ <strong>Travel:</strong> https://www.booking.com<br>
+                            💼 <strong>Services:</strong> https://www.squarespace.com
                         </div>
                     </div>
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
@@ -930,11 +930,11 @@
         
         // Test sites for batch training
         const testSites = [
-            { url: 'https://www.dominos.com', expectedType: 'restaurant', description: 'Pizza delivery chain' },
-            { url: 'https://www.asos.com', expectedType: 'ecommerce', description: 'Fashion e-commerce' },
-            { url: 'https://www.zillow.com', expectedType: 'real_estate', description: 'Real estate marketplace' },
-            { url: 'https://www.airbnb.com', expectedType: 'travel', description: 'Travel accommodation' },
-            { url: 'https://www.mailchimp.com', expectedType: 'services', description: 'Email marketing service' }
+            { url: 'https://www.pizzahut.com', expectedType: 'restaurant', description: 'Pizza restaurant chain' },
+            { url: 'https://www.etsy.com', expectedType: 'ecommerce', description: 'Handmade marketplace' },
+            { url: 'https://www.remax.com', expectedType: 'real_estate', description: 'Real estate agency' },
+            { url: 'https://www.booking.com', expectedType: 'travel', description: 'Hotel booking platform' },
+            { url: 'https://www.squarespace.com', expectedType: 'services', description: 'Website building service' }
         ];
         
         async function testAutoClassification() {
@@ -1026,7 +1026,7 @@
                     // Monitor training progress
                     const monitorTraining = async () => {
                         try {
-                            const statusResponse = await fetch(`${API_BASE}/api/training/status/${trainingData.trainingId}`, {
+                            const statusResponse = await fetch(`${API_BASE}/api/training/progress/${trainingData.trainingId}`, {
                                 headers: { 'Authorization': `Bearer ${API_KEY}` }
                             });
                             
