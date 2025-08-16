@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const DatabaseStorage = require('../storage/database-storage');
+const DesignIntelligence = require('../ai/design-intelligence');
 
+// 🧠 ENHANCED LAYOUT GENERATION
+// Utilizza pattern estratti per layout più intelligenti
 // 🔄 MAPPING BUSINESS TYPES (Italiano → Inglese per training data)
 const BUSINESS_TYPE_MAPPING = {
   'alimentare': ['restaurant', 'food', 'catering', 'cafe'],
@@ -39,14 +42,72 @@ const authenticateAPI = (req, res, next) => {
   next();
 };
 
-// POST /api/generate/layout - Genera layout semantico ottimizzato
+// 🧠 POST /api/generate/layout - Enhanced with Design Intelligence
 router.post('/layout', authenticateAPI, async (req, res) => {
   try {
-    console.log('🎨 Richiesta generazione layout:', {
+    console.log('🧠 AI-Enhanced Layout Generation:', {
       businessType: req.body.businessType,
       blocksCount: req.body.currentBlocks?.length || 0,
       timestamp: new Date().toISOString()
     });
+
+    const { businessType, businessName, style = 'modern', currentBlocks = [] } = req.body;
+    
+    if (!businessType) {
+      return res.status(400).json({
+        success: false,
+        error: 'Business type is required'
+      });
+    }
+    
+    // Mappa business type e usa Design Intelligence
+    const englishBusinessType = BUSINESS_TYPE_MAPPING[businessType.toLowerCase()]?.[0] || businessType;
+    
+    const designAI = new DesignIntelligence();
+    
+    // 🎨 Genera design completo basato sui pattern estratti
+    const designRecommendation = await designAI.generateCompleteDesignRecommendation(
+      englishBusinessType, 
+      { style, contentType: 'website' }
+    );
+    
+    // 📐 Genera layout specifico per VendiOnline
+    const layoutSuggestions = await designAI.generateLayoutSuggestions(englishBusinessType, 'website');
+    
+    await designAI.close();
+    
+    // 🔧 Genera blocchi semantici migliorati
+    const semanticBlocks = generateEnhancedBlocks(
+      englishBusinessType, 
+      businessName, 
+      designRecommendation.design,
+      currentBlocks
+    );
+    
+    const response = {
+      success: true,
+      source: 'ai-design-intelligence',
+      layoutData: {
+        blocks: semanticBlocks,
+        design: designRecommendation.design,
+        layout: layoutSuggestions,
+        metadata: {
+          businessType: englishBusinessType,
+          originalBusinessType: businessType,
+          style,
+          confidence: designRecommendation.confidence,
+          generatedAt: new Date().toISOString(),
+          aiEnhanced: true
+        }
+      },
+      businessType: englishBusinessType,
+      semanticScore: calculateSemanticScore(semanticBlocks, englishBusinessType),
+      suggestedBlocks: semanticBlocks.map(block => block.type),
+      designConfidence: designRecommendation.confidence
+    };
+    
+    console.log(`✅ AI-enhanced layout generated with ${designRecommendation.confidence}% confidence`);
+    res.json(response);
 
     const { businessType, businessName, style, currentBlocks, preferences, requirements } = req.body;
     
@@ -486,5 +547,291 @@ router.post('/template', async (req, res) => {
     });
   }
 });
+
+// 🧠 ENHANCED FUNCTIONS WITH DESIGN INTELLIGENCE
+
+/**
+ * Genera blocchi migliorati utilizzando i pattern di design estratti
+ */
+function generateEnhancedBlocks(businessType, businessName, designData, currentBlocks = []) {
+  console.log(`🧠 Generating enhanced blocks for ${businessType} with AI design data`);
+  
+  const blocks = [];
+  
+  // 1. Navigation (sempre ottimizzata con design patterns)
+  blocks.push({
+    id: `nav-${Date.now()}`,
+    type: 'navigation',
+    title: 'Navigazione Ottimizzata',
+    content: {
+      title: businessName || 'Il Tuo Business',
+      logo: null,
+      items: getOptimizedNavItems(businessType),
+      backgroundColor: designData.colors?.background || '#FFFFFF',
+      textColor: designData.colors?.text || '#1F2937',
+      style: designData.layout?.recommendedStyle || 'modern'
+    },
+    aiEnhanced: true,
+    confidence: designData.layout?.confidence || 'medium'
+  });
+  
+  // 2. Hero Section (con colori e font da pattern reali)
+  blocks.push({
+    id: `hero-${Date.now()}`,
+    type: 'hero',
+    title: 'Hero Section AI-Enhanced',
+    content: {
+      title: getAIOptimizedTitle(businessType, businessName),
+      subtitle: getAIOptimizedSubtitle(businessType),
+      ctaText: getAIOptimizedCTA(businessType),
+      ctaUrl: '#contatti',
+      backgroundColor: designData.colors?.primary || '#3B82F6',
+      textColor: '#FFFFFF',
+      typography: designData.typography?.primary || 'Inter'
+    },
+    aiEnhanced: true,
+    designSource: 'extracted-patterns'
+  });
+  
+  // 3. Sezioni specifiche per business type (basate su analisi reali)
+  const businessSpecificBlocks = getBusinessSpecificBlocks(businessType, designData);
+  blocks.push(...businessSpecificBlocks);
+  
+  // 4. Contact Form (ottimizzato per conversioni)
+  blocks.push({
+    id: `contact-${Date.now()}`,
+    type: 'contact-form',
+    title: 'Modulo Contatto Ottimizzato',
+    content: {
+      title: 'Contattaci Subito',
+      subtitle: 'Saremo felici di aiutarti',
+      fields: getOptimizedContactFields(businessType),
+      submitText: getOptimizedSubmitText(businessType),
+      backgroundColor: designData.colors?.background || '#FFFFFF',
+      accentColor: designData.colors?.accent || '#F59E0B'
+    },
+    aiEnhanced: true,
+    conversionOptimized: true
+  });
+  
+  console.log(`✅ Generated ${blocks.length} AI-enhanced blocks`);
+  return blocks;
+}
+
+/**
+ * Genera sezioni specifiche per business type basate sui pattern estratti
+ */
+function getBusinessSpecificBlocks(businessType, designData) {
+  const blocks = [];
+  
+  switch (businessType) {
+    case 'restaurant':
+    case 'food':
+      // Menu section ottimizzata per ristoranti
+      blocks.push({
+        id: `menu-${Date.now()}`,
+        type: 'menu',
+        title: 'Menu Digitale',
+        content: {
+          title: 'Il Nostro Menu',
+          subtitle: 'Scopri i nostri piatti preparati con ingredienti freschi',
+          backgroundColor: designData.colors?.secondary || '#F8F9FA',
+          accentColor: designData.colors?.accent || '#D97706'
+        },
+        aiEnhanced: true,
+        businessOptimized: true
+      });
+      
+      // Location section per ristoranti
+      blocks.push({
+        id: `location-${Date.now()}`,
+        type: 'location',
+        title: 'Dove Trovarci',
+        content: {
+          title: 'Vieni a Trovarci',
+          showMap: true,
+          showContactInfo: true,
+          backgroundColor: designData.colors?.background || '#FFFFFF'
+        },
+        aiEnhanced: true
+      });
+      break;
+      
+    case 'ecommerce':
+    case 'shop':
+      // Product showcase ottimizzato per e-commerce
+      blocks.push({
+        id: `products-${Date.now()}`,
+        type: 'product-showcase',
+        title: 'Vetrina Prodotti',
+        content: {
+          title: 'I Nostri Prodotti',
+          subtitle: 'Scopri la nostra selezione curata',
+          columns: 3,
+          showPrices: true,
+          showDescriptions: true,
+          backgroundColor: designData.colors?.background || '#F8F9FA'
+        },
+        aiEnhanced: true,
+        ecommerceOptimized: true
+      });
+      break;
+      
+    case 'portfolio':
+    case 'personal':
+      // Gallery per portfolio
+      blocks.push({
+        id: `gallery-${Date.now()}`,
+        type: 'gallery',
+        title: 'Portfolio Gallery',
+        content: {
+          title: 'I Miei Lavori',
+          subtitle: 'Una selezione dei progetti più rappresentativi',
+          images: [],
+          backgroundColor: designData.colors?.background || '#FFFFFF'
+        },
+        aiEnhanced: true
+      });
+      break;
+      
+    case 'services':
+    case 'consulting':
+      // Services section ottimizzata
+      blocks.push({
+        id: `services-${Date.now()}`,
+        type: 'services',
+        title: 'I Nostri Servizi',
+        content: {
+          title: 'Cosa Facciamo',
+          subtitle: 'Servizi professionali su misura per te',
+          services: [],
+          backgroundColor: designData.colors?.background || '#F8F9FA'
+        },
+        aiEnhanced: true
+      });
+      break;
+      
+    default:
+      // About section generica ma ottimizzata
+      blocks.push({
+        id: `about-${Date.now()}`,
+        type: 'about',
+        title: 'Chi Siamo',
+        content: {
+          title: 'La Nostra Storia',
+          description: 'Scopri di più su di noi e sui nostri valori',
+          backgroundColor: designData.colors?.background || '#F8F9FA'
+        },
+        aiEnhanced: true
+      });
+  }
+  
+  return blocks;
+}
+
+// Helper functions per contenuti ottimizzati
+function getOptimizedNavItems(businessType) {
+  const baseItems = [
+    { label: 'Home', url: '#', active: true },
+    { label: 'Chi Siamo', url: '#about', active: false },
+    { label: 'Contatti', url: '#contatti', active: false }
+  ];
+  
+  switch (businessType) {
+    case 'restaurant':
+    case 'food':
+      return [
+        ...baseItems.slice(0, 1),
+        { label: 'Menu', url: '#menu', active: false },
+        { label: 'Dove Siamo', url: '#location', active: false },
+        ...baseItems.slice(1)
+      ];
+    case 'ecommerce':
+    case 'shop':
+      return [
+        ...baseItems.slice(0, 1),
+        { label: 'Prodotti', url: '#prodotti', active: false },
+        { label: 'Categorie', url: '#categorie', active: false },
+        ...baseItems.slice(1)
+      ];
+    default:
+      return baseItems;
+  }
+}
+
+function getAIOptimizedTitle(businessType, businessName) {
+  if (businessName && businessName !== 'Il Tuo Business') {
+    return businessName;
+  }
+  
+  const titles = {
+    restaurant: 'Sapori Autentici, Esperienza Unica',
+    'tech-startup': 'Innovazione che Trasforma il Futuro',
+    ecommerce: 'Prodotti di Qualità, Consegna Rapida',
+    portfolio: 'Creatività e Professionalità',
+    wellness: 'Il Tuo Benessere è la Nostra Missione'
+  };
+  
+  return titles[businessType] || 'Benvenuto nel Nostro Mondo';
+}
+
+function getAIOptimizedSubtitle(businessType) {
+  const subtitles = {
+    restaurant: 'Piatti preparati con passione, ingredienti locali e ricette tradizionali',
+    'tech-startup': 'Soluzioni tecnologiche avanzate per accelerare la crescita del tuo business',
+    ecommerce: 'Scopri la nostra selezione curata di prodotti premium per ogni esigenza',
+    portfolio: 'Progetti realizzati con cura, attenzione ai dettagli e risultati eccellenti',
+    wellness: 'Servizi professionali per il tuo equilibrio fisico e mentale'
+  };
+  
+  return subtitles[businessType] || 'Scopri prodotti e servizi di qualità superiore';
+}
+
+function getAIOptimizedCTA(businessType) {
+  const ctas = {
+    restaurant: 'Prenota Ora',
+    'tech-startup': 'Inizia Gratis',
+    ecommerce: 'Esplora Prodotti',
+    portfolio: 'Vedi Portfolio',
+    wellness: 'Prenota Consulenza'
+  };
+  
+  return ctas[businessType] || 'Scopri di Più';
+}
+
+function calculateSemanticScore(blocks, businessType) {
+  let score = 0;
+  const maxScore = 100;
+  
+  // Base score per avere blocchi
+  if (blocks.length > 0) score += 20;
+  
+  // Bonus per AI enhancement
+  const aiEnhancedBlocks = blocks.filter(block => block.aiEnhanced);
+  score += Math.min(30, aiEnhancedBlocks.length * 10);
+  
+  // Bonus per business-specific optimization
+  const businessOptimizedBlocks = blocks.filter(block => block.businessOptimized);
+  score += Math.min(25, businessOptimizedBlocks.length * 15);
+  
+  // Bonus per sezioni appropriate al business type
+  const requiredSections = getRequiredSections(businessType);
+  const presentSections = blocks.map(block => block.type);
+  const matchingRequired = requiredSections.filter(section => presentSections.includes(section));
+  score += Math.min(25, (matchingRequired.length / requiredSections.length) * 25);
+  
+  return Math.min(maxScore, Math.round(score));
+}
+
+function getRequiredSections(businessType) {
+  const sections = {
+    restaurant: ['navigation', 'hero', 'menu', 'location', 'contact-form'],
+    ecommerce: ['navigation', 'hero', 'product-showcase', 'contact-form'],
+    portfolio: ['navigation', 'hero', 'gallery', 'about', 'contact-form'],
+    services: ['navigation', 'hero', 'services', 'about', 'contact-form']
+  };
+  
+  return sections[businessType] || ['navigation', 'hero', 'about', 'contact-form'];
+}
 
 module.exports = router;

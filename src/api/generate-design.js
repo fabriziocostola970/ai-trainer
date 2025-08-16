@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const DatabaseStorage = require('../storage/database-storage');
+const DesignIntelligence = require('../ai/design-intelligence');
 
-// 🎨 GENERATE DESIGN PATTERNS API
-// Genera palette colori e stili basati su training data
+// 🧠 ENHANCED DESIGN GENERATION API  
+// Utilizza Design Intelligence per generare design basati sui pattern estratti
 
 const authenticateAPI = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -27,76 +28,184 @@ const authenticateAPI = (req, res, next) => {
   next();
 };
 
-// 🎨 POST /api/generate/design-palette
+// 🧠 POST /api/generate/design-palette - Enhanced with AI
 router.post('/design-palette', authenticateAPI, async (req, res) => {
   try {
-    const { businessType, style = 'modern' } = req.body;
+    const { businessType, style = 'modern', requirements = {} } = req.body;
     
-    console.log('🎨 Generating design palette for:', { businessType, style });
+    console.log('🧠 Generating AI-powered design for:', { businessType, style, requirements });
     
-    const storage = new DatabaseStorage();
+    const designAI = new DesignIntelligence();
     
-    // 1. Cerca pattern esistenti per questo business type
-    const existingPatterns = await storage.pool.query(`
-      SELECT * FROM design_patterns 
-      WHERE business_type = $1 
-        AND pattern_type = 'color_palette'
-        AND effectiveness_score > 7.0
-      ORDER BY usage_count DESC, effectiveness_score DESC
-      LIMIT 5
-    `, [businessType]);
+    // Utilizza Design Intelligence per generare design ottimizzato
+    const colorPalette = await designAI.generateColorPalette(businessType, style);
+    const fontRecommendations = await designAI.recommendFontPairings(businessType, requirements.tone || 'professional');
+    const layoutSuggestions = await designAI.generateLayoutSuggestions(businessType, requirements.contentType || 'standard');
     
-    console.log(`📊 Found ${existingPatterns.rows.length} existing patterns`);
+    // Genera CSS ottimizzato
+    const cssRecommendations = designAI.generateCSSRecommendations(colorPalette, fontRecommendations, layoutSuggestions);
     
-    if (existingPatterns.rows.length > 0) {
-      // Usa pattern esistenti con alta efficacia
-      const bestPattern = existingPatterns.rows[0];
-      
-      // Incrementa usage_count
-      await storage.pool.query(`
-        UPDATE design_patterns 
-        SET usage_count = usage_count + 1, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $1
-      `, [bestPattern.id]);
-      
-      return res.json({
-        success: true,
-        source: 'learned_patterns',
-        design: {
-          primaryColor: bestPattern.primary_color,
-          secondaryColor: bestPattern.secondary_color,
-          accentColor: bestPattern.accent_color,
-          backgroundColor: bestPattern.background_color,
-          textColor: bestPattern.text_color,
-          palette: bestPattern.color_palette,
-          layoutStyle: bestPattern.layout_style,
-          typography: {
-            primaryFont: bestPattern.primary_font,
-            secondaryFont: bestPattern.secondary_font,
-            fontWeights: bestPattern.font_weights,
-            fontSizes: bestPattern.font_sizes
-          },
-          spacing: bestPattern.spacing_scale,
-          imageStyle: bestPattern.image_style,
-          effectiveness: bestPattern.effectiveness_score,
-          usageCount: bestPattern.usage_count + 1
+    await designAI.close();
+    
+    const response = {
+      success: true,
+      source: 'ai-design-intelligence',
+      design: {
+        // 🎨 Colors (basati sui pattern più efficaci)
+        primaryColor: colorPalette.primary,
+        secondaryColor: colorPalette.secondary,
+        accentColor: colorPalette.accent,
+        backgroundColor: colorPalette.background,
+        textColor: colorPalette.text,
+        palette: colorPalette.palette,
+        
+        // ✍️ Typography (analizzato da siti reali)
+        typography: {
+          primaryFont: fontRecommendations.primary,
+          secondaryFont: fontRecommendations.secondary,
+          fontWeights: fontRecommendations.weights,
+          fontSizes: fontRecommendations.sizes,
+          bestPairings: fontRecommendations.bestPairings
+        },
+        
+        // 📐 Layout (pattern di successo)
+        layout: {
+          style: layoutSuggestions.recommendedStyle,
+          gridSystem: layoutSuggestions.gridSystem,
+          spacing: layoutSuggestions.spacing,
+          sections: layoutSuggestions.sections,
+          responsive: layoutSuggestions.responsive
+        },
+        
+        // 🎯 CSS Ready-to-use
+        css: cssRecommendations,
+        
+        // 📊 Confidence metrics
+        confidence: {
+          colors: colorPalette.confidence,
+          typography: fontRecommendations.confidence,
+          layout: layoutSuggestions.confidence,
+          overall: Math.round((
+            (colorPalette.confidence === 'high' ? 90 : colorPalette.confidence === 'medium' ? 70 : 50) +
+            (fontRecommendations.confidence === 'high' ? 90 : fontRecommendations.confidence === 'medium' ? 70 : 50) +
+            (layoutSuggestions.confidence === 'high' ? 90 : layoutSuggestions.confidence === 'medium' ? 70 : 50)
+          ) / 3)
         }
+      },
+      businessType,
+      style,
+      requirements,
+      generatedAt: new Date().toISOString(),
+      processingTime: Date.now() - Date.now() // TODO: measure actual time
+    };
+    
+    console.log(`✅ AI design generated with ${response.design.confidence.overall}% confidence`);
+    res.json(response);
+    
+  } catch (error) {
+    console.error('❌ Design generation error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      source: 'ai-design-intelligence'
+    });
+  }
+});
+
+// 🎯 NEW: POST /api/generate/complete-design - Full AI-powered design system
+router.post('/complete-design', authenticateAPI, async (req, res) => {
+  try {
+    const { businessType, requirements = {} } = req.body;
+    
+    if (!businessType) {
+      return res.status(400).json({
+        success: false,
+        error: 'businessType is required'
       });
     }
     
-    // 2. Se non ci sono pattern, genera usando regole intelligenti
-    const generatedDesign = generateIntelligentDesign(businessType, style);
+    console.log('🎯 Generating complete AI design system for:', businessType);
     
-    // 3. Salva il nuovo pattern nel database per future analisi
-    const newPattern = await storage.pool.query(`
-      INSERT INTO design_patterns (
-        business_type, pattern_type, primary_color, secondary_color, 
-        accent_color, background_color, text_color, color_palette,
-        layout_style, primary_font, secondary_font, font_weights, 
-        font_sizes, spacing_scale, image_style, extraction_method,
-        confidence_level, usage_count
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-      RETURNING id
+    const designAI = new DesignIntelligence();
+    const completeDesign = await designAI.generateCompleteDesignRecommendation(businessType, requirements);
+    await designAI.close();
+    
+    res.json({
+      success: true,
+      ...completeDesign,
+      message: 'Complete design system generated using extracted patterns',
+      processingTime: Date.now() - Date.now() // TODO: measure actual time
+    });
+    
+  } catch (error) {
+    console.error('❌ Complete design generation error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// 📊 NEW: GET /api/generate/design-analytics/:businessType - Analisi pattern estratti
+router.get('/design-analytics/:businessType', authenticateAPI, async (req, res) => {
+  try {
+    const { businessType } = req.params;
+    const designAI = new DesignIntelligence();
+    
+    // Query analisi pattern estratti
+    const analytics = await designAI.pool.query(`
+      SELECT 
+        pattern_type,
+        COUNT(*) as total_patterns,
+        AVG(effectiveness_score) as avg_effectiveness,
+        MAX(effectiveness_score) as max_effectiveness,
+        SUM(usage_count) as total_usage
+      FROM design_patterns 
+      WHERE business_type = $1 
+      GROUP BY pattern_type
+      ORDER BY total_patterns DESC
+    `, [businessType]);
+    
+    const colorTrends = await designAI.pool.query(`
+      SELECT primary_color, COUNT(*) as frequency 
+      FROM design_patterns 
+      WHERE business_type = $1 AND pattern_type = 'color_palette'
+      GROUP BY primary_color 
+      ORDER BY frequency DESC 
+      LIMIT 10
+    `, [businessType]);
+    
+    const fontTrends = await designAI.pool.query(`
+      SELECT primary_font, COUNT(*) as frequency 
+      FROM design_patterns 
+      WHERE business_type = $1 AND pattern_type = 'typography'
+      GROUP BY primary_font 
+      ORDER BY frequency DESC 
+      LIMIT 10
+    `, [businessType]);
+    
+    await designAI.close();
+    
+    res.json({
+      success: true,
+      businessType,
+      analytics: {
+        overview: analytics.rows,
+        colorTrends: colorTrends.rows,
+        fontTrends: fontTrends.rows,
+        totalPatterns: analytics.rows.reduce((sum, row) => sum + parseInt(row.total_patterns), 0),
+        lastUpdated: new Date().toISOString()
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Design analytics error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
     `, [
       businessType, 'color_palette', 
       generatedDesign.primaryColor, generatedDesign.secondaryColor,
