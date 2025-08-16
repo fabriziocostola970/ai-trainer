@@ -309,48 +309,53 @@
         
         <div class="actions" style="margin-top: 2rem;">
             <div class="action-card">
-                <h3>🎨 Graphic Analysis & Improvement</h3>
-                <p>Analizza e migliora la grafica usando l'AI allenata</p>
+                <h3>🎨 Design Intelligence Engine</h3>
+                <p>Estrazione automatica di CSS, font e pattern dai siti analizzati</p>
                 <div style="margin: 1rem 0;">
-                    <div style="background: #e8f5e8; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #2d5016;">🎨 Funzionalità Grafiche:</h4>
-                        <div style="font-size: 0.85rem; color: #2d5016; line-height: 1.4;">
-                            🎨 <strong>Estrazione CSS:</strong> Salva stili da siti analizzati<br>
-                            🌈 <strong>Analisi Colori:</strong> Identifica palette vincenti<br>
-                            📝 <strong>Font Analysis:</strong> Trova combinazioni perfette<br>
-                            📐 <strong>Pattern Design:</strong> Layout e strutture ottimali
+                    <div style="background: #e3f2fd; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #1565c0;">🧠 Estrazione Automatica durante Training:</h4>
+                        <div style="font-size: 0.85rem; color: #1565c0; line-height: 1.4;">
+                            🎨 <strong>CSS Extraction:</strong> Estrae automaticamente stili CSS durante analisi<br>
+                            🌈 <strong>Color Palette Mining:</strong> Identifica palette dominanti e armoniose<br>
+                            📝 <strong>Font Intelligence:</strong> Rileva combinazioni tipografiche vincenti<br>
+                            📐 <strong>Layout Pattern Recognition:</strong> Cattura strutture e pattern di design<br>
+                            🎯 <strong>Auto-Classification:</strong> Classifica automaticamente per business type
                         </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem;">
-                        <button class="btn" id="btn-analyze-colors" style="background: #e91e63; flex: 1;">
-                            🌈 Analyze Colors
+                        <button class="btn" id="btn-extract-library" style="background: #2196f3; flex: 1;">
+                            � Extract Design Library
                         </button>
-                        <button class="btn" id="btn-analyze-fonts" style="background: #9c27b0; flex: 1;">
-                            📝 Analyze Fonts
+                        <button class="btn" id="btn-analyze-patterns" style="background: #3f51b5; flex: 1;">
+                            � Analyze Stored Patterns
                         </button>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem;">
-                        <button class="btn" id="btn-generate-css" style="background: #ff9800; flex: 1;">
-                            🔧 Generate CSS
+                        <button class="btn" id="btn-classify-samples" style="background: #673ab7; flex: 1;">
+                            🧠 Classify Training Samples
                         </button>
-                        <button class="btn" id="btn-preview-improved" style="background: #4caf50; flex: 1;">
-                            👀 Preview Improved
+                        <button class="btn" id="btn-export-library" style="background: #009688; flex: 1;">
+                            � Export CSS Library
                         </button>
                     </div>
-                    <div id="graphic-stats" style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
-                        <div style="font-weight: bold; margin-bottom: 0.5rem;">📊 Graphic Library Stats:</div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
+                    <div id="extraction-stats" style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
+                        <div style="font-weight: bold; margin-bottom: 0.5rem;">📊 Extracted Design Library:</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
                             <div style="text-align: center;">
-                                <div style="font-weight: bold; color: #e91e63;" id="colorPalettes">-</div>
+                                <div style="font-weight: bold; color: #2196f3;" id="extractedCSS">0</div>
+                                <div style="font-size: 0.8rem; color: #666;">CSS Themes</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-weight: bold; color: #e91e63;" id="extractedColors">0</div>
                                 <div style="font-size: 0.8rem; color: #666;">Color Palettes</div>
                             </div>
                             <div style="text-align: center;">
-                                <div style="font-weight: bold; color: #9c27b0;" id="fontCombos">-</div>
+                                <div style="font-weight: bold; color: #9c27b0;" id="extractedFonts">0</div>
                                 <div style="font-size: 0.8rem; color: #666;">Font Combos</div>
                             </div>
                             <div style="text-align: center;">
-                                <div style="font-weight: bold; color: #ff9800;" id="cssRules">-</div>
-                                <div style="font-size: 0.8rem; color: #666;">CSS Rules</div>
+                                <div style="font-weight: bold; color: #ff9800;" id="extractedPatterns">0</div>
+                                <div style="font-size: 0.8rem; color: #666;">Layout Patterns</div>
                             </div>
                         </div>
                     </div>
@@ -760,11 +765,11 @@
             document.getElementById('btn-auto-classify').addEventListener('click', testAutoClassification);
             document.getElementById('btn-batch-train').addEventListener('click', startBatchTraining);
             
-            // 🎨 Graphic Analysis & Improvement event listeners
-            document.getElementById('btn-analyze-colors').addEventListener('click', analyzeColorPalettes);
-            document.getElementById('btn-analyze-fonts').addEventListener('click', analyzeFontCombinations);
-            document.getElementById('btn-generate-css').addEventListener('click', generateImprovedCSS);
-            document.getElementById('btn-preview-improved').addEventListener('click', previewImprovedStyles);
+            // 🎨 Design Intelligence Engine event listeners
+            document.getElementById('btn-extract-library').addEventListener('click', extractDesignLibrary);
+            document.getElementById('btn-analyze-patterns').addEventListener('click', analyzeStoredPatterns);
+            document.getElementById('btn-classify-samples').addEventListener('click', classifyTrainingSamples);
+            document.getElementById('btn-export-library').addEventListener('click', exportCSSLibrary);
             
             logMessage('🎛️ Button event listeners attached', 'info');
             
@@ -773,10 +778,10 @@
                 getServerStatus();
             }, 1000);
             
-            // 🎨 Auto load graphic stats
+            // 🎨 Auto load extraction stats
             setTimeout(() => {
-                loadGraphicStats();
-                logMessage('🎨 Graphic stats monitoring started', 'info');
+                loadExtractionStats();
+                logMessage('🎨 Design extraction stats monitoring started', 'info');
             }, 3000);
             
             // 🚨 Start alert monitoring
@@ -1287,128 +1292,172 @@
             }
         }
         
-        // 🎨 COLOR ANALYSIS FUNCTIONS
-        async function analyzeColorPalettes() {
+        // 🎨 DESIGN INTELLIGENCE ENGINE - AUTOMATIC EXTRACTION
+        async function extractDesignLibrary() {
             try {
-                logMessage('🎨 Analyzing collected color palettes...', 'info');
+                logMessage('🎨 Starting design library extraction from analyzed sites...', 'info');
                 
-                const response = await fetch(`${API_BASE}/api/design/analyze-colors`, {
-                    headers: { 'Authorization': `Bearer ${API_KEY}` }
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    logMessage('🎨 Color Analysis Results:', 'success');
-                    
-                    if (result.popularColors) {
-                        logMessage(`  🔥 Most used colors: ${result.popularColors.slice(0, 5).join(', ')}`, 'info');
-                    }
-                    
-                    if (result.colorHarmonies) {
-                        logMessage(`  🌈 Harmonious combinations: ${result.colorHarmonies.length} found`, 'info');
-                    }
-                    
-                    if (result.businessTypeColors) {
-                        Object.entries(result.businessTypeColors).forEach(([type, colors]) => {
-                            logMessage(`  🏷️ ${type}: ${colors.slice(0, 3).join(', ')}`, 'info');
-                        });
-                    }
-                    
-                } else {
-                    logMessage(`❌ Color analysis failed: ${result.error}`, 'error');
-                }
-                
-            } catch (error) {
-                logMessage(`❌ Color analysis error: ${error.message}`, 'error');
-            }
-        }
-        
-        // 📝 FONT ANALYSIS FUNCTIONS
-        async function analyzeFontCombinations() {
-            try {
-                logMessage('📝 Analyzing font combinations...', 'info');
-                
-                const response = await fetch(`${API_BASE}/api/design/analyze-fonts`, {
-                    headers: { 'Authorization': `Bearer ${API_KEY}` }
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    logMessage('📝 Font Analysis Results:', 'success');
-                    
-                    if (result.popularFonts) {
-                        logMessage(`  📊 Most used fonts: ${result.popularFonts.slice(0, 5).join(', ')}`, 'info');
-                    }
-                    
-                    if (result.fontPairings) {
-                        logMessage(`  💑 Best pairings: ${result.fontPairings.length} combinations`, 'info');
-                        result.fontPairings.slice(0, 3).forEach(pair => {
-                            logMessage(`    • ${pair.header} + ${pair.body} (score: ${pair.score})`, 'info');
-                        });
-                    }
-                    
-                    if (result.businessTypeFonts) {
-                        Object.entries(result.businessTypeFonts).forEach(([type, fonts]) => {
-                            logMessage(`  🏷️ ${type}: ${fonts.slice(0, 2).join(' + ')}`, 'info');
-                        });
-                    }
-                    
-                } else {
-                    logMessage(`❌ Font analysis failed: ${result.error}`, 'error');
-                }
-                
-            } catch (error) {
-                logMessage(`❌ Font analysis error: ${error.message}`, 'error');
-            }
-        }
-        
-        // 🎨 PREVIEW IMPROVED STYLES
-        async function previewImprovedStyles() {
-            try {
-                logMessage('🎨 Generating preview with improved styles...', 'info');
-                
-                const businessType = document.getElementById('generated-business-type').value;
-                const businessName = document.getElementById('business-name').value || `Improved ${businessType}`;
-                
-                const response = await fetch(`${API_BASE}/api/design/preview-improved`, {
+                const response = await fetch(`${API_BASE}/api/design/extract-library`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEY}`
+                    headers: { 
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        businessType: businessType,
-                        businessName: businessName,
-                        useImprovedCSS: true,
-                        useAnalyzedColors: true,
-                        useAnalyzedFonts: true
+                        extractionMode: 'automatic',
+                        includePatterns: true,
+                        businessTypes: ['restaurant', 'ecommerce', 'tech-startup', 'portfolio']
                     })
                 });
                 
                 const result = await response.json();
                 
-                if (result.success && result.previewHTML) {
-                    // Open improved preview
-                    const blob = new Blob([result.previewHTML], { type: 'text/html' });
-                    const url = URL.createObjectURL(blob);
-                    const previewWindow = window.open(url, '_blank');
+                if (result.success) {
+                    logMessage(`🎨 Design extraction completed!`, 'success');
+                    logMessage(`📊 Extracted: ${result.extracted.cssThemes} CSS themes, ${result.extracted.colorPalettes} palettes`, 'success');
+                    logMessage(`📝 Font combinations: ${result.extracted.fontCombinations}`, 'info');
+                    logMessage(`📐 Layout patterns: ${result.extracted.layoutPatterns}`, 'info');
                     
-                    setTimeout(() => URL.revokeObjectURL(url), 1000);
-                    
-                    logMessage('✅ Improved style preview opened!', 'success');
-                    logMessage(`🎨 Applied ${result.appliedStyles} improved styles`, 'info');
+                    // Update extraction stats
+                    updateExtractionStats(result.extracted);
                     
                 } else {
-                    logMessage(`❌ Preview generation failed: ${result.error}`, 'error');
+                    logMessage(`❌ Design extraction failed: ${result.error}`, 'error');
                 }
                 
             } catch (error) {
-                logMessage(`❌ Preview error: ${error.message}`, 'error');
+                logMessage(`❌ Extraction error: ${error.message}`, 'error');
             }
         }
         
+        async function analyzeStoredPatterns() {
+            try {
+                logMessage('📊 Analyzing stored design patterns...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/design/analyze-patterns`, {
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    logMessage(`📊 Pattern analysis completed!`, 'success');
+                    logMessage(`🏆 Best performing patterns: ${result.analysis.topPatterns}`, 'info');
+                    logMessage(`📈 Quality score average: ${result.analysis.avgQualityScore}%`, 'info');
+                    logMessage(`🎯 Business type coverage: ${result.analysis.businessTypeCoverage.join(', ')}`, 'info');
+                    
+                } else {
+                    logMessage(`❌ Pattern analysis failed: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Analysis error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function classifyTrainingSamples() {
+            try {
+                logMessage('🧠 Auto-classifying training samples by design patterns...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/design/classify-samples`, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        classificationCriteria: ['businessType', 'colorScheme', 'layoutStructure', 'typography'],
+                        autoTag: true
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    logMessage(`🧠 Classification completed!`, 'success');
+                    logMessage(`📊 Classified ${result.classified.totalSamples} samples`, 'success');
+                    logMessage(`🏷️ Auto-tagged: ${result.classified.autoTagged} patterns`, 'info');
+                    logMessage(`📈 Confidence average: ${result.classified.avgConfidence}%`, 'info');
+                    
+                } else {
+                    logMessage(`❌ Classification failed: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Classification error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function exportCSSLibrary() {
+            try {
+                logMessage('💾 Exporting CSS library from extracted patterns...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/design/export-library`, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        format: 'css',
+                        includeResponsive: true,
+                        businessTypes: 'all',
+                        qualityThreshold: 7.0
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Create downloadable CSS file
+                    const cssBlob = new Blob([result.cssContent], { type: 'text/css' });
+                    const url = URL.createObjectURL(cssBlob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `ai-trainer-library-${new Date().toISOString().split('T')[0]}.css`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    logMessage(`💾 CSS library exported!`, 'success');
+                    logMessage(`📊 Exported ${result.exportStats.themes} themes in ${result.exportStats.fileSize}`, 'success');
+                    
+                } else {
+                    logMessage(`❌ Export failed: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Export error: ${error.message}`, 'error');
+            }
+        }
+        
+        function updateExtractionStats(extracted) {
+            document.getElementById('extractedCSS').textContent = extracted.cssThemes || 0;
+            document.getElementById('extractedColors').textContent = extracted.colorPalettes || 0;
+            document.getElementById('extractedFonts').textContent = extracted.fontCombinations || 0;
+            document.getElementById('extractedPatterns').textContent = extracted.layoutPatterns || 0;
+        }
+        
+        async function loadExtractionStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/design/extraction-stats`, {
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateExtractionStats(result.stats);
+                    logMessage(`📊 Extraction stats loaded`, 'info');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Failed to load extraction stats: ${error.message}`, 'error');
+            }
+        }
+
         // 🎨 GRAPHIC STATS MONITORING
         async function loadGraphicStats() {
             try {
