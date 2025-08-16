@@ -275,17 +275,18 @@
             </div>
             
             <div class="action-card">
-                <h3>🚀 Batch Auto-Training</h3>
-                <p>Training automatico con 50 siti diversi - Dataset completo per AI training</p>
+                <h3>🚀 Auto Complete Training</h3>
+                <p>Training automatico completo: raccolta + estrazione + analisi + export in un click</p>
                 <div style="margin: 1rem 0;">
                     <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #495057;">Dataset Completo:</h4>
+                        <h4 style="margin: 0 0 0.5rem 0; color: #495057;">🤖 Processo Completamente Automatico:</h4>
                         <div style="font-size: 0.85rem; color: #6c757d; line-height: 1.4;">
-                            🍕 <strong>Restaurants:</strong> 10 siti (McDonald's, Starbucks, KFC, ecc.)<br>
-                            🛍️ <strong>E-commerce:</strong> 15 siti (Amazon, eBay, Nike, Zara, ecc.)<br>
-                            🏠 <strong>Real Estate:</strong> 10 siti (Zillow, Century21, Coldwell Banker, ecc.)<br>
-                            ✈️ <strong>Travel:</strong> 10 siti (Expedia, Airbnb, Marriott, Delta, ecc.)<br>
-                            💼 <strong>Services:</strong> 5 siti (Wix, WordPress, Shopify, ecc.)
+                            1. 🚀 <strong>Raccolta HTML</strong> da 5 siti diversi<br>
+                            2. 🎨 <strong>Estrazione CSS</strong> automatica durante analisi<br>
+                            3. � <strong>Analisi Colori</strong> e palette vincenti<br>
+                            4. 📝 <strong>Analisi Font</strong> e combinazioni tipografiche<br>
+                            5. 🧠 <strong>Classificazione</strong> automatica per business type<br>
+                            6. � <strong>Export CSS Library</strong> pronta all'uso
                         </div>
                     </div>
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
@@ -293,14 +294,22 @@
                             🧠 Test Auto-Classification
                         </button>
                         <button class="btn" id="btn-batch-train" style="background: #fd7e14; flex: 1;">
-                            🚀 Batch Train (5 Sites)
+                            🚀 Auto Train Complete (5 Sites)
                         </button>
                     </div>
                     <div id="batch-progress" style="display: none; background: #e3f2fd; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
-                        <div style="font-weight: bold; margin-bottom: 0.5rem;">📊 Training Progress:</div>
-                        <div id="batch-status">Initializing...</div>
+                        <div style="font-weight: bold; margin-bottom: 0.5rem;">📊 Auto Training Progress:</div>
+                        <div id="batch-status">Initializing complete process...</div>
                         <div style="background: #fff; border-radius: 3px; height: 8px; margin-top: 0.5rem; overflow: hidden;">
                             <div id="batch-progress-bar" style="background: #2196f3; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                        </div>
+                        <div id="batch-steps" style="margin-top: 1rem; font-size: 0.85rem; color: #666;">
+                            <div id="step-collect">⏳ Step 1: Collecting HTML from 5 sites...</div>
+                            <div id="step-extract" style="opacity: 0.5;">⏳ Step 2: Extracting CSS and colors...</div>
+                            <div id="step-analyze" style="opacity: 0.5;">⏳ Step 3: Analyzing fonts and patterns...</div>
+                            <div id="step-classify" style="opacity: 0.5;">⏳ Step 4: Auto-classifying samples...</div>
+                            <div id="step-export" style="opacity: 0.5;">⏳ Step 5: Exporting CSS library...</div>
+                            <div id="step-complete" style="opacity: 0.5;">⏳ Step 6: Process complete!</div>
                         </div>
                     </div>
                 </div>
@@ -1122,99 +1131,153 @@
                 
                 // Show progress UI
                 progressDiv.style.display = 'block';
-                statusDiv.textContent = 'Starting batch training...';
+                statusDiv.textContent = '🚀 Starting Complete Auto Training...';
                 progressBar.style.width = '0%';
                 
-                logMessage('🚀 Starting batch training with 50 diverse sites...', 'info');
+                logMessage('🤖 Starting Complete Automatic Training Process...', 'info');
+                logMessage('📋 Steps: 1) Collect HTML → 2) Extract CSS → 3) Analyze Colors → 4) Analyze Fonts → 5) Classify Patterns → 6) Export Data', 'info');
                 
-                // Start training session
-                const trainingResponse = await fetch(`${API_BASE}/api/training/custom`, {
+                // Step 1: Collect HTML from all sites (0-20%)
+                statusDiv.textContent = '📊 Step 1/6: Collecting HTML from sites...';
+                progressBar.style.width = '5%';
+                
+                const htmlResponse = await fetch(`${API_BASE}/api/training/auto-html`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${API_KEY}`
                     },
                     body: JSON.stringify({
-                        customSites: testSites.map(site => ({
-                            url: site.url,
-                            businessType: site.expectedType,
-                            style: 'modern',
-                            description: site.description
-                        })),
-                        aiAnalysis: true,
-                        batchMode: true
+                        sites: testSites,
+                        batchSize: 10
                     })
                 });
                 
-                const trainingData = await trainingResponse.json();
+                const htmlData = await htmlResponse.json();
+                if (!htmlData.success) throw new Error(`HTML Collection failed: ${htmlData.error}`);
                 
-                if (trainingData.success) {
-                    if (trainingData.sitesCount === 0) {
-                        logMessage(`ℹ️ All sites are up to date! ${trainingData.skippedSitesCount || trainingData.originalSitesCount} sites skipped (updated within last month)`, 'info');
-                        statusDiv.textContent = 'All sites are current';
-                        progressBar.style.width = '100%';
-                        progressBar.style.background = '#17a2b8';
-                        return;
-                    }
-                    
-                    const skippedInfo = trainingData.skippedSitesCount > 0 ? ` (${trainingData.skippedSitesCount} sites skipped as recent)` : '';
-                    logMessage(`✅ Batch training initiated! Session ID: ${trainingData.trainingId}${skippedInfo}`, 'success');
-                    logMessage(`📊 Processing ${trainingData.sitesCount}/${trainingData.originalSitesCount || trainingData.sitesCount} sites`, 'info');
-                    statusDiv.textContent = 'Training in progress...';
-                    progressBar.style.width = '20%';
-                    
-                    // Monitor training progress
-                    const monitorTraining = async () => {
-                        try {
-                            const statusResponse = await fetch(`${API_BASE}/api/training/progress/${trainingData.trainingId}`, {
-                                headers: { 'Authorization': `Bearer ${API_KEY}` }
-                            });
-                            
-                            const status = await statusResponse.json();
-                            
-                            if (status.success) {
-                                const progress = Math.min((status.progress || 0), 100);
-                                progressBar.style.width = `${progress}%`;
-                                statusDiv.textContent = `Training: ${status.currentStep || 'Processing'} (${progress}%)`;
-                                
-                                if (status.status === 'COMPLETED') {
-                                    logMessage(`🎉 Batch training completed! Accuracy: ${status.accuracy}%`, 'success');
-                                    statusDiv.textContent = `✅ Completed! ${status.samplesCollected} samples collected`;
-                                    progressBar.style.width = '100%';
-                                    progressBar.style.background = '#28a745';
-                                    
-                                    // Update counters
-                                    document.getElementById('totalSamples').textContent = status.totalSamples || 0;
-                                    document.getElementById('customSitesCount').textContent = status.customSitesCount || 0;
-                                    
-                                } else if (status.status === 'FAILED') {
-                                    logMessage(`❌ Batch training failed: ${status.error}`, 'error');
-                                    statusDiv.textContent = `❌ Training failed: ${status.error}`;
-                                    progressBar.style.background = '#dc3545';
-                                } else {
-                                    // Continue monitoring
-                                    setTimeout(monitorTraining, 3000);
-                                }
-                            }
-                            
-                        } catch (error) {
-                            logMessage(`⚠️ Training monitoring error: ${error.message}`, 'error');
-                            setTimeout(monitorTraining, 5000); // Retry
-                        }
-                    };
-                    
-                    // Start monitoring after initial delay
-                    setTimeout(monitorTraining, 2000);
-                    
-                } else {
-                    logMessage(`❌ Failed to start batch training: ${trainingData.error}`, 'error');
-                    statusDiv.textContent = `❌ Failed: ${trainingData.error}`;
-                    progressBar.style.background = '#dc3545';
-                }
+                progressBar.style.width = '20%';
+                logMessage(`✅ Step 1 Complete: ${htmlData.sitesProcessed} sites HTML collected`, 'success');
+                
+                // Step 2: Extract CSS patterns (20-40%)
+                statusDiv.textContent = '🎨 Step 2/6: Extracting CSS patterns...';
+                
+                const cssResponse = await fetch(`${API_BASE}/api/training/auto-css`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        sessionId: htmlData.sessionId
+                    })
+                });
+                
+                const cssData = await cssResponse.json();
+                if (!cssData.success) throw new Error(`CSS Extraction failed: ${cssData.error}`);
+                
+                progressBar.style.width = '40%';
+                logMessage(`✅ Step 2 Complete: ${cssData.patternsExtracted} CSS patterns extracted`, 'success');
+                
+                // Step 3: Analyze Colors (40-60%)
+                statusDiv.textContent = '🌈 Step 3/6: Analyzing color schemes...';
+                
+                const colorResponse = await fetch(`${API_BASE}/api/training/auto-colors`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        sessionId: htmlData.sessionId
+                    })
+                });
+                
+                const colorData = await colorResponse.json();
+                if (!colorData.success) throw new Error(`Color Analysis failed: ${colorData.error}`);
+                
+                progressBar.style.width = '60%';
+                logMessage(`✅ Step 3 Complete: ${colorData.colorSchemesAnalyzed} color schemes analyzed`, 'success');
+                
+                // Step 4: Analyze Fonts (60-80%)
+                statusDiv.textContent = '🔤 Step 4/6: Analyzing typography...';
+                
+                const fontResponse = await fetch(`${API_BASE}/api/training/auto-fonts`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        sessionId: htmlData.sessionId
+                    })
+                });
+                
+                const fontData = await fontResponse.json();
+                if (!fontData.success) throw new Error(`Font Analysis failed: ${fontData.error}`);
+                
+                progressBar.style.width = '80%';
+                logMessage(`✅ Step 4 Complete: ${fontData.fontsAnalyzed} font combinations analyzed`, 'success');
+                
+                // Step 5: Classify Design Patterns (80-95%)
+                statusDiv.textContent = '🧠 Step 5/6: Classifying design patterns...';
+                
+                const classifyResponse = await fetch(`${API_BASE}/api/training/auto-classify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        sessionId: htmlData.sessionId
+                    })
+                });
+                
+                const classifyData = await classifyResponse.json();
+                if (!classifyData.success) throw new Error(`Pattern Classification failed: ${classifyData.error}`);
+                
+                progressBar.style.width = '95%';
+                logMessage(`✅ Step 5 Complete: ${classifyData.patternsClassified} design patterns classified`, 'success');
+                
+                // Step 6: Export & Train AI (95-100%)
+                statusDiv.textContent = '💾 Step 6/6: Finalizing AI training...';
+                
+                const exportResponse = await fetch(`${API_BASE}/api/training/auto-finalize`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        sessionId: htmlData.sessionId
+                    })
+                });
+                
+                const exportData = await exportResponse.json();
+                if (!exportData.success) throw new Error(`Training Finalization failed: ${exportData.error}`);
+                
+                // Success!
+                progressBar.style.width = '100%';
+                progressBar.style.background = '#28a745';
+                statusDiv.textContent = `🎉 Complete Auto Training Finished!`;
+                
+                logMessage(`✅ Step 6 Complete: AI model updated with new patterns`, 'success');
+                logMessage(`🎯 TRAINING SUMMARY:`, 'info');
+                logMessage(`📊 Sites Processed: ${exportData.totalSites}`, 'info');
+                logMessage(`🎨 CSS Patterns: ${exportData.cssPatterns}`, 'info');
+                logMessage(`🌈 Color Schemes: ${exportData.colorSchemes}`, 'info');
+                logMessage(`🔤 Font Combinations: ${exportData.fontCombinations}`, 'info');
+                logMessage(`🧠 Design Patterns: ${exportData.designPatterns}`, 'info');
+                logMessage(`🚀 AI Model Accuracy: ${exportData.accuracy}%`, 'success');
+                
+                // Update UI counters
+                document.getElementById('totalSamples').textContent = exportData.totalSamples || 0;
+                document.getElementById('customSitesCount').textContent = exportData.totalSites || 0;
                 
             } catch (error) {
-                logMessage(`❌ Batch training error: ${error.message}`, 'error');
-                document.getElementById('batch-status').textContent = `❌ Error: ${error.message}`;
+                logMessage(`❌ Complete Auto Training Error: ${error.message}`, 'error');
+                document.getElementById('batch-status').textContent = `❌ Auto Training Failed: ${error.message}`;
+                document.getElementById('batch-progress-bar').style.background = '#dc3545';
             }
         }
         
