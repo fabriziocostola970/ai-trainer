@@ -90,6 +90,7 @@ app.use('/training', authenticateAPI, require('./src/training/training-interface
 
 // Public API Routes (with authentication) 
 app.use('/api/generate', authenticateAPI, require('./src/api/generate-layout'));
+app.use('/api/generate', authenticateAPI, require('./src/api/generate-design')); // NEW: Design patterns API
 app.use('/api/optimize', authenticateAPI, require('./src/api/optimize-blocks'));
 app.use('/api/validate', authenticateAPI, require('./src/api/validate-template'));
 app.use('/api/training', authenticateAPI, require('./src/api/training'));
@@ -122,6 +123,8 @@ app.get('/api/status', authenticateAPI, (req, res) => {
     endpoints: [
       'GET /api/status',
       'POST /api/generate/layout',
+      'POST /api/generate/design-palette', // NEW: Design patterns
+      'GET /api/analyze/design-trends/:businessType', // NEW: Design analytics
       'POST /api/optimize/blocks',
       'POST /api/validate/template'
     ]
