@@ -1,0 +1,124 @@
+{
+  "url": "https://www.starbucks.com",
+  "businessType": "restaurant",
+  "designData": {
+    "colors": [
+      "rgb(0, 98, 73)",
+      "rgb(255, 255, 255)",
+      "rgb(30, 57, 50)",
+      "rgb(214, 210, 196)",
+      "rgb(0, 0, 0)",
+      "rgb(242, 242, 242)"
+    ],
+    "fonts": [
+      {
+        "family": "SoDo Sans, Helvetica, Arial, sans-serif",
+        "size": "16px",
+        "weight": "400",
+        "element": "body"
+      },
+      {
+        "family": "SoDo Sans, Helvetica, Arial, sans-serif",
+        "size": "24px",
+        "weight": "600",
+        "element": "h2"
+      },
+      {
+        "family": "SoDo Sans, Helvetica, Arial, sans-serif",
+        "size": "48px",
+        "weight": "700",
+        "element": "h1"
+      }
+    ],
+    "cssRules": [
+      {
+        "selector": ".hero",
+        "cssText": "background-color: rgb(0, 98, 73); color: white; padding: 60px 0;",
+        "properties": [
+          {
+            "property": "background-color",
+            "value": "rgb(0, 98, 73)"
+          },
+          {
+            "property": "color",
+            "value": "white"
+          },
+          {
+            "property": "padding",
+            "value": "60px 0"
+          }
+        ]
+      },
+      {
+        "selector": ".card",
+        "cssText": "background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);",
+        "properties": [
+          {
+            "property": "background",
+            "value": "white"
+          },
+          {
+            "property": "border-radius",
+            "value": "12px"
+          },
+          {
+            "property": "box-shadow",
+            "value": "0 4px 20px rgba(0,0,0,0.1)"
+          }
+        ]
+      }
+    ],
+    "layout": {
+      "sections": [
+        {
+          "tag": "header",
+          "className": "header-main",
+          "width": 1920,
+          "height": 80,
+          "top": 0
+        },
+        {
+          "tag": "section",
+          "className": "hero-section",
+          "width": 1920,
+          "height": 600,
+          "top": 80
+        },
+        {
+          "tag": "section",
+          "className": "featured-products",
+          "width": 1920,
+          "height": 400,
+          "top": 680
+        }
+      ]
+    },
+    "patterns": [
+      {
+        "type": "card-grid",
+        "count": 8,
+        "description": "Card-based layout pattern"
+      },
+      {
+        "type": "navigation",
+        "itemCount": 6,
+        "description": "Navigation menu pattern"
+      },
+      {
+        "type": "grid-layout",
+        "count": 3,
+        "description": "Grid-based layout system"
+      }
+    ],
+    "metadata": {
+      "url": "https://www.starbucks.com",
+      "title": "Starbucks Coffee Company",
+      "timestamp": "2025-08-16T10:30:00.000Z",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    }
+  },
+  "savedAt": "2025-08-16T10:30:00.000Z"
+}

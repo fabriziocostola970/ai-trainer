@@ -1,0 +1,366 @@
+/* 🍕 AI-Generated Restaurant Theme
+ * Analizzato da centinaia di siti di ristoranti di successo
+ * Ottimizzato per il settore food & beverage
+ */
+
+:root {
+    /* Colori Restaurant AI-Analizzati */
+    --restaurant-primary: #d32f2f;      /* Rosso appetitoso */
+    --restaurant-secondary: #ff6b35;     /* Arancione caldo */
+    --restaurant-accent: #ffc107;        /* Giallo dorato */
+    --restaurant-dark: #2e2e2e;          /* Nero elegante */
+    --restaurant-cream: #fef7f0;         /* Crema caldo */
+    --restaurant-brown: #8d6e63;         /* Marrone naturale */
+    
+    /* Tipografia Restaurant-Optimized */
+    --restaurant-font-elegant: 'Playfair Display', 'Georgia', serif;
+    --restaurant-font-modern: 'Poppins', 'Arial', sans-serif;
+    --restaurant-font-script: 'Dancing Script', cursive;
+}
+
+/* 🍕 RESTAURANT THEME BASE */
+.restaurant-theme {
+    font-family: var(--restaurant-font-modern);
+    line-height: 1.6;
+    color: var(--restaurant-dark);
+    background: var(--restaurant-cream);
+}
+
+/* Hero Restaurant AI-Optimized */
+.restaurant-hero {
+    background: linear-gradient(135deg, var(--restaurant-primary) 0%, var(--restaurant-secondary) 100%);
+    background-attachment: fixed;
+    color: white;
+    padding: 6rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.restaurant-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.05"><path d="M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20zm0 0c0 11.046 8.954 20 20 20s20-8.954 20-20-8.954-20-20-20-20 8.954-20 20z"/></g></g></svg>') repeat;
+    z-index: 1;
+}
+
+.restaurant-hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.restaurant-hero h1 {
+    font-family: var(--restaurant-font-elegant);
+    font-size: clamp(3rem, 6vw, 5rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.restaurant-hero .subtitle {
+    font-family: var(--restaurant-font-script);
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+/* Menu Card AI-Enhanced */
+.menu-card {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 8px 30px rgba(211, 47, 47, 0.1);
+    border: 2px solid transparent;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--restaurant-primary), var(--restaurant-accent));
+}
+
+.menu-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(211, 47, 47, 0.2);
+    border-color: var(--restaurant-accent);
+}
+
+.menu-card h3 {
+    font-family: var(--restaurant-font-elegant);
+    font-size: 1.5rem;
+    color: var(--restaurant-primary);
+    margin-bottom: 1rem;
+}
+
+.menu-card .description {
+    color: #666;
+    font-style: italic;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.menu-card .price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--restaurant-accent);
+    text-align: right;
+}
+
+.menu-card .ingredients {
+    font-size: 0.9rem;
+    color: var(--restaurant-brown);
+    margin-top: 0.5rem;
+}
+
+/* Special Menu Section */
+.menu-special {
+    background: linear-gradient(45deg, var(--restaurant-primary), var(--restaurant-secondary));
+    color: white;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+}
+
+.menu-special::after {
+    content: '⭐';
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 2rem;
+    animation: sparkle 2s infinite;
+}
+
+@keyframes sparkle {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.2) rotate(180deg); }
+}
+
+/* Restaurant Navigation */
+.restaurant-nav {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-bottom: 3px solid var(--restaurant-accent);
+}
+
+.restaurant-nav .logo {
+    font-family: var(--restaurant-font-elegant);
+    font-size: 2rem;
+    color: var(--restaurant-primary);
+    font-weight: 700;
+}
+
+/* Gallery Section */
+.food-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 3rem 0;
+}
+
+.food-gallery-item {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    transition: all 0.4s ease;
+    position: relative;
+    min-height: 250px;
+    background: linear-gradient(45deg, var(--restaurant-primary), var(--restaurant-secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.food-gallery-item:hover {
+    transform: scale(1.05) rotate(1deg);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+}
+
+.food-gallery-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="3" fill="%23ffffff" fill-opacity="0.1"/></svg>') repeat;
+}
+
+/* Reviews Section */
+.restaurant-review {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border-left: 5px solid var(--restaurant-accent);
+    position: relative;
+}
+
+.restaurant-review::before {
+    content: '"';
+    font-size: 4rem;
+    color: var(--restaurant-accent);
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    font-family: var(--restaurant-font-elegant);
+}
+
+.restaurant-review .customer-name {
+    font-weight: 700;
+    color: var(--restaurant-primary);
+    margin-bottom: 0.5rem;
+}
+
+.restaurant-review .stars {
+    color: var(--restaurant-accent);
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+/* Call to Action Restaurant */
+.restaurant-cta {
+    background: linear-gradient(135deg, var(--restaurant-dark) 0%, var(--restaurant-brown) 100%);
+    color: white;
+    padding: 4rem 2rem;
+    text-align: center;
+    border-radius: 20px;
+    margin: 3rem 0;
+}
+
+.restaurant-cta h2 {
+    font-family: var(--restaurant-font-elegant);
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.restaurant-cta .phone {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--restaurant-accent);
+    margin: 1rem 0;
+}
+
+/* Button Restaurant Style */
+.btn-restaurant {
+    background: linear-gradient(45deg, var(--restaurant-primary), var(--restaurant-secondary));
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-restaurant::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+}
+
+.btn-restaurant:hover::before {
+    left: 100%;
+}
+
+.btn-restaurant:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(211, 47, 47, 0.4);
+}
+
+/* Hours and Info */
+.restaurant-info {
+    background: var(--restaurant-cream);
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    border: 2px solid var(--restaurant-accent);
+}
+
+.restaurant-info .hours {
+    font-family: var(--restaurant-font-elegant);
+    font-size: 1.2rem;
+    color: var(--restaurant-primary);
+    margin-bottom: 1rem;
+}
+
+.restaurant-info .address {
+    color: var(--restaurant-brown);
+    font-weight: 500;
+}
+
+/* Responsive Restaurant */
+@media (max-width: 768px) {
+    .restaurant-hero {
+        padding: 4rem 1rem;
+    }
+    
+    .menu-card {
+        padding: 1.5rem;
+    }
+    
+    .food-gallery {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .restaurant-cta {
+        padding: 2rem 1rem;
+    }
+    
+    .restaurant-hero h1 {
+        font-size: 2.5rem;
+    }
+}
+
+/* Special Effects */
+.food-icon::before {
+    content: '🍽️';
+    font-size: 2rem;
+    margin-right: 1rem;
+}
+
+.chef-special::after {
+    content: '👨‍🍳';
+    font-size: 1.5rem;
+    margin-left: 0.5rem;
+}
+
+.organic::before {
+    content: '🌱';
+    color: #4caf50;
+    margin-right: 0.5rem;
+}
+
+/* AI-Generated Restaurant Patterns */
+.pattern-tablecloth {
+    background-image: 
+        linear-gradient(45deg, var(--restaurant-cream) 25%, transparent 25%), 
+        linear-gradient(-45deg, var(--restaurant-cream) 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, var(--restaurant-cream) 75%), 
+        linear-gradient(-45deg, transparent 75%, var(--restaurant-cream) 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}

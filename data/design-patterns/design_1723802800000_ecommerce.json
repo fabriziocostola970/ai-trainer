@@ -1,0 +1,128 @@
+{
+  "url": "https://www.nike.com",
+  "businessType": "ecommerce",
+  "designData": {
+    "colors": [
+      "rgb(0, 0, 0)",
+      "rgb(255, 255, 255)",
+      "rgb(117, 117, 117)",
+      "rgb(247, 247, 247)",
+      "rgb(229, 229, 229)",
+      "rgb(245, 245, 245)"
+    ],
+    "fonts": [
+      {
+        "family": "Helvetica Neue, Helvetica, Arial, sans-serif",
+        "size": "16px",
+        "weight": "400",
+        "element": "body"
+      },
+      {
+        "family": "Helvetica Neue, Helvetica, Arial, sans-serif",
+        "size": "32px",
+        "weight": "700",
+        "element": "h1"
+      },
+      {
+        "family": "Helvetica Neue, Helvetica, Arial, sans-serif",
+        "size": "24px",
+        "weight": "600",
+        "element": "h2"
+      }
+    ],
+    "cssRules": [
+      {
+        "selector": ".product-card",
+        "cssText": "background: white; border: 1px solid #e5e5e5; transition: all 0.3s ease;",
+        "properties": [
+          {
+            "property": "background",
+            "value": "white"
+          },
+          {
+            "property": "border",
+            "value": "1px solid #e5e5e5"
+          },
+          {
+            "property": "transition",
+            "value": "all 0.3s ease"
+          }
+        ]
+      },
+      {
+        "selector": ".btn-primary",
+        "cssText": "background: black; color: white; padding: 12px 24px; border-radius: 30px;",
+        "properties": [
+          {
+            "property": "background",
+            "value": "black"
+          },
+          {
+            "property": "color",
+            "value": "white"
+          },
+          {
+            "property": "padding",
+            "value": "12px 24px"
+          },
+          {
+            "property": "border-radius",
+            "value": "30px"
+          }
+        ]
+      }
+    ],
+    "layout": {
+      "sections": [
+        {
+          "tag": "nav",
+          "className": "main-nav",
+          "width": 1920,
+          "height": 60,
+          "top": 0
+        },
+        {
+          "tag": "section",
+          "className": "hero-banner",
+          "width": 1920,
+          "height": 500,
+          "top": 60
+        },
+        {
+          "tag": "section",
+          "className": "product-grid",
+          "width": 1920,
+          "height": 800,
+          "top": 560
+        }
+      ]
+    },
+    "patterns": [
+      {
+        "type": "card-grid",
+        "count": 12,
+        "description": "Product card grid layout"
+      },
+      {
+        "type": "navigation",
+        "itemCount": 8,
+        "description": "Horizontal navigation menu"
+      },
+      {
+        "type": "grid-layout",
+        "count": 4,
+        "description": "4-column product grid"
+      }
+    ],
+    "metadata": {
+      "url": "https://www.nike.com",
+      "title": "Nike. Just Do It. Nike.com",
+      "timestamp": "2025-08-16T10:35:00.000Z",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    }
+  },
+  "savedAt": "2025-08-16T10:35:00.000Z"
+}

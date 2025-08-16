@@ -164,6 +164,14 @@
                 <div class="stat-value" id="accuracyScore">94%</div>
                 <div class="stat-label">Accuracy Score</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-value" id="colorPalettes">⏳</div>
+                <div class="stat-label">🎨 Color Palettes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="fontCombos">⏳</div>
+                <div class="stat-label">📝 Font Combos</div>
+            </div>
         </div>
         
         <div class="actions">
@@ -293,6 +301,57 @@
                         <div id="batch-status">Initializing...</div>
                         <div style="background: #fff; border-radius: 3px; height: 8px; margin-top: 0.5rem; overflow: hidden;">
                             <div id="batch-progress-bar" style="background: #2196f3; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions" style="margin-top: 2rem;">
+            <div class="action-card">
+                <h3>🎨 Graphic Analysis & Improvement</h3>
+                <p>Analizza e migliora la grafica usando l'AI allenata</p>
+                <div style="margin: 1rem 0;">
+                    <div style="background: #e8f5e8; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #2d5016;">🎨 Funzionalità Grafiche:</h4>
+                        <div style="font-size: 0.85rem; color: #2d5016; line-height: 1.4;">
+                            🎨 <strong>Estrazione CSS:</strong> Salva stili da siti analizzati<br>
+                            🌈 <strong>Analisi Colori:</strong> Identifica palette vincenti<br>
+                            📝 <strong>Font Analysis:</strong> Trova combinazioni perfette<br>
+                            📐 <strong>Pattern Design:</strong> Layout e strutture ottimali
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem;">
+                        <button class="btn" id="btn-analyze-colors" style="background: #e91e63; flex: 1;">
+                            🌈 Analyze Colors
+                        </button>
+                        <button class="btn" id="btn-analyze-fonts" style="background: #9c27b0; flex: 1;">
+                            📝 Analyze Fonts
+                        </button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem;">
+                        <button class="btn" id="btn-generate-css" style="background: #ff9800; flex: 1;">
+                            🔧 Generate CSS
+                        </button>
+                        <button class="btn" id="btn-preview-improved" style="background: #4caf50; flex: 1;">
+                            👀 Preview Improved
+                        </button>
+                    </div>
+                    <div id="graphic-stats" style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
+                        <div style="font-weight: bold; margin-bottom: 0.5rem;">📊 Graphic Library Stats:</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
+                            <div style="text-align: center;">
+                                <div style="font-weight: bold; color: #e91e63;" id="colorPalettes">-</div>
+                                <div style="font-size: 0.8rem; color: #666;">Color Palettes</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-weight: bold; color: #9c27b0;" id="fontCombos">-</div>
+                                <div style="font-size: 0.8rem; color: #666;">Font Combos</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-weight: bold; color: #ff9800;" id="cssRules">-</div>
+                                <div style="font-size: 0.8rem; color: #666;">CSS Rules</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -701,12 +760,24 @@
             document.getElementById('btn-auto-classify').addEventListener('click', testAutoClassification);
             document.getElementById('btn-batch-train').addEventListener('click', startBatchTraining);
             
+            // 🎨 Graphic Analysis & Improvement event listeners
+            document.getElementById('btn-analyze-colors').addEventListener('click', analyzeColorPalettes);
+            document.getElementById('btn-analyze-fonts').addEventListener('click', analyzeFontCombinations);
+            document.getElementById('btn-generate-css').addEventListener('click', generateImprovedCSS);
+            document.getElementById('btn-preview-improved').addEventListener('click', previewImprovedStyles);
+            
             logMessage('🎛️ Button event listeners attached', 'info');
             
             // Auto check server status
             setTimeout(() => {
                 getServerStatus();
             }, 1000);
+            
+            // 🎨 Auto load graphic stats
+            setTimeout(() => {
+                loadGraphicStats();
+                logMessage('🎨 Graphic stats monitoring started', 'info');
+            }, 3000);
             
             // 🚨 Start alert monitoring
             setTimeout(() => {
@@ -1139,6 +1210,238 @@
             } catch (error) {
                 logMessage(`❌ Batch training error: ${error.message}`, 'error');
                 document.getElementById('batch-status').textContent = `❌ Error: ${error.message}`;
+            }
+        }
+        
+        // 🎨 GRAPHIC IMPROVEMENT FUNCTIONS
+        async function saveDesignData(site, designData) {
+            try {
+                logMessage(`💾 Saving design data for ${site.url}...`, 'info');
+                
+                const response = await fetch(`${API_BASE}/api/design/save`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        url: site.url,
+                        businessType: site.expectedType,
+                        description: site.description,
+                        designData: designData,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    logMessage(`  ✅ Design data saved: ${result.savedId}`, 'success');
+                } else {
+                    logMessage(`  ⚠️ Failed to save design data: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`  ❌ Error saving design data: ${error.message}`, 'error');
+            }
+        }
+        
+        async function generateImprovedCSS() {
+            try {
+                logMessage('🎨 Generating improved CSS library from collected design data...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/design/generate-css`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        includeBusinessTypes: ['restaurant', 'ecommerce', 'real_estate', 'travel', 'services'],
+                        generateThemes: true,
+                        generateColorPalettes: true,
+                        generateTypography: true,
+                        generateLayouts: true
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    logMessage(`✅ CSS library generated: ${result.cssFiles?.length || 0} files`, 'success');
+                    logMessage(`🎨 Color palettes: ${result.colorPalettes?.length || 0} themes`, 'success');
+                    logMessage(`📝 Typography sets: ${result.typography?.length || 0} font combinations`, 'success');
+                    logMessage(`📐 Layout patterns: ${result.layouts?.length || 0} responsive patterns`, 'success');
+                    
+                    // Show preview of generated styles
+                    if (result.previewURL) {
+                        logMessage(`👀 Preview available at: ${result.previewURL}`, 'info');
+                    }
+                    
+                } else {
+                    logMessage(`❌ Failed to generate CSS library: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Error generating CSS library: ${error.message}`, 'error');
+            }
+        }
+        
+        // 🎨 COLOR ANALYSIS FUNCTIONS
+        async function analyzeColorPalettes() {
+            try {
+                logMessage('🎨 Analyzing collected color palettes...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/design/analyze-colors`, {
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    logMessage('🎨 Color Analysis Results:', 'success');
+                    
+                    if (result.popularColors) {
+                        logMessage(`  🔥 Most used colors: ${result.popularColors.slice(0, 5).join(', ')}`, 'info');
+                    }
+                    
+                    if (result.colorHarmonies) {
+                        logMessage(`  🌈 Harmonious combinations: ${result.colorHarmonies.length} found`, 'info');
+                    }
+                    
+                    if (result.businessTypeColors) {
+                        Object.entries(result.businessTypeColors).forEach(([type, colors]) => {
+                            logMessage(`  🏷️ ${type}: ${colors.slice(0, 3).join(', ')}`, 'info');
+                        });
+                    }
+                    
+                } else {
+                    logMessage(`❌ Color analysis failed: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Color analysis error: ${error.message}`, 'error');
+            }
+        }
+        
+        // 📝 FONT ANALYSIS FUNCTIONS
+        async function analyzeFontCombinations() {
+            try {
+                logMessage('📝 Analyzing font combinations...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/design/analyze-fonts`, {
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    logMessage('📝 Font Analysis Results:', 'success');
+                    
+                    if (result.popularFonts) {
+                        logMessage(`  📊 Most used fonts: ${result.popularFonts.slice(0, 5).join(', ')}`, 'info');
+                    }
+                    
+                    if (result.fontPairings) {
+                        logMessage(`  💑 Best pairings: ${result.fontPairings.length} combinations`, 'info');
+                        result.fontPairings.slice(0, 3).forEach(pair => {
+                            logMessage(`    • ${pair.header} + ${pair.body} (score: ${pair.score})`, 'info');
+                        });
+                    }
+                    
+                    if (result.businessTypeFonts) {
+                        Object.entries(result.businessTypeFonts).forEach(([type, fonts]) => {
+                            logMessage(`  🏷️ ${type}: ${fonts.slice(0, 2).join(' + ')}`, 'info');
+                        });
+                    }
+                    
+                } else {
+                    logMessage(`❌ Font analysis failed: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Font analysis error: ${error.message}`, 'error');
+            }
+        }
+        
+        // 🎨 PREVIEW IMPROVED STYLES
+        async function previewImprovedStyles() {
+            try {
+                logMessage('🎨 Generating preview with improved styles...', 'info');
+                
+                const businessType = document.getElementById('generated-business-type').value;
+                const businessName = document.getElementById('business-name').value || `Improved ${businessType}`;
+                
+                const response = await fetch(`${API_BASE}/api/design/preview-improved`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        businessType: businessType,
+                        businessName: businessName,
+                        useImprovedCSS: true,
+                        useAnalyzedColors: true,
+                        useAnalyzedFonts: true
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.previewHTML) {
+                    // Open improved preview
+                    const blob = new Blob([result.previewHTML], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const previewWindow = window.open(url, '_blank');
+                    
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    
+                    logMessage('✅ Improved style preview opened!', 'success');
+                    logMessage(`🎨 Applied ${result.appliedStyles} improved styles`, 'info');
+                    
+                } else {
+                    logMessage(`❌ Preview generation failed: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Preview error: ${error.message}`, 'error');
+            }
+        }
+        
+        // 🎨 GRAPHIC STATS MONITORING
+        async function loadGraphicStats() {
+            try {
+                logMessage('📊 Loading graphic library stats...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/design/stats`, {
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update main stats
+                    document.getElementById('colorPalettes').textContent = result.stats.colorPalettes || 0;
+                    document.getElementById('fontCombos').textContent = result.stats.fontCombos || 0;
+                    
+                    // Update detailed stats in graphic card
+                    const colorPalettesDetail = document.querySelector('#graphic-stats #colorPalettes');
+                    const fontCombosDetail = document.querySelector('#graphic-stats #fontCombos');
+                    const cssRulesDetail = document.querySelector('#graphic-stats #cssRules');
+                    
+                    if (colorPalettesDetail) colorPalettesDetail.textContent = result.stats.colorPalettes || 0;
+                    if (fontCombosDetail) fontCombosDetail.textContent = result.stats.fontCombos || 0;
+                    if (cssRulesDetail) cssRulesDetail.textContent = result.stats.cssRules || 0;
+                    
+                    logMessage(`📊 Graphic Stats Loaded: ${result.stats.colorPalettes} palettes, ${result.stats.fontCombos} combos`, 'success');
+                    
+                } else {
+                    logMessage(`⚠️ Failed to load graphic stats: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Graphic stats error: ${error.message}`, 'error');
             }
         }
     </script>
