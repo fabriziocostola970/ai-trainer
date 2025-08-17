@@ -204,8 +204,9 @@ async function triggerControlledTraining(businessType, storage) {
     
     console.log(`✅ Generated ${competitorSites.length} competitors for ${businessType}`);
     
-    // �️ STEP 2: Scraping SOLO immagini Unsplash dai competitor
-    const unsplashImages = await scrapeUnsplashFromCompetitors(competitorSites, businessType);
+    // 🖼️ STEP 2: SOLO Unsplash API per immagini copyright-free
+    console.log(`📸 Using ONLY Unsplash API for copyright-free images: ${businessType}`);
+    const unsplashImages = await generateUnsplashFallback(businessType, 8);
     
     if (unsplashImages.length > 0) {
       // 💾 STEP 3: Salva nel database
@@ -213,13 +214,10 @@ async function triggerControlledTraining(businessType, storage) {
       console.log(`✅ Controlled training completed for: ${businessType}`);
       return true;
     } else {
-      // 🆘 Fallback a Unsplash API se scraping fallisce
-      console.log(`⚠️ Scraping failed, using Unsplash API for: ${businessType}`);
-      const apiImages = await generateUnsplashFallback(businessType, 6);
-      if (apiImages.length > 0) {
-        await saveBusinessImagesPattern(businessType, apiImages, storage);
-        return true;
-      }
+      console.log(`⚠️ Unsplash API failed, using hardcoded stock for: ${businessType}`);
+      const hardcodedImages = getHardcodedStockImages(businessType, 6);
+      await saveBusinessImagesPattern(businessType, hardcodedImages, storage);
+      return true;
     }
     
     return false;
@@ -390,10 +388,10 @@ async function generateUnsplashFallback(businessType, count = 4) {
   try {
     console.log(`🔗 Using Unsplash API fallback for ${businessType}`);
     
-    // 🔑 Temporary API key for testing (should be in environment)
-    const unsplashKey = process.env.UNSPLASH_ACCESS_KEY || 'tLFEH-8sI4xZXGgwWLhgT1J5Qi-y0LvCRF1bJz5k_W8';
+    // 🔑 Fixed API key for testing (replace with environment variable)
+    const unsplashKey = process.env.UNSPLASH_ACCESS_KEY || 'Client-ID-DEMO-REPLACED-WITH-VALID-KEY';
     
-    if (!unsplashKey) {
+    if (!unsplashKey || unsplashKey === 'Client-ID-DEMO-REPLACED-WITH-VALID-KEY') {
       console.log('⚠️ Unsplash API key not configured, using hardcoded stock');
       return getHardcodedStockImages(businessType, count);
     }
@@ -461,12 +459,14 @@ function getUnsplashQuery(businessType) {
 function getHardcodedStockImages(businessType, count = 4) {
   const STOCK_IMAGES = {
     florist: [
-      "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800&h=600&fit=crop", // Rose rosse
-      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&h=600&fit=crop", // Bouquet
-      "https://images.unsplash.com/photo-1487070183336-b863922373d4?w=800&h=600&fit=crop", // Tulipani
-      "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=800&h=600&fit=crop", // Orchidee
-      "https://images.unsplash.com/photo-1478432432450-5e6d70a0e9ce?w=800&h=600&fit=crop", // Negozio
-      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop"  // Composizione
+      "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800&h=600&fit=crop", // Rose rosse fresche
+      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&h=600&fit=crop", // Bouquet misto elegante
+      "https://images.unsplash.com/photo-1487070183336-b863922373d4?w=800&h=600&fit=crop", // Tulipani colorati
+      "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=800&h=600&fit=crop", // Orchidee esotiche
+      "https://images.unsplash.com/photo-1478432432450-5e6d70a0e9ce?w=800&h=600&fit=crop", // Negozio fiori
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop", // Composizione floreale
+      "https://images.unsplash.com/photo-1464207687429-7505649dae38?w=800&h=600&fit=crop", // Girasoli brillanti
+      "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop"  // Peonie delicate
     ],
     dentist: [
       "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop",
