@@ -229,6 +229,23 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
       const images = result.rows[0].business_images;
       const gallery = images.unsplash_gallery || images.gallery || [];
       
+      // 🛡️ STEP 2.1: CRITICAL - Validate minimum business types in database FIRST
+      const totalBusinessTypes = await countValidBusinessTypes(storage);
+      if (totalBusinessTypes < 5) {
+        console.log(`⚠️ CRITICAL: Only ${totalBusinessTypes}/5 business types in database`);
+        console.log(`🔄 System MUST expand business diversity - triggering expansion`);
+        
+        // 🚀 Trigger background expansion of business types (PRIORITY ACTION)
+        if (attempt === 1) {
+          console.log(`🚀 Starting business types expansion to reach minimum 5 types`);
+          triggerBusinessTypesExpansion(storage).catch(err => 
+            console.log('⚠️ Business types expansion error:', err.message)
+          );
+        }
+      } else {
+        console.log(`✅ BUSINESS TYPES VALIDATION PASSED: ${totalBusinessTypes} types available (≥5 required)`);
+      }
+      
       // 🛡️ STEP 2.1: Check if we have the specific business type needed
       // Note: We only generate data for the REQUESTED business type, not random expansion
       console.log(`� Checking database for specific business type: ${identifiedType}`);
