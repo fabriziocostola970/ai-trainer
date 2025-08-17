@@ -34,7 +34,7 @@ class DesignIntelligence {
                 LIMIT 5
             `;
             
-            const result = await this.pool.query(query, [businessType, style]);
+            const result = await this.pool.query(query, [businessType]);
             
             if (result.rows.length === 0) {
                 // Fallback ai pattern generali se non ci sono dati specifici
