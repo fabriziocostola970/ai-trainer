@@ -303,12 +303,15 @@ async function triggerControlledTraining(businessType, storage) {
     console.log(`🔍 Starting REAL scraping for ${businessType} competitors...`);
     
     try {
-      // Get the correct base URL for the environment
+      // Get the correct base URL for the environment - FORCE https for Railway
       let baseUrl;
-      if (process.env.RAILWAY_STATIC_URL) {
+      if (process.env.RAILWAY_STATIC_URL && process.env.RAILWAY_STATIC_URL.startsWith('http')) {
         baseUrl = process.env.RAILWAY_STATIC_URL;
       } else if (process.env.RAILWAY_PUBLIC_DOMAIN) {
         baseUrl = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+      } else if (process.env.RAILWAY_STATIC_URL) {
+        // Force https if RAILWAY_STATIC_URL exists but no protocol
+        baseUrl = `https://${process.env.RAILWAY_STATIC_URL}`;
       } else {
         baseUrl = `http://localhost:${process.env.PORT || 8080}`;
       }
