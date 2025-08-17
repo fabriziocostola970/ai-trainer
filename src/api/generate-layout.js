@@ -716,7 +716,7 @@ async function generateCompetitorSites(businessType) {
       return [];
     }
     
-    const prompt = `Find 5 real competitor websites for a "${businessType}" business in Italy.
+    const prompt = `Find 15 real competitor websites for a "${businessType}" business in Italy.
     
     Return ONLY a JSON array with this exact format:
     [
