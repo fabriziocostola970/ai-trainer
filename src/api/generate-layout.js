@@ -241,7 +241,7 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
         console.log(`⚠️ Invalid business data for ${identifiedType}: insufficient images (${gallery.length}), triggering regeneration`);
         
         // �️ Remove invalid record from database
-        await storage.query('DELETE FROM ai_design_patterns WHERE business_type = $1', [identifiedType]);
+        // ✅ NEVER DELETE USER DATA! Preserve existing data always!
         
         // 🔄 Trigger new data generation
         if (attempt === 1) {
