@@ -414,6 +414,8 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     // 🚀 SISTEMA DINAMICO: usa business type originale per attivare discovery automatico
     const englishBusinessType = businessType; // Mantieni tipo originale per sistema dinamico
     
+    console.log(`🔍 DEBUG MAPPING: Original=${businessType}, Final=${englishBusinessType}`);
+    
     // 🤖 Try to generate content with OpenAI first
     console.log('🤖 Attempting AI content generation...');
     const aiContent = await generateBusinessContentWithAI(englishBusinessType, businessName);
