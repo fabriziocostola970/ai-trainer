@@ -477,6 +477,11 @@ body { font-family: var(--font-secondary); font-size: ${fonts.sizes?.body || 16}
     }
     
     generateUtilityCSS(spacing) {
+        // Safety check for undefined spacing
+        if (!spacing || !Array.isArray(spacing)) {
+            spacing = [8, 16, 24, 32, 48]; // Default spacing values
+        }
+        
         const utilities = spacing.map((space, index) => 
             `.m-${index} { margin: ${space}px; }\n.p-${index} { padding: ${space}px; }`
         ).join('\n');
@@ -562,6 +567,7 @@ body { font-family: var(--font-secondary); font-size: ${fonts.sizes?.body || 16}
         
         return {
             layout: layout,
+            spacing: [8, 16, 24, 32, 48], // Add default spacing values
             confidence: 0.6,
             method: 'fallback',
             source: 'default_patterns',
