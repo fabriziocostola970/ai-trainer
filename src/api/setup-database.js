@@ -36,11 +36,26 @@ router.post('/setup-database', async (req, res) => {
             });
         }
         
-        console.log('📋 Creating design_patterns table...');
-        
-        // Crea la tabella design_patterns
+        // Rinomina la tabella per coerenza con lo schema
+        console.log('🔄 Renaming design_patterns to ai_design_patterns for consistency...');
         await pool.query(`
-            CREATE TABLE design_patterns (
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'design_patterns'
+                ) THEN
+                    ALTER TABLE design_patterns RENAME TO ai_design_patterns;
+                    RAISE NOTICE 'Table renamed from design_patterns to ai_design_patterns';
+                END IF;
+            END $$;
+        `);
+        
+        console.log('📋 Creating ai_design_patterns table...');
+        
+        // Crea la tabella ai_design_patterns
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS ai_design_patterns (
                 id SERIAL PRIMARY KEY,
                 business_type VARCHAR(100) NOT NULL,
                 source_url VARCHAR(2048),
@@ -66,17 +81,17 @@ router.post('/setup-database', async (req, res) => {
         
         // Crea indici per performance
         await pool.query(`
-            CREATE INDEX idx_design_patterns_business_type ON design_patterns(business_type);
-            CREATE INDEX idx_design_patterns_status ON design_patterns(status);
-            CREATE INDEX idx_design_patterns_confidence ON design_patterns(confidence_score);
-            CREATE INDEX idx_design_patterns_created_at ON design_patterns(created_at);
+            CREATE INDEX IF NOT EXISTS idx_ai_design_patterns_business_type ON ai_design_patterns(business_type);
+            CREATE INDEX IF NOT EXISTS idx_ai_design_patterns_status ON ai_design_patterns(status);
+            CREATE INDEX IF NOT EXISTS idx_ai_design_patterns_confidence ON ai_design_patterns(confidence_score);
+            CREATE INDEX IF NOT EXISTS idx_ai_design_patterns_created_at ON ai_design_patterns(created_at);
         `);
         
         console.log('✅ Design patterns table created successfully');
         
         // Inserisci alcuni dati di esempio
         await pool.query(`
-            INSERT INTO design_patterns (business_type, design_analysis, color_palette, font_families, layout_structure, confidence_score) VALUES
+            INSERT INTO ai_design_patterns (business_type, design_analysis, color_palette, font_families, layout_structure, confidence_score) VALUES
             ('restaurant', 
              '{"style": "modern", "theme": "warm"}',
              '{"primary": "#D97706", "secondary": "#DC2626", "accent": "#059669"}',

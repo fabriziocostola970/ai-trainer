@@ -23,15 +23,14 @@ class DesignIntelligence {
             // Query per trovare i pattern più efficaci per questo business type
             const query = `
                 SELECT 
-                    primary_color, secondary_color, accent_color, 
-                    background_color, text_color, color_palette,
-                    effectiveness_score, usage_count
-                FROM design_patterns 
+                    color_palette,
+                    confidence_score as effectiveness_score,
+                    1 as usage_count
+                FROM ai_design_patterns 
                 WHERE business_type = $1 
-                    AND pattern_type = 'color_palette'
-                    AND layout_style = $2
-                    AND effectiveness_score > 7.0
-                ORDER BY effectiveness_score DESC, usage_count DESC
+                    AND color_palette IS NOT NULL
+                    AND confidence_score > 0.6
+                ORDER BY confidence_score DESC
                 LIMIT 5
             `;
             
@@ -50,7 +49,15 @@ class DesignIntelligence {
             return optimizedPalette;
             
         } catch (error) {
+            // Se le colonne non esistono (schema non compatibile), usa i default
+            if (error.code === '42703' || error.message.includes('does not exist')) {
+                console.log(`❌ Error generating color palette: ${error.message}`);
+                console.log(`🎨 Using default color palette for ${businessType}`);
+                return this.getDefaultColorPalette(businessType);
+            }
+            
             console.error('❌ Error generating color palette:', error);
+            console.log(`🎨 Using default color palette for ${businessType}`);
             return this.getDefaultColorPalette(businessType);
         }
     }
@@ -64,14 +71,14 @@ class DesignIntelligence {
             
             const query = `
                 SELECT 
-                    primary_font, secondary_font, font_weights, font_sizes,
-                    effectiveness_score, usage_count
-                FROM design_patterns 
+                    font_families,
+                    confidence_score as effectiveness_score,
+                    1 as usage_count
+                FROM ai_design_patterns 
                 WHERE business_type = $1 
-                    AND pattern_type = 'typography'
-                    AND primary_font IS NOT NULL
-                    AND effectiveness_score > 6.0
-                ORDER BY effectiveness_score DESC, usage_count DESC
+                    AND font_families IS NOT NULL
+                    AND confidence_score > 0.6
+                ORDER BY confidence_score DESC
                 LIMIT 10
             `;
             
@@ -88,6 +95,12 @@ class DesignIntelligence {
             return fontPairings;
             
         } catch (error) {
+            // Se le colonne non esistono (schema non compatibile), usa i default
+            if (error.code === '42703' || error.message.includes('does not exist')) {
+                console.log(`❌ Error recommending fonts: ${error.message}`);
+                return this.getDefaultFontPairings(businessType, tone);
+            }
+            
             console.error('❌ Error recommending fonts:', error);
             return this.getDefaultFontPairings(businessType, tone);
         }
@@ -102,13 +115,14 @@ class DesignIntelligence {
             
             const query = `
                 SELECT 
-                    layout_style, grid_system, spacing_scale,
-                    effectiveness_score, usage_count, tags
-                FROM design_patterns 
+                    layout_structure,
+                    confidence_score as effectiveness_score,
+                    1 as usage_count
+                FROM ai_design_patterns 
                 WHERE business_type = $1 
-                    AND pattern_type = 'layout'
-                    AND effectiveness_score > 7.5
-                ORDER BY effectiveness_score DESC, usage_count DESC
+                    AND layout_structure IS NOT NULL
+                    AND confidence_score > 0.6
+                ORDER BY confidence_score DESC
                 LIMIT 5
             `;
             
@@ -125,7 +139,15 @@ class DesignIntelligence {
             return layoutSuggestions;
             
         } catch (error) {
+            // Se le colonne non esistono (schema non compatibile), usa i default
+            if (error.code === '42703' || error.message.includes('does not exist')) {
+                console.log(`❌ Error generating layout: ${error.message}`);
+                console.log(`📐 Using default layout suggestions for ${businessType}`);
+                return this.getDefaultLayoutSuggestions(businessType);
+            }
+            
             console.error('❌ Error generating layout:', error);
+            console.log(`📐 Using default layout suggestions for ${businessType}`);
             return this.getDefaultLayoutSuggestions(businessType);
         }
     }
