@@ -325,12 +325,13 @@ async function triggerControlledTraining(businessType, storage) {
           'Authorization': `Bearer ${process.env.AI_TRAINER_API_KEY || 'ai-trainer-local-dev'}`
         },
         body: JSON.stringify({
-          sites: competitorSites.map(site => site.url),
+          customSites: competitorSites.map(site => site.url), // FIXED: was "sites", now "customSites"
           businessType: businessType,
           extractDesignPatterns: true,  // 🎨 Extract CSS, colors, fonts
           extractImages: true,          // 🖼️ Extract real images
           saveToDatabase: true,         // 💾 Save in ai_design_patterns
-          specificBusinessType: businessType // 🎯 Save only for this business type
+          specificBusinessType: businessType, // 🎯 Save only for this business type
+          aiAnalysis: true              // Enable AI analysis
         })
       });
       
