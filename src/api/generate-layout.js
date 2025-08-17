@@ -304,9 +304,16 @@ async function triggerControlledTraining(businessType, storage) {
     
     try {
       // Get the correct base URL for the environment
-      const baseUrl = process.env.RAILWAY_STATIC_URL || 
-                     process.env.RAILWAY_PUBLIC_DOMAIN || 
-                     `http://localhost:${process.env.PORT || 8080}`;
+      let baseUrl;
+      if (process.env.RAILWAY_STATIC_URL) {
+        baseUrl = process.env.RAILWAY_STATIC_URL;
+      } else if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+        baseUrl = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+      } else {
+        baseUrl = `http://localhost:${process.env.PORT || 8080}`;
+      }
+      
+      console.log(`🌐 Training API URL: ${baseUrl}/api/training/custom`);
       
       const trainingResponse = await fetch(`${baseUrl}/api/training/custom`, {
         method: 'POST',
