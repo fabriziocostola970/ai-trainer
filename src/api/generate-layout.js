@@ -75,8 +75,10 @@ async function generateBusinessContentWithAI(businessType, businessName) {
   }
 }
 
-// �️ DATABASE-DRIVEN Gallery Images (Sicuro - Solo Stock Images)
-async function getBusinessImagesFromDB(businessType, count = 4) {
+// 🖼️ DATABASE-DRIVEN Gallery Images (DINAMICO - Auto-genera competitor)
+async function getBusinessImagesFromDB(businessType, count = 4, attempt = 1) {
+  const maxAttempts = 2; // Evita loop infiniti
+  
   try {
     const storage = new DatabaseStorage();
     
@@ -92,20 +94,28 @@ async function getBusinessImagesFromDB(businessType, count = 4) {
       return images.gallery ? images.gallery.slice(0, count) : [];
     }
     
-    // 2. Se non esiste, prima genera competitor con OpenAI e scraping
-    console.log(`🤖 Business type "${businessType}" not found in database. Generating competitor sites with OpenAI...`);
+    // 2. ⚡ NUOVO BUSINESS TYPE → SISTEMA DINAMICO AUTOMATICO
+    if (attempt === 1) {
+      console.log(`🔍 NEW BUSINESS TYPE "${businessType}" - Starting dynamic competitor analysis...`);
+      
+      // 2a. Chiama OpenAI per generare 5 competitor reali
+      const competitorSites = await generateCompetitorSites(businessType);
+      
+      if (competitorSites && competitorSites.length > 0) {
+        // 2b. Avvia training automatico con le funzioni esistenti
+        const success = await triggerDynamicTraining(businessType, competitorSites);
+        
+        if (success) {
+          // 2c. 🔄 RICORSIONE SICURA: Richiama per usare i nuovi dati
+          console.log(`🔄 Recursive call to get newly generated data for: ${businessType}`);
+          return await getBusinessImagesFromDB(businessType, count, attempt + 1);
+        }
+      }
+    }
     
-    // 2.1 Genera competitor sites con OpenAI
-    await generateAndScrapeCompetitors(businessType);
-    
-    // 2.2 Dopo lo scraping, genera immagini stock specifiche per il business
-    console.log(`🔍 Generating new stock images for business type: ${businessType}`);
-    const newImages = await generateStockImagesForBusiness(businessType);
-    
-    // 3. Salva nel database per il futuro
-    await saveBusinessImages(businessType, newImages);
-    
-    return newImages.gallery ? newImages.gallery.slice(0, count) : [];
+    // 3. Fallback se tutto fallisce o è il secondo tentativo
+    console.log(`⚠️ Using stock fallback for: ${businessType} (attempt ${attempt})`);
+    return generateFallbackStockImages(businessType, count);
     
   } catch (error) {
     console.log('⚠️ Database error, using fallback stock images:', error.message);
@@ -113,186 +123,140 @@ async function getBusinessImagesFromDB(businessType, count = 4) {
   }
 }
 
-// 🤖 AUTOMATIC COMPETITOR GENERATION & SCRAPING per nuovi business types
-async function generateAndScrapeCompetitors(businessType) {
+// 🤖 Chiama OpenAI per generare competitor automaticamente
+async function generateCompetitorSites(businessType) {
   try {
-    console.log(`🤖 Starting OpenAI competitor generation for: ${businessType}`);
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     
-    // 1. Chiama OpenAI per generare 5 competitor sites
-    const competitorSites = await generateCompetitorSitesWithOpenAI(businessType);
-    
-    if (competitorSites && competitorSites.length > 0) {
-      console.log(`✅ Generated ${competitorSites.length} competitor sites for ${businessType}`);
-      
-      // 2. Avvia training automatico con i siti competitor
-      await startAutomaticTraining(businessType, competitorSites);
-    } else {
-      console.log(`⚠️ No competitor sites generated for ${businessType}, using default stock images`);
-    }
-    
-  } catch (error) {
-    console.log(`❌ Error in automatic competitor generation: ${error.message}`);
-    console.log(`🔄 Continuing with stock images fallback`);
-  }
-}
-
-// 🤖 Genera competitor sites usando OpenAI
-async function generateCompetitorSitesWithOpenAI(businessType) {
-  try {
     if (!process.env.OPENAI_API_KEY) {
-      console.log('⚠️ OpenAI API key not configured, skipping competitor generation');
-      return null;
+      console.log('⚠️ OpenAI API key not configured for competitor generation');
+      return [];
     }
-
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
-
-    const prompt = `Generate exactly 5 real competitor websites for a "${businessType}" business.
     
-    Requirements:
-    - Must be real, existing websites (not fictional)
-    - Should be well-known brands in the ${businessType} industry
-    - Include diverse examples (local, national, international if possible)
-    - Focus on websites with good design and user experience
-    - Provide complete, working URLs
+    const prompt = `Find 5 real competitor websites for a "${businessType}" business in Italy.
     
-    Respond ONLY with JSON format:
+    Return ONLY a JSON array with this exact format:
     [
       {
+        "name": "Nome Azienda",
         "url": "https://example.com",
-        "name": "Company Name",
-        "description": "Brief description of the business"
+        "description": "Breve descrizione del business"
       }
     ]
     
-    Business type: ${businessType}`;
+    Requirements:
+    - Real, existing Italian websites only
+    - Include local and national competitors  
+    - Websites that likely use Unsplash or stock images
+    - No major corporations with strict copyright
+    - Focus on small to medium businesses`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 800,
+      max_tokens: 600,
       temperature: 0.3
     });
 
-    const competitorSites = JSON.parse(completion.choices[0].message.content);
-    console.log(`🎯 OpenAI generated ${competitorSites.length} competitors for ${businessType}`);
-    
-    return competitorSites;
+    const sites = JSON.parse(completion.choices[0].message.content);
+    console.log(`✅ Generated ${sites.length} competitor sites for ${businessType}`);
+    return sites;
     
   } catch (error) {
-    console.log(`❌ OpenAI competitor generation failed: ${error.message}`);
-    return null;
+    console.log('⚠️ OpenAI competitor generation failed:', error.message);
+    return [];
   }
 }
 
-// 🚀 Avvia training automatico con competitor sites
-async function startAutomaticTraining(businessType, competitorSites) {
+// 🚀 Trigger training usando l'endpoint esistente /api/training/start
+async function triggerDynamicTraining(businessType, competitorSites) {
   try {
-    console.log(`🚀 Starting automatic training for ${businessType} with ${competitorSites.length} sites`);
+    console.log(`🚀 Starting dynamic training for ${businessType} with ${competitorSites.length} sites`);
     
-    // Usa l'endpoint /api/training/custom per avviare training con siti specifici
+    // Costruisce il payload per l'endpoint esistente
     const trainingPayload = {
-      customSites: competitorSites,
       businessType: businessType,
-      aiAnalysis: true,
-      saveLocal: true,
-      autoGenerated: true
+      sites: competitorSites.map(site => site.url), // Array di URL come si aspetta l'endpoint
+      autoGenerated: true,
+      extractOptions: {
+        images: true,
+        colors: true, 
+        layouts: true,
+        onlyStockImages: true, // 🔒 SOLO IMMAGINI COPYRIGHT-FREE
+        maxSites: 5
+      }
     };
     
-    // Avvia training in background (non bloccante)
-    setTimeout(async () => {
-      try {
-        // Per ora logghiamo i competitor sites generati
-        // Il training effettivo può essere avviato manualmente dal dashboard
-        console.log(`✅ Automatic training queued for ${businessType} with ${competitorSites.length} competitor sites`);
-        console.log(`🎯 Competitor sites for ${businessType}:`, competitorSites.map(s => s.name).join(', '));
-        
-        // TODO: In futuro, chiamare direttamente l'endpoint /api/training/custom
-        
-      } catch (trainingError) {
-        console.log(`❌ Automatic training failed for ${businessType}: ${trainingError.message}`);
-      }
-    }, 1000); // Avvia dopo 1 secondo per non bloccare la risposta API
+    // Chiama l'endpoint di training esistente tramite HTTP interno
+    const response = await fetch(`http://localhost:${process.env.PORT || 4000}/api/training/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.AI_TRAINER_API_KEY}`,
+        'User-Agent': 'AI-Trainer-Internal'
+      },
+      body: JSON.stringify(trainingPayload)
+    });
     
-    console.log(`🔄 Automatic training queued for ${businessType}`);
-    
-  } catch (error) {
-    console.log(`❌ Failed to start automatic training: ${error.message}`);
-  }
-}
-
-// 🤖 AUTOMATIC COMPETITOR GENERATION & SCRAPING per nuovi business types
-async function generateAndScrapeCompetitors(businessType) {
-  try {
-    console.log(`🤖 Starting OpenAI competitor generation for: ${businessType}`);
-    
-    // 1. Chiama OpenAI per generare 5 competitor sites
-    const competitorSites = await generateCompetitorSitesWithOpenAI(businessType);
-    
-    if (competitorSites && competitorSites.length > 0) {
-      console.log(`✅ Generated ${competitorSites.length} competitor sites for ${businessType}`);
+    if (response.ok) {
+      const result = await response.json();
+      console.log(`✅ Training started for ${businessType}:`, result.sessionId || 'no-session-id');
       
-      // 2. Avvia training automatico con i siti competitor
-      await startAutomaticTraining(businessType, competitorSites);
+      // Attendi il completamento del training
+      return await waitForTrainingCompletion(businessType, result.sessionId);
     } else {
-      console.log(`⚠️ No competitor sites generated for ${businessType}, using default stock images`);
+      const errorText = await response.text();
+      console.log(`❌ Training failed for ${businessType}:`, response.status, errorText);
+      return false;
     }
     
   } catch (error) {
-    console.log(`❌ Error in automatic competitor generation: ${error.message}`);
-    console.log(`🔄 Continuing with stock images fallback`);
+    console.log('⚠️ Dynamic training trigger failed:', error.message);
+    return false;
   }
 }
 
-// 🤖 Genera competitor sites usando OpenAI
-async function generateCompetitorSitesWithOpenAI(businessType) {
-  try {
-    if (!process.env.OPENAI_API_KEY) {
-      console.log('⚠️ OpenAI API key not configured, skipping competitor generation');
-      return null;
-    }
-
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
-
-    const prompt = `Generate exactly 5 real competitor websites for a "${businessType}" business.
-    
-    Requirements:
-    - Must be real, existing websites (not fictional)
-    - Should be well-known brands in the ${businessType} industry
-    - Include diverse examples (local, national, international if possible)
-    - Focus on websites with good design and user experience
-    - Provide complete, working URLs
-    
-    Respond ONLY with JSON format:
-    [
-      {
-        "url": "https://example.com",
-        "name": "Company Name",
-        "description": "Brief description of the business"
+// ⏰ Attende completamento training e verifica salvataggio nel DB
+async function waitForTrainingCompletion(businessType, sessionId, maxWait = 120000) {
+  const startTime = Date.now();
+  const checkInterval = 15000; // 15 secondi
+  
+  console.log(`⏰ Waiting for training completion for ${businessType}... (max ${maxWait/1000}s)`);
+  
+  while (Date.now() - startTime < maxWait) {
+    try {
+      // Controlla se i dati sono stati salvati nel database
+      const storage = new DatabaseStorage();
+      const result = await storage.query(
+        'SELECT business_images, pattern_data FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
+        [businessType, 'active']
+      );
+      
+      if (result.rows.length > 0) {
+        const row = result.rows[0];
+        const images = row.business_images;
+        const patterns = row.pattern_data;
+        
+        // Verifica che abbia dati validi
+        if (images && images.gallery && images.gallery.length > 0) {
+          console.log(`✅ Training completed successfully for ${businessType}`);
+          console.log(`📸 Extracted ${images.gallery.length} copyright-free images`);
+          console.log(`🎨 Extracted design patterns:`, patterns ? Object.keys(patterns).length : 0);
+          return true;
+        }
       }
-    ]
-    
-    Business type: ${businessType}`;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 800,
-      temperature: 0.3
-    });
-
-    const competitorSites = JSON.parse(completion.choices[0].message.content);
-    console.log(`🎯 OpenAI generated ${competitorSites.length} competitors for ${businessType}`);
-    
-    return competitorSites;
-    
-  } catch (error) {
-    console.log(`❌ OpenAI competitor generation failed: ${error.message}`);
-    return null;
+      
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      console.log(`⏰ Still training ${businessType}... (${elapsed}s elapsed)`);
+      await new Promise(resolve => setTimeout(resolve, checkInterval));
+      
+    } catch (error) {
+      console.log('⚠️ Error checking training progress:', error.message);
+    }
   }
+  
+  console.log(`⚠️ Training timeout for ${businessType} after ${maxWait/1000}s`);
+  return false;
 }
 
 // 🎨 Genera immagini stock sicure per settore specifico
