@@ -283,12 +283,49 @@
                         <div style="font-size: 0.85rem; color: #6c757d; line-height: 1.4;">
                             1. 🚀 <strong>Raccolta HTML</strong> da 5 siti diversi<br>
                             2. 🎨 <strong>Estrazione CSS</strong> automatica durante analisi<br>
-                            3. � <strong>Analisi Colori</strong> e palette vincenti<br>
+                            3. 🌈 <strong>Analisi Colori</strong> e palette vincenti<br>
                             4. 📝 <strong>Analisi Font</strong> e combinazioni tipografiche<br>
                             5. 🧠 <strong>Classificazione</strong> automatica per business type<br>
-                            6. � <strong>Export CSS Library</strong> pronta all'uso
+                            6. 📦 <strong>Export CSS Library</strong> pronta all'uso
                         </div>
                     </div>
+                    
+                    <!-- Site Selection Section -->
+                    <div style="background: #e8f5e8; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #2d5a2d;">🌐 Selezione Siti per Training:</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem;">
+                            <select id="training-business-type" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="restaurant">Restaurant</option>
+                                <option value="ecommerce">E-commerce</option>
+                                <option value="tech-startup">Tech Startup</option>
+                                <option value="portfolio">Portfolio</option>
+                                <option value="real-estate">Real Estate</option>
+                                <option value="wellness">Wellness</option>
+                                <option value="mixed">Mixed (Diversi Tipi)</option>
+                            </select>
+                            <select id="training-region" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="global">Global Sites</option>
+                                <option value="italy">Italian Sites</option>
+                                <option value="europe">European Sites</option>
+                                <option value="usa">USA Sites</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                            <button class="btn" id="btn-generate-sites" style="background: #10b981; flex: 1;">
+                                🤖 Genera 5 Siti con OpenAI
+                            </button>
+                            <button class="btn" id="btn-use-default-sites" style="background: #6b7280; flex: 1;">
+                                📋 Usa Siti di Default
+                            </button>
+                        </div>
+                        <div id="selected-sites" style="background: white; padding: 0.75rem; border-radius: 4px; border: 1px solid #ddd; min-height: 120px;">
+                            <div style="font-weight: bold; margin-bottom: 0.5rem; color: #4b5563;">🎯 Siti Selezionati per Training:</div>
+                            <div id="sites-list" style="font-size: 0.85rem; color: #6b7280;">
+                                Clicca "Genera 5 Siti con OpenAI" per ottenere suggerimenti personalizzati
+                            </div>
+                        </div>
+                    </div>
+
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
                         <button class="btn" id="btn-auto-classify" style="background: #6f42c1; flex: 1;">
                             🧠 Test Auto-Classification
@@ -741,6 +778,122 @@
             }
         }
         
+        // 🤖 OPENAI SITE GENERATION FUNCTIONS
+        let selectedTrainingSites = [];
+        
+        async function generateSitesWithOpenAI() {
+            try {
+                const businessType = document.getElementById('training-business-type').value;
+                const region = document.getElementById('training-region').value;
+                const sitesListDiv = document.getElementById('sites-list');
+                
+                sitesListDiv.innerHTML = '⏳ Generando siti con OpenAI...';
+                logMessage('🤖 Requesting site suggestions from OpenAI...', 'info');
+                
+                // Chiamata all'endpoint OpenAI per generare siti
+                const response = await fetch(`${API_BASE}/api/training/generate-sites`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        businessType: businessType,
+                        region: region,
+                        count: 5,
+                        requirements: {
+                            diverse: true,
+                            wellKnown: true,
+                            goodDesign: true,
+                            responsive: true
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.sites) {
+                    selectedTrainingSites = data.sites;
+                    displaySelectedSites(data.sites);
+                    logMessage(`✅ Generated ${data.sites.length} sites with OpenAI`, 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to generate sites');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ OpenAI Site Generation Error: ${error.message}`, 'error');
+                document.getElementById('sites-list').innerHTML = `❌ Errore: ${error.message}<br><em>Usa "Siti di Default" come fallback</em>`;
+            }
+        }
+        
+        function useDefaultSites() {
+            const businessType = document.getElementById('training-business-type').value;
+            
+            // Siti di default per diversi business types
+            const defaultSites = {
+                restaurant: [
+                    { url: 'https://www.starbucks.com', name: 'Starbucks', description: 'Global coffee chain' },
+                    { url: 'https://www.mcdonalds.com', name: 'McDonald\'s', description: 'Fast food restaurant' },
+                    { url: 'https://www.pizzahut.com', name: 'Pizza Hut', description: 'Pizza restaurant chain' },
+                    { url: 'https://www.kfc.com', name: 'KFC', description: 'Fried chicken restaurant' },
+                    { url: 'https://www.subway.com', name: 'Subway', description: 'Sandwich restaurant' }
+                ],
+                ecommerce: [
+                    { url: 'https://www.amazon.com', name: 'Amazon', description: 'Online marketplace' },
+                    { url: 'https://www.nike.com', name: 'Nike', description: 'Sportswear brand' },
+                    { url: 'https://www.etsy.com', name: 'Etsy', description: 'Handmade marketplace' },
+                    { url: 'https://www.zara.com', name: 'Zara', description: 'Fashion retailer' },
+                    { url: 'https://www.apple.com', name: 'Apple', description: 'Technology products' }
+                ],
+                'tech-startup': [
+                    { url: 'https://www.stripe.com', name: 'Stripe', description: 'Payment processing' },
+                    { url: 'https://www.slack.com', name: 'Slack', description: 'Team communication' },
+                    { url: 'https://www.notion.so', name: 'Notion', description: 'Productivity workspace' },
+                    { url: 'https://www.figma.com', name: 'Figma', description: 'Design tool' },
+                    { url: 'https://www.vercel.com', name: 'Vercel', description: 'Web deployment' }
+                ],
+                mixed: [
+                    { url: 'https://www.apple.com', name: 'Apple', description: 'Technology (ecommerce)' },
+                    { url: 'https://www.starbucks.com', name: 'Starbucks', description: 'Restaurant (coffee)' },
+                    { url: 'https://www.airbnb.com', name: 'Airbnb', description: 'Travel (marketplace)' },
+                    { url: 'https://www.stripe.com', name: 'Stripe', description: 'Tech (fintech)' },
+                    { url: 'https://www.nike.com', name: 'Nike', description: 'Fashion (ecommerce)' }
+                ]
+            };
+            
+            selectedTrainingSites = defaultSites[businessType] || defaultSites.mixed;
+            displaySelectedSites(selectedTrainingSites);
+            logMessage(`✅ Using ${selectedTrainingSites.length} default sites for ${businessType}`, 'success');
+        }
+        
+        function displaySelectedSites(sites) {
+            const sitesListDiv = document.getElementById('sites-list');
+            
+            const sitesHTML = sites.map((site, index) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-bottom: 1px solid #e5e7eb; ${index === sites.length - 1 ? 'border-bottom: none;' : ''}">
+                    <div>
+                        <strong style="color: #1f2937;">${site.name || extractDomainName(site.url)}</strong>
+                        <div style="font-size: 0.75rem; color: #6b7280;">${site.url}</div>
+                        <div style="font-size: 0.7rem; color: #9ca3af; font-style: italic;">${site.description || 'Website for training'}</div>
+                    </div>
+                    <div style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.7rem;">
+                        ✓ Selected
+                    </div>
+                </div>
+            `).join('');
+            
+            sitesListDiv.innerHTML = sitesHTML;
+        }
+        
+        function extractDomainName(url) {
+            try {
+                const domain = new URL(url).hostname;
+                return domain.replace('www.', '').split('.')[0];
+            } catch {
+                return 'Website';
+            }
+        }
+        
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', () => {
             logMessage('🚀 Dashboard initialized successfully', 'success');
@@ -773,6 +926,8 @@
             // 🚀 Batch Auto-Training event listeners
             document.getElementById('btn-auto-classify').addEventListener('click', testAutoClassification);
             document.getElementById('btn-batch-train').addEventListener('click', startBatchTraining);
+            document.getElementById('btn-generate-sites').addEventListener('click', generateSitesWithOpenAI);
+            document.getElementById('btn-use-default-sites').addEventListener('click', useDefaultSites);
             
             // 🎨 Design Intelligence Engine event listeners
             document.getElementById('btn-extract-library').addEventListener('click', extractDesignLibrary);
@@ -1125,6 +1280,12 @@
         
         async function startBatchTraining() {
             try {
+                // Check if sites are selected
+                if (!selectedTrainingSites || selectedTrainingSites.length === 0) {
+                    alert('⚠️ Please select or generate training sites first!');
+                    return;
+                }
+                
                 const progressDiv = document.getElementById('batch-progress');
                 const statusDiv = document.getElementById('batch-status');
                 const progressBar = document.getElementById('batch-progress-bar');
@@ -1135,6 +1296,7 @@
                 progressBar.style.width = '0%';
                 
                 logMessage('🤖 Starting Complete Automatic Training Process...', 'info');
+                logMessage(`📋 Training Sites: ${selectedTrainingSites.join(', ')}`, 'info');
                 logMessage('📋 Steps: 1) Collect HTML → 2) Extract CSS → 3) Analyze Colors → 4) Analyze Fonts → 5) Classify Patterns → 6) Export Data', 'info');
                 
                 // Step 1: Collect HTML from all sites (0-20%)
@@ -1148,7 +1310,7 @@
                         'Authorization': `Bearer ${API_KEY}`
                     },
                     body: JSON.stringify({
-                        sites: testSites,
+                        sites: selectedTrainingSites,
                         batchSize: 10
                     })
                 });

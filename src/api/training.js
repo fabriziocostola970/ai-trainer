@@ -21,6 +21,127 @@ let customSites = [];
   console.log(`📊 Current sessions: ${healthCheck.totalSessions || 0}`);
 })();
 
+// POST /api/training/generate-sites - Genera siti con OpenAI
+router.post('/generate-sites', async (req, res) => {
+  try {
+    const { businessType, region } = req.body;
+    
+    if (!businessType) {
+      return res.status(400).json({
+        success: false,
+        error: 'businessType is required'
+      });
+    }
+
+    // For now, provide intelligent defaults based on business type and region
+    // In future, integrate with OpenAI API
+    const siteSuggestions = generateSiteSuggestions(businessType, region);
+    
+    res.json({
+      success: true,
+      sites: siteSuggestions,
+      businessType,
+      region: region || 'global',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Generate sites error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Helper function to generate site suggestions
+function generateSiteSuggestions(businessType, region = 'global') {
+  const businessTemplates = {
+    'restaurant': [
+      'https://www.mcdonalds.com',
+      'https://www.starbucks.com',
+      'https://www.subway.com',
+      'https://www.kfc.com',
+      'https://www.dominos.com'
+    ],
+    'e-commerce': [
+      'https://www.amazon.com',
+      'https://www.shopify.com',
+      'https://www.etsy.com',
+      'https://www.ebay.com',
+      'https://www.alibaba.com'
+    ],
+    'technology': [
+      'https://www.apple.com',
+      'https://www.microsoft.com',
+      'https://www.google.com',
+      'https://www.tesla.com',
+      'https://www.meta.com'
+    ],
+    'healthcare': [
+      'https://www.mayoclinic.org',
+      'https://www.webmd.com',
+      'https://www.who.int',
+      'https://www.medscape.com',
+      'https://www.healthline.com'
+    ],
+    'education': [
+      'https://www.harvard.edu',
+      'https://www.mit.edu',
+      'https://www.stanford.edu',
+      'https://www.coursera.org',
+      'https://www.edx.org'
+    ],
+    'finance': [
+      'https://www.chase.com',
+      'https://www.paypal.com',
+      'https://www.bloomberg.com',
+      'https://www.schwab.com',
+      'https://www.fidelity.com'
+    ],
+    'travel': [
+      'https://www.booking.com',
+      'https://www.expedia.com',
+      'https://www.airbnb.com',
+      'https://www.tripadvisor.com',
+      'https://www.kayak.com'
+    ],
+    'real-estate': [
+      'https://www.zillow.com',
+      'https://www.realtor.com',
+      'https://www.redfin.com',
+      'https://www.trulia.com',
+      'https://www.apartments.com'
+    ]
+  };
+
+  // Regional variations
+  const regionalSites = {
+    'europe': {
+      'restaurant': ['https://www.deliveroo.com', 'https://www.just-eat.com'],
+      'e-commerce': ['https://www.zalando.com', 'https://www.otto.de'],
+      'travel': ['https://www.ryanair.com', 'https://www.easyjet.com']
+    },
+    'asia': {
+      'restaurant': ['https://www.foodpanda.com', 'https://www.ubereats.com'],
+      'e-commerce': ['https://www.tmall.com', 'https://www.rakuten.com'],
+      'technology': ['https://www.samsung.com', 'https://www.sony.com']
+    }
+  };
+
+  let sites = businessTemplates[businessType.toLowerCase()] || businessTemplates['technology'];
+  
+  // Mix in regional sites if available
+  if (region && region !== 'global' && regionalSites[region.toLowerCase()]) {
+    const regionalOptions = regionalSites[region.toLowerCase()][businessType.toLowerCase()];
+    if (regionalOptions) {
+      sites = [...sites.slice(0, 3), ...regionalOptions];
+    }
+  }
+
+  return sites.slice(0, 5);
+}
+
 // POST /api/training/start - Avvia training collection
 router.post('/start', async (req, res) => {
   try {
