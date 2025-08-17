@@ -738,6 +738,12 @@ async function generateCompetitorSites(businessType) {
 
     const sites = JSON.parse(completion.choices[0].message.content);
     console.log(`✅ Generated ${sites.length} competitor sites for ${businessType}`);
+    
+    // 🔍 LOG THE ACTUAL SITES GENERATED
+    sites.forEach((site, index) => {
+      console.log(`  ${index + 1}. ${site.name}: ${site.url}`);
+    });
+    
     return sites;
     
   } catch (error) {
