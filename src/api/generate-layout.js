@@ -243,13 +243,42 @@ function generateFallbackLayout(businessType) {
 function generateEnhancedBlocks(businessType, businessName, designData, currentBlocks = []) {
   console.log(`🧠 Generating enhanced blocks for ${businessType} with AI design data`);
   
+  // 🎨 ENHANCED: Working image service function
+  const getWorkingImage = (type, businessType) => {
+    const businessImages = {
+      restaurant: {
+        logo: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=200&h=100&fit=crop&crop=center',
+        hero: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&h=600&fit=crop&crop=center'
+      },
+      ecommerce: {
+        logo: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=200&h=100&fit=crop&crop=center',
+        hero: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=600&fit=crop&crop=center'
+      },
+      technology: {
+        logo: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=200&h=100&fit=crop&crop=center',
+        hero: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=600&fit=crop&crop=center'
+      },
+      default: {
+        logo: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=100&fit=crop&crop=center',
+        hero: 'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=1200&h=600&fit=crop&crop=center'
+      }
+    };
+    
+    const images = businessImages[businessType] || businessImages.default;
+    return images[type] || images.hero;
+  };
+  
   const blocks = [];
   
-  // 1. Navigation (sempre ottimizzata con design patterns)
+  // 1. Navigation (sempre ottimizzata con design patterns e logo)
   blocks.push({
     id: `nav-${Date.now()}`,
     type: 'navigation-modern',
-    content: `Navigation for ${businessName}`,
+    content: {
+      title: businessName,
+      logo: getWorkingImage('logo', businessType),
+      menuItems: ['Home', 'Servizi', 'Chi Siamo', 'Contatti']
+    },
     style: {
       backgroundColor: designData?.backgroundColor || '#FFFFFF',
       textColor: designData?.textColor || '#1F2937',
@@ -259,11 +288,17 @@ function generateEnhancedBlocks(businessType, businessName, designData, currentB
     confidence: 95
   });
   
-  // 2. Hero Section (personalizzata per business type)
+  // 2. Hero Section (personalizzata per business type con immagine)
   blocks.push({
     id: `hero-${Date.now()}`,
     type: getOptimalHeroType(businessType),
-    content: `Hero section for ${businessName}`,
+    content: {
+      title: `Benvenuto in ${businessName}`,
+      subtitle: getBusinessSubtitle(businessType, businessName),
+      description: getBusinessDescription(businessType),
+      image: getWorkingImage('hero', businessType),
+      cta: getBusinessCTA(businessType)
+    },
     style: {
       backgroundColor: designData?.primaryColor || '#3B82F6',
       textColor: '#FFFFFF',
@@ -280,6 +315,37 @@ function generateEnhancedBlocks(businessType, businessName, designData, currentB
   return blocks;
 }
 
+// 🎯 Helper functions for business-specific content
+function getBusinessSubtitle(businessType, businessName) {
+  const subtitles = {
+    restaurant: `Sapori autentici e tradizione culinaria`,
+    ecommerce: `La tua destinazione per lo shopping online`,
+    technology: `Innovazione e soluzioni tecnologiche avanzate`,
+    default: `Qualità e professionalità al tuo servizio`
+  };
+  return subtitles[businessType] || subtitles.default;
+}
+
+function getBusinessDescription(businessType) {
+  const descriptions = {
+    restaurant: 'Vieni a scoprire la nostra cucina, dove tradizione e innovazione si incontrano per offrirti un\'esperienza gastronomica indimenticabile.',
+    ecommerce: 'Scopri la nostra vasta selezione di prodotti di alta qualità, con spedizioni rapide e un servizio clienti sempre a tua disposizione.',
+    technology: 'Trasformiamo le tue idee in soluzioni digitali innovative, utilizzando le tecnologie più avanzate per far crescere il tuo business.',
+    default: 'Siamo qui per offrirti il meglio dei nostri servizi, con professionalità e dedizione per soddisfare ogni tua esigenza.'
+  };
+  return descriptions[businessType] || descriptions.default;
+}
+
+function getBusinessCTA(businessType) {
+  const ctas = {
+    restaurant: 'Prenota un Tavolo',
+    ecommerce: 'Inizia a Comprare',
+    technology: 'Richiedi Preventivo',
+    default: 'Scopri di Più'
+  };
+  return ctas[businessType] || ctas.default;
+}
+
 function getOptimalHeroType(businessType) {
   const heroTypes = {
     restaurant: 'hero-restaurant-showcase',
@@ -292,55 +358,125 @@ function getOptimalHeroType(businessType) {
 }
 
 function generateBusinessSpecificBlocks(businessType, businessName, designData) {
+  // 🎨 ENHANCED: Generate structured content with working images
+  const getWorkingImage = (type) => {
+    const imageServices = {
+      'menu-showcase': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&h=600&fit=crop&crop=center',
+      'gallery-food': 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=600&fit=crop&crop=center',
+      'reviews-customers': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
+      'featured-products': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop&crop=center',
+      'categories-grid': 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=600&h=400&fit=crop&crop=center',
+      'testimonials-social': 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face',
+      'features-tech': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop&crop=center',
+      'case-studies': 'https://images.unsplash.com/photo-1552581234-26160f608093?w=800&h=600&fit=crop&crop=center',
+      'pricing-plans': 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&h=400&fit=crop&crop=center'
+    };
+    return imageServices[type] || 'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=800&h=600&fit=crop&crop=center';
+  };
+
   const businessBlocks = {
     restaurant: [
       {
         type: 'menu-showcase',
-        content: 'Menu highlights and signature dishes',
+        content: {
+          title: `Menu ${businessName}`,
+          subtitle: 'I nostri piatti più amati dai clienti',
+          description: 'Scopri la nostra selezione di specialità culinarie preparate con ingredienti freschi e di alta qualità.',
+          image: getWorkingImage('menu-showcase'),
+          cta: 'Guarda il Menu'
+        },
         priority: 1
       },
       {
         type: 'gallery-food',
-        content: 'Food photography gallery',
+        content: {
+          title: 'Galleria Gastronomica',
+          subtitle: 'Un viaggio visivo nei nostri sapori',
+          description: 'Ogni piatto è una piccola opera d\'arte culinaria.',
+          image: getWorkingImage('gallery-food'),
+          cta: 'Vedi Tutte le Foto'
+        },
         priority: 2
       },
       {
         type: 'reviews-customers',
-        content: 'Customer testimonials and reviews',
+        content: {
+          title: 'Testimonianze',
+          subtitle: 'Cosa dicono i nostri clienti',
+          description: 'La soddisfazione dei nostri ospiti è la nostra priorità.',
+          image: getWorkingImage('reviews-customers'),
+          cta: 'Leggi Tutte le Recensioni'
+        },
         priority: 3
       }
     ],
     ecommerce: [
       {
         type: 'featured-products',
-        content: 'Best selling products showcase',
+        content: {
+          title: `Prodotti in Evidenza - ${businessName}`,
+          subtitle: 'I più venduti del mese',
+          description: 'Scopri i prodotti che stanno conquistando i nostri clienti.',
+          image: getWorkingImage('featured-products'),
+          cta: 'Acquista Ora'
+        },
         priority: 1
       },
       {
         type: 'categories-grid',
-        content: 'Product categories overview',
+        content: {
+          title: 'Categorie Prodotti',
+          subtitle: 'Trova quello che cerchi',
+          description: 'Naviga tra le nostre categorie per trovare il prodotto perfetto.',
+          image: getWorkingImage('categories-grid'),
+          cta: 'Esplora Categorie'
+        },
         priority: 2
       },
       {
         type: 'testimonials-social',
-        content: 'Customer reviews and social proof',
+        content: {
+          title: 'Recensioni Clienti',
+          subtitle: 'Fiducia e qualità garantita',
+          description: 'Migliaia di clienti soddisfatti che ci hanno scelto.',
+          image: getWorkingImage('testimonials-social'),
+          cta: 'Leggi le Recensioni'
+        },
         priority: 3
       }
     ],
     technology: [
       {
         type: 'features-tech',
-        content: 'Product features and capabilities',
+        content: {
+          title: `Funzionalità ${businessName}`,
+          subtitle: 'Tecnologia all\'avanguardia',
+          description: 'Scopri le caratteristiche innovative che rendono unica la nostra soluzione.',
+          image: getWorkingImage('features-tech'),
+          cta: 'Scopri di Più'
+        },
         priority: 1
       },
       {
         type: 'case-studies',
-        content: 'Success stories and case studies',
+        content: {
+          title: 'Casi di Successo',
+          subtitle: 'Risultati che parlano da soli',
+          description: 'Scopri come abbiamo aiutato i nostri clienti a raggiungere i loro obiettivi.',
+          image: getWorkingImage('case-studies'),
+          cta: 'Leggi i Casi Studio'
+        },
         priority: 2
       },
       {
         type: 'pricing-plans',
-        content: 'Pricing and subscription options',
+        content: {
+          title: 'Piani e Prezzi',
+          subtitle: 'La soluzione giusta per ogni esigenza',
+          description: 'Scegli il piano più adatto al tuo business.',
+          image: getWorkingImage('pricing-plans'),
+          cta: 'Scegli il Tuo Piano'
+        },
         priority: 3
       }
     ]
