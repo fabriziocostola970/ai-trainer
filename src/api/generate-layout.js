@@ -325,11 +325,7 @@ async function triggerControlledTraining(businessType, storage) {
           'Authorization': `Bearer ${process.env.AI_TRAINER_API_KEY || 'ai-trainer-local-dev'}`
         },
         body: JSON.stringify({
-          customSites: competitorSites.map(site => ({
-            url: site.url,
-            businessType: businessType,
-            style: 'modern'
-          })), // FIXED: Pass objects with url property, not just strings
+          customSites: competitorSites.map(site => site.url), // FIXED: was "sites", now "customSites"
           businessType: businessType,
           extractDesignPatterns: true,  // 🎨 Extract CSS, colors, fonts
           extractImages: true,          // 🖼️ Extract real images
@@ -737,9 +733,15 @@ async function generateCompetitorSites(businessType) {
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 600,
+      max_tokens: 1200, // AUMENTATO da 600 a 1200 per gestire 15 siti
       temperature: 0.3
     });
+
+    // 🆕 LOG COMPLETO DELLA RISPOSTA OPENAI
+    console.log('🤖 OpenAI raw response:', completion.choices[0].message.content);
+    console.log('🤖 Response length:', completion.choices[0].message.content.length);
+    console.log('🤖 First 200 chars:', completion.choices[0].message.content.substring(0, 200));
+    console.log('🤖 Last 200 chars:', completion.choices[0].message.content.slice(-200));
 
     const sites = JSON.parse(completion.choices[0].message.content);
     console.log(`✅ Generated ${sites.length} competitor sites for ${businessType}`);
@@ -753,6 +755,10 @@ async function generateCompetitorSites(businessType) {
     
   } catch (error) {
     console.log('⚠️ OpenAI competitor generation failed:', error.message);
+    // 🆕 LOG PER DEBUG JSON PARSE ERROR
+    if (error.message.includes('JSON') || error.message.includes('Unexpected')) {
+      console.log('🔍 JSON Parse Error - Raw response was:', completion?.choices?.[0]?.message?.content || 'No response available');
+    }
     return [];
   }
 }

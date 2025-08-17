@@ -238,7 +238,6 @@
                 </div>
                 <button class="btn" id="btn-generate-layout" style="background: #10b981;">🎨 Generate AI Layout</button>
                 <button class="btn" id="btn-preview-layout">👀 Preview Generated</button>
-                <button class="btn" id="btn-generate-another" style="background: linear-gradient(45deg, #667eea, #764ba2); color: white;">🎨 Generate Another (Smart Training)</button>
             </div>
 
             <div class="action-card">
@@ -915,7 +914,6 @@
             // 🎨 AI Layout Generation event listeners
             document.getElementById('btn-generate-layout').addEventListener('click', generateAILayout);
             document.getElementById('btn-preview-layout').addEventListener('click', previewGeneratedLayout);
-            document.getElementById('btn-generate-another').addEventListener('click', generateAnotherSmart);
             
             // 🤖 AI Training event listeners
             document.getElementById('btn-start-training').addEventListener('click', startTraining);
@@ -1732,53 +1730,6 @@
                 
             } catch (error) {
                 logMessage(`❌ Graphic stats error: ${error.message}`, 'error');
-            }
-        }
-
-        // 🎨 GENERATE ANOTHER SMART - Arricchisce sempre la libreria
-        async function generateAnotherSmart() {
-            try {
-                const businessType = document.getElementById('business-type').value;
-                const businessName = document.getElementById('business-name').value;
-                
-                logMessage('🎨 Generating another layout + enriching graphic library...', 'info');
-                logMessage('📈 This will add MORE sites to improve our design variety!', 'info');
-                
-                // Genera un nuovo layout con più training automatico
-                // Il backend ora richiederà automaticamente 15 siti invece di 5
-                const response = await fetch(`${API_BASE}/api/generate-layout`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        businessType: businessType,
-                        businessName: businessName || `${businessType} Business`,
-                        style: document.getElementById('business-style').value || 'modern',
-                        enrichmentMode: true // Flag per modalità arricchimento
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    generatedLayout = data.layout;
-                    logMessage('✅ New layout generated with enriched library!', 'success');
-                    logMessage(`🎯 Business: ${data.layout.businessType}`, 'info');
-                    logMessage(`📊 New training data added to improve future layouts`, 'success');
-                    
-                    // Auto-preview il nuovo layout
-                    setTimeout(() => {
-                        previewGeneratedLayout();
-                    }, 1000);
-                    
-                } else {
-                    logMessage(`❌ Layout generation failed: ${data.error}`, 'error');
-                }
-                
-            } catch (error) {
-                logMessage(`❌ Smart generation failed: ${error.message}`, 'error');
             }
         }
     </script>
