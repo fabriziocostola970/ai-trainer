@@ -4,8 +4,7 @@ const DatabaseStorage = require('../storage/database-storage');
 const DesignIntelligence = require('../ai/design-intelligence');
 const OpenAI = require('openai');
 
-// 🛑 EMERGENCY: Disable automatic training to prevent loops
-const DISABLE_AUTO_TRAINING = true;
+// � Dynamic training enabled with loop protection
 
 // 🤖 OpenAI content generation with fallback
 async function generateBusinessContentWithAI(businessType, businessName) {
@@ -115,21 +114,21 @@ Business type:`;
   }
 }
 
-// 🖼️ DATABASE-DRIVEN Gallery Images (DINAMICO - MEMORY SAFE)
+// 🖼️ DATABASE-DRIVEN Gallery Images (SISTEMA DINAMICO COMPLETO)
 async function getBusinessImagesFromDB(businessName, businessDescription, count = 4, attempt = 1) {
-  const maxAttempts = 1; // 🔒 MEMORY PROTECTION: Solo 1 tentativo per evitare loop infiniti
+  const maxAttempts = 2; // 🔒 MEMORY PROTECTION: Max 2 tentativi
   
   // 🛡️ EMERGENCY PROTECTION: Controllo memoria heap
   const memUsage = process.memoryUsage();
   if (memUsage.heapUsed > 1024 * 1024 * 1024) { // 1GB limit
-    console.log('🚨 MEMORY PROTECTION: Heap usage too high, using fallback');
-    return generateFallbackStockImages('business', count);
+    console.log('🚨 MEMORY PROTECTION: Heap usage too high, using Unsplash fallback');
+    return await generateUnsplashFallback('business', count);
   }
   
   // 🔒 STRICT ATTEMPT LIMIT 
   if (attempt > maxAttempts) {
-    console.log(`⚠️ Max attempts reached (${attempt}), using fallback`);
-    return generateFallbackStockImages('business', count);
+    console.log(`⚠️ Max attempts reached (${attempt}), using Unsplash API`);
+    return await generateUnsplashFallback('business', count);
   }
   
   try {
@@ -140,96 +139,340 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
     const identifiedType = await identifyBusinessType(businessName, businessDescription);
     
     if (!identifiedType) {
-      console.log('⚠️ Could not identify business type, using fallback');
-      return generateFallbackStockImages('business', count);
+      console.log('⚠️ Could not identify business type, using Unsplash fallback');
+      return await generateUnsplashFallback('business', count);
     }
     
     console.log(`🔍 Checking database for business type: ${identifiedType} (attempt ${attempt})`);
     
-    // 💾 STEP 2: Cerca nel database
+    // 💾 STEP 2: Cerca nel database ai_design_patterns
     const result = await storage.query(
       'SELECT business_images FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
       [identifiedType, 'active']
     );
     
     if (result.rows.length > 0 && result.rows[0].business_images) {
-      console.log(`✅ Found existing data for business type: ${identifiedType}`);
+      console.log(`✅ Found existing images for business type: ${identifiedType}`);
       const images = result.rows[0].business_images;
-      return images.gallery ? images.gallery.slice(0, count) : [];
+      const gallery = images.unsplash_gallery || images.gallery || [];
+      console.log(`📊 Returning ${gallery.length} saved images from database`);
+      return gallery.slice(0, count);
     }
     
-    // 🚀 STEP 3: Business type non trovato → TRAINING DISABILITATO TEMPORANEAMENTE
+    // 🚀 STEP 3: Business type non trovato → Sistema dinamico CONTROLLATO
     if (attempt === 1) {
-      console.log(`🔍 NEW BUSINESS TYPE "${identifiedType}" - Training disabled to prevent loops`);
+      console.log(`🔍 NEW BUSINESS TYPE "${identifiedType}" - Starting controlled dynamic discovery...`);
       
-      // 🛑 TEMPORARY: Training disabled to stop infinite loops
-      console.log(`⚡ Using immediate fallback images - no background training`);
-      return generateFallbackStockImages(identifiedType.toLowerCase(), count);
+      // 🎯 STEP 4: Genera competitor e avvia scraping CONTROLLATO
+      const success = await triggerControlledTraining(identifiedType, storage);
+      
+      if (success) {
+        // 🔄 STEP 5: Una sola ricorsione controllata
+        console.log(`🔄 Controlled recursive call for newly saved data: ${identifiedType}`);
+        return await getBusinessImagesFromDB(businessName, businessDescription, count, attempt + 1);
+      }
     }
     
-    // 🆘 Fallback finale  
-    console.log(`⚠️ Using stock fallback for: ${identifiedType} (attempt ${attempt})`);
-    return generateFallbackStockImages(identifiedType, count);
+    // 🆘 Fallback finale con Unsplash API diretta
+    console.log(`⚠️ Using Unsplash API fallback for: ${identifiedType} (attempt ${attempt})`);
+    return await generateUnsplashFallback(identifiedType, count);
     
   } catch (error) {
-    console.log('⚠️ Database error, using fallback stock images:', error.message);
-    return generateFallbackStockImages('business', count);
+    console.log('⚠️ Database error, using Unsplash fallback:', error.message);
+    return await generateUnsplashFallback('business', count);
   }
 }
 
-// 🚀 Training in background SENZA ricorsione (Memory Safe + Emergency Disable)
-async function triggerBackgroundTraining(businessType) {
-  // 🛑 EMERGENCY: Check if training is disabled
-  if (DISABLE_AUTO_TRAINING) {
-    console.log(`🛑 EMERGENCY: Auto-training disabled to prevent loops for ${businessType}`);
-    return false;
-  }
-  
+// 🚀 Training controllato SENZA loop infiniti (con Unsplash Scraping)
+async function triggerControlledTraining(businessType, storage) {
   try {
-    // 🔒 DEDUPLICATION: Check if training is already running
-    if (global.activeTraining && global.activeTraining[businessType]) {
-      console.log(`⚠️ Training already active for ${businessType}, skipping duplicate`);
-      return false;
-    }
-    
-    // Mark training as active
-    if (!global.activeTraining) global.activeTraining = {};
-    global.activeTraining[businessType] = Date.now();
-    
-    console.log(`🤖 Starting background competitor discovery for: ${businessType}`);
+    console.log(`🤖 Starting controlled training for: ${businessType}`);
     
     // 🎯 STEP 1: Genera competitor con OpenAI
     const competitorSites = await generateCompetitorSites(businessType);
     
     if (!competitorSites || competitorSites.length === 0) {
-      console.log(`⚠️ No competitors generated for: ${businessType}`);
-      delete global.activeTraining[businessType];
+      console.log(`⚠️ No competitors generated, using direct Unsplash API for: ${businessType}`);
+      // Fallback diretto a Unsplash API
+      const unsplashImages = await generateUnsplashFallback(businessType, 6);
+      if (unsplashImages.length > 0) {
+        await saveBusinessImagesPattern(businessType, unsplashImages, storage);
+        return true;
+      }
       return false;
     }
     
     console.log(`✅ Generated ${competitorSites.length} competitors for ${businessType}`);
     
-    // 🕷️ STEP 2: Avvia training senza aspettare (Fire and Forget)
-    const trainingPromise = triggerDynamicTraining(businessType, competitorSites);
+    // �️ STEP 2: Scraping SOLO immagini Unsplash dai competitor
+    const unsplashImages = await scrapeUnsplashFromCompetitors(competitorSites, businessType);
     
-    // Non aspettiamo il risultato per evitare timeout
-    trainingPromise
-      .then(() => {
-        console.log(`✅ Background training completed for: ${businessType}`);
-        delete global.activeTraining[businessType];
-      })
-      .catch(err => {
-        console.log(`⚠️ Background training failed for ${businessType}:`, err.message);
-        delete global.activeTraining[businessType];
-      });
+    if (unsplashImages.length > 0) {
+      // 💾 STEP 3: Salva nel database
+      await saveBusinessImagesPattern(businessType, unsplashImages, storage);
+      console.log(`✅ Controlled training completed for: ${businessType}`);
+      return true;
+    } else {
+      // 🆘 Fallback a Unsplash API se scraping fallisce
+      console.log(`⚠️ Scraping failed, using Unsplash API for: ${businessType}`);
+      const apiImages = await generateUnsplashFallback(businessType, 6);
+      if (apiImages.length > 0) {
+        await saveBusinessImagesPattern(businessType, apiImages, storage);
+        return true;
+      }
+    }
     
-    return true; // Ritorna subito
+    return false;
     
   } catch (error) {
-    console.log('❌ Background training error:', error.message);
-    if (global.activeTraining) delete global.activeTraining[businessType];
+    console.log('❌ Controlled training error:', error.message);
     return false;
   }
+}
+
+// 🕷️ SCRAPING DINAMICO - Solo immagini Unsplash/stock dai competitor
+async function scrapeUnsplashFromCompetitors(competitorSites, businessType) {
+  try {
+    console.log(`🕷️ Scraping Unsplash images from ${competitorSites.length} competitor sites for ${businessType}`);
+    
+    const unsplashImages = [];
+    
+    for (const site of competitorSites.slice(0, 3)) { // Max 3 sites per evitare timeout
+      try {
+        console.log(`🌐 Analyzing: ${site.url}`);
+        
+        // 🌐 Fetch della homepage del competitor con timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+        
+        const response = await fetch(site.url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          console.log(`⚠️ ${site.url} returned ${response.status}`);
+          continue;
+        }
+        
+        const html = await response.text();
+        
+        // 🔍 Estrai solo immagini Unsplash/stock
+        const stockImages = extractStockImages(html, businessType);
+        unsplashImages.push(...stockImages);
+        
+        console.log(`📊 Found ${stockImages.length} stock images from ${site.url}`);
+        
+        if (unsplashImages.length >= 8) break; // Limite per business type
+        
+      } catch (siteError) {
+        console.log(`⚠️ Failed to scrape ${site.url}:`, siteError.message);
+      }
+    }
+    
+    // 🧹 Deduplication
+    const uniqueImages = [...new Set(unsplashImages)];
+    console.log(`✅ Extracted ${uniqueImages.length} unique stock images for ${businessType}`);
+    
+    return uniqueImages.slice(0, 6); // Max 6 immagini per business type
+    
+  } catch (error) {
+    console.log('⚠️ Scraping failed:', error.message);
+    return [];
+  }
+}
+
+// 🔍 ESTRAZIONE SOLO IMMAGINI STOCK/UNSPLASH
+function extractStockImages(html, businessType) {
+  const stockImages = [];
+  
+  try {
+    // Pattern per identificare immagini stock sicure
+    const stockPatterns = [
+      /https:\/\/images\.unsplash\.com\/[^"'\s)]+/g,
+      /https:\/\/unsplash\.com\/photos\/[^"'\s)]+/g,
+      /https:\/\/source\.unsplash\.com\/[^"'\s)]+/g,
+      /https:\/\/[^"'\s]*\.unsplash\.com\/[^"'\s)]+/g,
+      /https:\/\/images\.pexels\.com\/[^"'\s)]+/g
+    ];
+    
+    for (const pattern of stockPatterns) {
+      const matches = html.match(pattern) || [];
+      for (const match of matches) {
+        // Pulizia URL e aggiunta parametri per dimensioni
+        const cleanUrl = match.replace(/['">\s)#].*$/, '');
+        const optimizedUrl = optimizeImageUrl(cleanUrl, businessType);
+        
+        if (optimizedUrl && !stockImages.includes(optimizedUrl)) {
+          stockImages.push(optimizedUrl);
+        }
+      }
+    }
+    
+    console.log(`🔍 Extracted ${stockImages.length} stock image URLs`);
+    return stockImages;
+    
+  } catch (error) {
+    console.log('⚠️ Error extracting stock images:', error.message);
+    return [];
+  }
+}
+
+// �️ OTTIMIZZAZIONE URL IMMAGINI
+function optimizeImageUrl(url, businessType) {
+  try {
+    if (url.includes('unsplash.com')) {
+      // Ottimizza Unsplash per qualità e dimensioni
+      const baseUrl = url.split('?')[0];
+      return `${baseUrl}?w=800&h=600&fit=crop&crop=entropy&auto=format&q=80`;
+    }
+    
+    if (url.includes('pexels.com')) {
+      // Ottimizza Pexels
+      return `${url}?auto=compress&cs=tinysrgb&w=800&h=600`;
+    }
+    
+    return url;
+  } catch (error) {
+    return url;
+  }
+}
+
+// 💾 SALVATAGGIO PATTERN NEL DATABASE
+async function saveBusinessImagesPattern(businessType, images, storage) {
+  try {
+    const imagePattern = {
+      unsplash_gallery: images,
+      collection_date: new Date().toISOString(),
+      source: 'competitor_analysis',
+      count: images.length,
+      copyright_status: 'free_to_use',
+      business_type: businessType
+    };
+    
+    console.log(`💾 Saving ${images.length} images for business type: ${businessType}`);
+    
+    // Insert o Update nel database
+    await storage.query(`
+      INSERT INTO ai_design_patterns (business_type, business_images, status, created_at)
+      VALUES ($1, $2, 'active', NOW())
+      ON CONFLICT (business_type) 
+      DO UPDATE SET 
+        business_images = $2,
+        updated_at = NOW()
+    `, [businessType, JSON.stringify(imagePattern)]);
+    
+    console.log(`✅ Saved ${images.length} stock images for business type: ${businessType}`);
+    
+  } catch (error) {
+    console.log('⚠️ Failed to save business images pattern:', error.message);
+    throw error;
+  }
+}
+
+// 🆘 FALLBACK UNSPLASH API DIRETTA
+async function generateUnsplashFallback(businessType, count = 4) {
+  try {
+    console.log(`🔗 Using Unsplash API fallback for ${businessType}`);
+    
+    if (!process.env.UNSPLASH_ACCESS_KEY) {
+      console.log('⚠️ Unsplash API key not configured, using hardcoded stock');
+      return getHardcodedStockImages(businessType, count);
+    }
+    
+    // Query di ricerca per business type
+    const searchQuery = getUnsplashQuery(businessType);
+    
+    // Chiama Unsplash API direttamente
+    const response = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchQuery)}&per_page=${count}&orientation=landscape&content_filter=high`, {
+      headers: {
+        'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Unsplash API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.results && data.results.length > 0) {
+      const images = data.results.map(photo => ({
+        url: photo.urls.regular,
+        thumb: photo.urls.small,
+        alt: photo.alt_description || `${businessType} image`,
+        photographer: photo.user.name,
+        source: 'unsplash_api'
+      }));
+      
+      console.log(`✅ Generated ${images.length} Unsplash images for ${businessType}`);
+      return images.map(img => img.url); // Return only URLs for compatibility
+    }
+    
+    return getHardcodedStockImages(businessType, count);
+    
+  } catch (error) {
+    console.log('⚠️ Unsplash API failed:', error.message);
+    return getHardcodedStockImages(businessType, count);
+  }
+}
+
+// 🔍 Query ottimizzate per business type
+function getUnsplashQuery(businessType) {
+  const queries = {
+    florist: 'flowers bouquet florist shop roses tulips orchids',
+    dentist: 'dental clinic dentist teeth medical healthcare',
+    restaurant: 'restaurant food dining cuisine chef kitchen',
+    gym: 'fitness gym workout exercise health sports',
+    bakery: 'bakery bread pastry cake dessert',
+    technology: 'technology computer office modern business',
+    fashion: 'fashion clothing style boutique elegant',
+    beauty: 'beauty salon spa wellness massage',
+    automotive: 'car automotive garage mechanic repair',
+    real_estate: 'house property real estate home modern',
+    business: 'business office professional modern workplace'
+  };
+  
+  return queries[businessType] || queries.business;
+}
+
+// 📦 IMMAGINI STOCK HARDCODED (ultima risorsa)
+function getHardcodedStockImages(businessType, count = 4) {
+  const STOCK_IMAGES = {
+    florist: [
+      "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800&h=600&fit=crop", // Rose rosse
+      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&h=600&fit=crop", // Bouquet
+      "https://images.unsplash.com/photo-1487070183336-b863922373d4?w=800&h=600&fit=crop", // Tulipani
+      "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=800&h=600&fit=crop", // Orchidee
+      "https://images.unsplash.com/photo-1478432432450-5e6d70a0e9ce?w=800&h=600&fit=crop", // Negozio
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop"  // Composizione
+    ],
+    dentist: [
+      "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop"
+    ],
+    restaurant: [
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=600&fit=crop"
+    ],
+    business: [
+      "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=800&h=600&fit=crop"
+    ]
+  };
+  
+  const images = STOCK_IMAGES[businessType] || STOCK_IMAGES.business;
+  return images.slice(0, count);
 }
 
 // 🤖 Chiama OpenAI per generare competitor automaticamente
@@ -448,18 +691,6 @@ async function saveBusinessImages(businessType, businessImages) {
   } catch (error) {
     console.log('⚠️ Failed to save business images:', error.message);
   }
-}
-
-// 🔄 Fallback immagini stock sicure
-function generateFallbackStockImages(businessType, count = 4) {
-  const fallbackImages = [
-    'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1552581234-26160f608093?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&h=600&fit=crop'
-  ];
-  
-  return fallbackImages.slice(0, count);
 }
 
 // 🔄 MAPPING BUSINESS TYPES (Italiano → Inglese per training data)
