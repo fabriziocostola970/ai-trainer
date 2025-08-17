@@ -404,6 +404,8 @@ router.post('/layout', authenticateAPI, async (req, res) => {
 
     const { businessType, businessName, style = 'modern', currentBlocks = [] } = req.body;
     
+    console.log(`📥 RECEIVED REQUEST: businessType="${businessType}", businessName="${businessName}"`);
+    
     if (!businessType) {
       return res.status(400).json({
         success: false,
