@@ -411,14 +411,14 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       });
     }
 
-    // Traduzione business type per compatibilità con training data
-    const englishBusinessType = BUSINESS_TYPE_MAPPING[businessType.toLowerCase()]?.[0] || businessType;
+    // 🚀 SISTEMA DINAMICO: usa business type originale per attivare discovery automatico
+    const englishBusinessType = businessType; // Mantieni tipo originale per sistema dinamico
     
     // 🤖 Try to generate content with OpenAI first
     console.log('🤖 Attempting AI content generation...');
     const aiContent = await generateBusinessContentWithAI(englishBusinessType, businessName);
     
-    // 🖼️ Generate gallery images from database (stock images only)
+    // 🖼️ Generate gallery images from database (stock images only) - ATTIVA SISTEMA DINAMICO
     const galleryImages = await getBusinessImagesFromDB(englishBusinessType, 6);
     
     // 🎨 Initialize Design Intelligence
