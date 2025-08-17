@@ -229,24 +229,11 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
       const images = result.rows[0].business_images;
       const gallery = images.unsplash_gallery || images.gallery || [];
       
-      // 🛡️ STEP 2.1: Validate minimum business types in database FIRST (CRITICAL CHECK)
-      const totalBusinessTypes = await countValidBusinessTypes(storage);
-      if (totalBusinessTypes < 5) {
-        console.log(`⚠️ CRITICAL: Only ${totalBusinessTypes}/5 business types in database`);
-        console.log(`🔄 System MUST expand business diversity - triggering expansion`);
-        
-        // 🚀 Trigger background expansion of business types (PRIORITY ACTION)
-        if (attempt === 1) {
-          console.log(`🚀 Starting business types expansion to reach minimum 5 types`);
-          triggerBusinessTypesExpansion(storage).catch(err => 
-            console.log('⚠️ Business types expansion error:', err.message)
-          );
-        }
-      } else {
-        console.log(`✅ BUSINESS TYPES VALIDATION PASSED: ${totalBusinessTypes} types available (≥5 required)`);
-      }
+      // 🛡️ STEP 2.1: Check if we have the specific business type needed
+      // Note: We only generate data for the REQUESTED business type, not random expansion
+      console.log(`� Checking database for specific business type: ${identifiedType}`);
       
-      // 🛡️ STEP 2.2: Validate individual business image data quality (SECONDARY CHECK)
+      // 🛡️ STEP 2.2: Validate individual business image data quality
       if (!isValidBusinessImageData(gallery, identifiedType)) {
         console.log(`⚠️ Invalid business data for ${identifiedType}: insufficient images (${gallery.length}), triggering regeneration`);
         
@@ -294,7 +281,7 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
   }
 }
 
-// 🚀 Training controllato SENZA scraping (solo Unsplash API libere)
+// 🚀 Training controllato con SCRAPING REALE (updated per business type specifico)
 async function triggerControlledTraining(businessType, storage) {
   try {
     console.log(`🤖 Starting controlled training for: ${businessType}`);
@@ -303,33 +290,76 @@ async function triggerControlledTraining(businessType, storage) {
     const competitorSites = await generateCompetitorSites(businessType);
     
     if (!competitorSites || competitorSites.length === 0) {
-      console.log(`⚠️ No competitors generated, using direct Unsplash API for: ${businessType}`);
-      // Fallback diretto a Unsplash API
-      const unsplashImages = await generateUnsplashFallback(businessType, 6);
-      if (unsplashImages.length > 0) {
-        await saveBusinessImagesPattern(businessType, unsplashImages, storage);
-        return true;
-      }
+      console.log(`⚠️ No competitors generated for ${businessType}, using fallback`);
       return false;
     }
     
     console.log(`✅ Generated ${competitorSites.length} competitors for ${businessType}`);
     
-    // 🖼️ STEP 2: SOLO Unsplash API per immagini copyright-free
-    console.log(`📸 Using ONLY Unsplash API for copyright-free images: ${businessType}`);
-    const unsplashImages = await generateUnsplashFallback(businessType, 8);
+    // 🕷️ STEP 2: SCRAPING REALE dei competitor sites
+    console.log(`🔍 Starting REAL scraping for ${businessType} competitors...`);
     
-    if (unsplashImages.length > 0) {
-      // 💾 STEP 3: Salva nel database
-      await saveBusinessImagesPattern(businessType, unsplashImages, storage);
-      console.log(`✅ Controlled training completed for: ${businessType}`);
-      return true;
-    } else {
-      console.log(`⚠️ Unsplash API failed, using hardcoded stock for: ${businessType}`);
-      const hardcodedImages = getHardcodedStockImages(businessType, 6);
-      await saveBusinessImagesPattern(businessType, hardcodedImages, storage);
+    try {
+      const trainingResponse = await fetch(`http://localhost:${process.env.PORT || 8080}/api/training/custom`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.AI_TRAINER_API_KEY || 'ai-trainer-local-dev'}`
+        },
+        body: JSON.stringify({
+          sites: competitorSites.map(site => site.url),
+          businessType: businessType,
+          extractDesignPatterns: true,  // 🎨 Extract CSS, colors, fonts
+          extractImages: true,          // 🖼️ Extract real images
+          saveToDatabase: true,         // 💾 Save in ai_design_patterns
+          specificBusinessType: businessType // 🎯 Save only for this business type
+        })
+      });
+      
+      if (trainingResponse.ok) {
+        const trainingResult = await trainingResponse.json();
+        console.log(`✅ Real scraping started for ${businessType}:`, trainingResult);
+        
+        // 🕰️ Wait for training completion (with timeout)
+        const maxWaitTime = 60000; // 60 seconds
+        const startTime = Date.now();
+        
+        while (Date.now() - startTime < maxWaitTime) {
+          // Check if data was saved in database
+          const checkResult = await storage.query(
+            'SELECT business_images, pattern_data FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
+            [businessType, 'active']
+          );
+          
+          if (checkResult.rows.length > 0 && checkResult.rows[0].pattern_data) {
+            console.log(`✅ Real training completed for ${businessType} - data saved in database`);
+            return true;
+          }
+          
+          // Wait 3 seconds before next check
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+        
+        console.log(`⏰ Training timeout for ${businessType}, using fallback`);
+      } else {
+        console.log(`⚠️ Training API failed for ${businessType}, using fallback`);
+      }
+      
+    } catch (fetchError) {
+      console.log(`⚠️ Training fetch error for ${businessType}:`, fetchError.message);
+    }
+    
+    // 🔄 FALLBACK: If real training fails, use stock images only
+    console.log(`🔄 Using stock images fallback for ${businessType}`);
+    const stockImages = await generateUnsplashFallback(businessType, 6);
+    
+    if (stockImages.length > 0) {
+      await saveBusinessImagesPattern(businessType, stockImages, storage);
+      console.log(`✅ Fallback training completed for: ${businessType}`);
       return true;
     }
+    
+    return false;
     
     return false;
     
@@ -452,7 +482,7 @@ function optimizeImageUrl(url, businessType) {
 }
 
 // 💾 SALVATAGGIO PATTERN NEL DATABASE (Fixed Schema)
-async function saveBusinessImagesPattern(businessType, images, storage) {
+async function saveBusinessImagesPattern(businessType, images, storage, designPatterns = null) {
   try {
     const imagePattern = {
       unsplash_gallery: images,
@@ -463,29 +493,51 @@ async function saveBusinessImagesPattern(businessType, images, storage) {
       business_type: businessType
     };
     
-    console.log(`💾 Saving ${images.length} images for business type: ${businessType}`);
+    // 🎨 Generate design patterns if not provided from scraping
+    const patternData = designPatterns || {
+      colors: {
+        primary: getBusinessTypeColor(businessType, 'primary'),
+        secondary: getBusinessTypeColor(businessType, 'secondary'), 
+        accent: getBusinessTypeColor(businessType, 'accent'),
+        background: '#FFFFFF',
+        text: '#1F2937'
+      },
+      fonts: {
+        heading: getBusinessTypeFont(businessType, 'heading'),
+        body: getBusinessTypeFont(businessType, 'body')
+      },
+      layout: {
+        type: 'modern',
+        sections: ['hero', 'about', 'services', 'contact'],
+        business_type: businessType
+      },
+      generated_date: new Date().toISOString(),
+      source: designPatterns ? 'scraped' : 'generated'
+    };
     
-    // 🔧 Fixed: Use proper UPSERT without ON CONFLICT constraint
+    console.log(`💾 Saving ${images.length} images + design patterns for business type: ${businessType}`);
+    
+    // 🔧 UPSERT with both business_images AND pattern_data
     const existingCheck = await storage.query(
       'SELECT id FROM ai_design_patterns WHERE business_type = $1',
       [businessType]
     );
     
     if (existingCheck.rows.length > 0) {
-      // Update existing record
+      // Update existing record with both images and patterns
       await storage.query(`
         UPDATE ai_design_patterns 
-        SET business_images = $1, updated_at = NOW()
-        WHERE business_type = $2
-      `, [JSON.stringify(imagePattern), businessType]);
-      console.log(`✅ Updated existing images for business type: ${businessType}`);
+        SET business_images = $1, pattern_data = $2, updated_at = NOW()
+        WHERE business_type = $3
+      `, [JSON.stringify(imagePattern), JSON.stringify(patternData), businessType]);
+      console.log(`✅ Updated existing data for business type: ${businessType}`);
     } else {
-      // Insert new record
+      // Insert new record with both images and patterns
       await storage.query(`
-        INSERT INTO ai_design_patterns (business_type, business_images, status, created_at)
-        VALUES ($1, $2, 'active', NOW())
-      `, [businessType, JSON.stringify(imagePattern)]);
-      console.log(`✅ Inserted new images for business type: ${businessType}`);
+        INSERT INTO ai_design_patterns (business_type, business_images, pattern_data, status, created_at)
+        VALUES ($1, $2, $3, 'active', NOW())
+      `, [businessType, JSON.stringify(imagePattern), JSON.stringify(patternData)]);
+      console.log(`✅ Inserted new data for business type: ${businessType}`);
     }
     
   } catch (error) {
@@ -1497,6 +1549,78 @@ function calculateSemanticScore(blocks, businessType) {
   const aiBonus = blocks.some(block => block.aiEnhanced) ? 10 : 0;
   
   return Math.round(Math.min(baseScore + aiBonus, 99));
+}
+
+// 🎨 Business type specific colors
+function getBusinessTypeColor(businessType, colorType) {
+  const businessColors = {
+    florist: {
+      primary: '#E91E63', // Pink
+      secondary: '#4CAF50', // Green
+      accent: '#FFC107' // Amber
+    },
+    restaurant: {
+      primary: '#FF5722', // Red-Orange
+      secondary: '#795548', // Brown
+      accent: '#FFC107' // Amber
+    },
+    dentist: {
+      primary: '#2196F3', // Blue
+      secondary: '#00BCD4', // Cyan
+      accent: '#4CAF50' // Green
+    },
+    gym: {
+      primary: '#FF5722', // Red
+      secondary: '#9E9E9E', // Grey
+      accent: '#FF9800' // Orange
+    },
+    bakery: {
+      primary: '#FF9800', // Orange
+      secondary: '#795548', // Brown
+      accent: '#FFEB3B' // Yellow
+    },
+    default: {
+      primary: '#3B82F6',
+      secondary: '#1E40AF',
+      accent: '#F59E0B'
+    }
+  };
+  
+  const colors = businessColors[businessType] || businessColors.default;
+  return colors[colorType] || colors.primary;
+}
+
+// 📝 Business type specific fonts
+function getBusinessTypeFont(businessType, fontType) {
+  const businessFonts = {
+    florist: {
+      heading: 'Dancing Script',
+      body: 'Open Sans'
+    },
+    restaurant: {
+      heading: 'Playfair Display',
+      body: 'Source Sans Pro'
+    },
+    dentist: {
+      heading: 'Roboto',
+      body: 'Roboto'
+    },
+    gym: {
+      heading: 'Oswald',
+      body: 'Roboto'
+    },
+    bakery: {
+      heading: 'Fredoka One',
+      body: 'Nunito'
+    },
+    default: {
+      heading: 'Inter',
+      body: 'Inter'
+    }
+  };
+  
+  const fonts = businessFonts[businessType] || businessFonts.default;
+  return fonts[fontType] || fonts.heading;
 }
 
 module.exports = router;
