@@ -514,7 +514,7 @@ class DatabaseStorage {
           INSERT INTO ai_design_patterns (
             business_type,
             source_url, 
-            pattern_data,
+            design_analysis,
             business_images,
             confidence_score,
             source,
@@ -524,7 +524,7 @@ class DatabaseStorage {
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
           ON CONFLICT (business_type, source_url) 
           DO UPDATE SET 
-            pattern_data = $3,
+            design_analysis = $3,
             business_images = $4,
             confidence_score = $5,
             updated_at = NOW()
@@ -566,17 +566,17 @@ class DatabaseStorage {
     }
 
     try {
-      const query = 'SELECT business_type, source_url, pattern_data, created_at FROM ai_design_patterns WHERE source LIKE \'%competitor%\' ORDER BY created_at DESC';
+      const query = 'SELECT business_type, source_url, design_analysis, created_at FROM ai_design_patterns WHERE source LIKE \'%competitor%\' ORDER BY created_at DESC';
       const result = await this.pool.query(query);
       
       const sites = result.rows.map(row => ({
         url: row.source_url,
         businessType: row.business_type,
-        name: row.pattern_data?.name || 'Unknown',
-        description: row.pattern_data?.description || 'Competitor site',
-        style: row.pattern_data?.style || 'modern',
+        name: row.design_analysis?.name || 'Unknown',
+        description: row.design_analysis?.description || 'Competitor site',
+        style: row.design_analysis?.style || 'modern',
         lastCollected: row.created_at,
-        metadata: row.pattern_data
+        metadata: row.design_analysis
       }));
       
       console.log(`📖 Loaded ${sites.length} custom sites from DB`);
