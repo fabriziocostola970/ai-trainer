@@ -85,6 +85,27 @@ app.get('/health', (req, res) => {
   });
 });
 
+// 🔧 DEBUG: Database connection test endpoint
+app.get('/debug/db', async (req, res) => {
+  try {
+    const DatabaseStorage = require('./src/storage/database-storage');
+    const storage = new DatabaseStorage();
+    
+    const result = await storage.query('SELECT 1 as test');
+    res.json({
+      status: 'Database connected',
+      timestamp: new Date().toISOString(),
+      test_query: result.rows[0]
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'Database connection failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Training Interface Routes (with authentication)
 app.use('/training', authenticateAPI, require('./src/training/training-interface'));
 
