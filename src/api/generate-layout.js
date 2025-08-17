@@ -70,10 +70,10 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     const designAI = new DesignIntelligence();
     
     try {
-      // Test rapido per verificare se il database design_patterns esiste
-      await designAI.pool.query('SELECT 1 FROM design_patterns LIMIT 1');
+      // Test rapido per verificare se il database ai_design_patterns esiste
+      await designAI.pool.query('SELECT 1 FROM ai_design_patterns LIMIT 1');
     } catch (dbError) {
-      console.log(`❌ Database design_patterns not available: ${dbError.message}`);
+      console.log(`❌ Database ai_design_patterns not available: ${dbError.message}`);
       await designAI.close();
       
       // Restituisci modalità manutenzione quando il database non è disponibile
