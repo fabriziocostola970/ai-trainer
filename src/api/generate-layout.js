@@ -108,7 +108,7 @@ function isValidBusinessImageData(gallery, businessType) {
 // �🔢 Count valid business types in database (NEW VALIDATION FUNCTION)
 // ❌ REMOVED countValidBusinessTypes - was counting ALL business types instead of specific one
 
-// 🎯 Check if we have sufficient data for SPECIFIC business type
+// 🎯 Check if we have MINIMUM 5 records for SPECIFIC business type
 async function hasValidBusinessTypeData(businessType, storage) {
   try {
     const result = await storage.query(`
@@ -122,8 +122,8 @@ async function hasValidBusinessTypeData(businessType, storage) {
     `, [businessType]);
     
     const count = parseInt(result.rows[0]?.count || 0);
-    console.log(`📊 Valid data for business type "${businessType}": ${count} records`);
-    return count > 0;
+    console.log(`📊 Valid records for business type "${businessType}": ${count}/5 required`);
+    return count >= 5; // MUST HAVE AT LEAST 5 RECORDS!
   } catch (error) {
     console.log(`⚠️ Error checking business type ${businessType}:`, error.message);
     return false;
@@ -213,15 +213,15 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
       const images = result.rows[0].business_images;
       const gallery = images.unsplash_gallery || images.gallery || [];
       
-      // 🛡️ STEP 2.1: CRITICAL - Check if we have data for THIS SPECIFIC business type
+      // 🛡️ STEP 2.1: CRITICAL - Must have MINIMUM 5 records for this business type
       const hasValidData = await hasValidBusinessTypeData(identifiedType, storage);
       if (!hasValidData) {
-        console.log(`⚠️ CRITICAL: No data for business type "${identifiedType}"`);
-        console.log(`🔄 System MUST scrape competitors for "${identifiedType}" - triggering training`);
+        console.log(`⚠️ CRITICAL: Insufficient records for business type "${identifiedType}" (need minimum 5)`);
+        console.log(`🔄 System MUST scrape MORE competitors for "${identifiedType}" - triggering training`);
         
-        // 🚀 Trigger training for THIS SPECIFIC business type (not random ones!)
+        // 🚀 Trigger training for THIS SPECIFIC business type to reach 5 records
         if (attempt === 1) {
-          console.log(`🚀 Starting competitor scraping for business type: ${identifiedType}`);
+          console.log(`🚀 Starting competitor scraping for business type: ${identifiedType} (targeting 5 records)`);
           const success = await triggerControlledTraining(identifiedType, storage);
           if (success) {
             // Retry with fresh data
@@ -229,7 +229,7 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
           }
         }
       } else {
-        console.log(`✅ BUSINESS TYPE DATA FOUND: "${identifiedType}" has valid patterns`);
+        console.log(`✅ BUSINESS TYPE VALIDATION PASSED: "${identifiedType}" has minimum 5 records`);
       }
       
       // 🛡️ STEP 2.1: Check if we have the specific business type needed
@@ -762,8 +762,20 @@ async function triggerDynamicTraining(businessType, competitorSites) {
       }
     };
     
-    // Chiama l'endpoint di training esistente tramite HTTP interno
-    const response = await fetch(`http://localhost:${process.env.PORT || 4000}/api/training/start`, {
+    // Get the correct base URL for the environment (FIXED for Railway)
+    let trainingBaseUrl;
+    if (process.env.RAILWAY_STATIC_URL) {
+      trainingBaseUrl = process.env.RAILWAY_STATIC_URL;
+    } else if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+      trainingBaseUrl = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+    } else {
+      trainingBaseUrl = `http://localhost:${process.env.PORT || 4000}`;
+    }
+    
+    console.log(`🌐 Training endpoint: ${trainingBaseUrl}/api/training/start`);
+    
+    // Chiama l'endpoint di training esistente tramite HTTP
+    const response = await fetch(`${trainingBaseUrl}/api/training/start`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
