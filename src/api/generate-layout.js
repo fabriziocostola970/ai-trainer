@@ -106,64 +106,33 @@ function isValidBusinessImageData(gallery, businessType) {
 }
 
 // �🔢 Count valid business types in database (NEW VALIDATION FUNCTION)
-async function countValidBusinessTypes(storage) {
+// ❌ REMOVED countValidBusinessTypes - was counting ALL business types instead of specific one
+
+// 🎯 Check if we have sufficient data for SPECIFIC business type
+async function hasValidBusinessTypeData(businessType, storage) {
   try {
     const result = await storage.query(`
-      SELECT COUNT(DISTINCT business_type) as count 
+      SELECT COUNT(*) as count 
       FROM ai_design_patterns 
-      WHERE status = 'active' 
+      WHERE business_type = $1 
+      AND status = 'active' 
       AND business_images IS NOT NULL 
+      AND color_palette IS NOT NULL
       AND jsonb_array_length(COALESCE(business_images->'unsplash_gallery', business_images->'gallery', '[]'::jsonb)) >= 5
-    `);
+    `, [businessType]);
     
     const count = parseInt(result.rows[0]?.count || 0);
-    console.log(`📊 Valid business types in database: ${count}`);
-    return count;
+    console.log(`📊 Valid data for business type "${businessType}": ${count} records`);
+    return count > 0;
   } catch (error) {
-    console.log('⚠️ Error counting business types:', error.message);
-    return 0;
+    console.log(`⚠️ Error checking business type ${businessType}:`, error.message);
+    return false;
   }
 }
 
 // 🚀 Trigger background expansion of business types (ASYNC NON-BLOCKING)
-async function triggerBusinessTypesExpansion(storage) {
-  const missingTypes = ['restaurant', 'dentist', 'gym']; // REDUCED to prevent overload
-  
-  let successCount = 0;
-  const maxSuccess = 2; // LIMIT expansion to prevent infinite loops
-  
-  for (const businessType of missingTypes) {
-    if (successCount >= maxSuccess) {
-      console.log(`🛑 Expansion limit reached (${maxSuccess}), stopping to prevent overload`);
-      break;
-    }
-    
-    try {
-      // Check if type already exists
-      const existing = await storage.query(
-        'SELECT business_type FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
-        [businessType, 'active']
-      );
-      
-      if (existing.rows.length === 0) {
-        console.log(`🔄 Expanding database with business type: ${businessType}`);
-        const success = await triggerControlledTraining(businessType, storage);
-        
-        if (success) {
-          successCount++;
-          console.log(`✅ Successfully expanded: ${businessType} (${successCount}/${maxSuccess})`);
-        }
-        
-        // Small delay to prevent overload
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    } catch (error) {
-      console.log(`⚠️ Error expanding business type ${businessType}:`, error.message);
-    }
-  }
-  
-  console.log(`🎯 Business expansion completed: ${successCount} new types added`);
-}
+// ❌ REMOVED triggerBusinessTypesExpansion - was adding random business types
+// 🎯 Now we only scrape competitors for the SPECIFIC business type requested
 
 // 🤖 STEP 1: Identifica il business type dalla descrizione
 async function identifyBusinessType(businessName, businessDescription) {
@@ -244,21 +213,23 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
       const images = result.rows[0].business_images;
       const gallery = images.unsplash_gallery || images.gallery || [];
       
-      // 🛡️ STEP 2.1: CRITICAL - Validate minimum business types in database FIRST
-      const totalBusinessTypes = await countValidBusinessTypes(storage);
-      if (totalBusinessTypes < 5) {
-        console.log(`⚠️ CRITICAL: Only ${totalBusinessTypes}/5 business types in database`);
-        console.log(`🔄 System MUST expand business diversity - triggering expansion`);
+      // 🛡️ STEP 2.1: CRITICAL - Check if we have data for THIS SPECIFIC business type
+      const hasValidData = await hasValidBusinessTypeData(identifiedType, storage);
+      if (!hasValidData) {
+        console.log(`⚠️ CRITICAL: No data for business type "${identifiedType}"`);
+        console.log(`🔄 System MUST scrape competitors for "${identifiedType}" - triggering training`);
         
-        // 🚀 Trigger background expansion of business types (PRIORITY ACTION)
+        // 🚀 Trigger training for THIS SPECIFIC business type (not random ones!)
         if (attempt === 1) {
-          console.log(`🚀 Starting business types expansion to reach minimum 5 types`);
-          triggerBusinessTypesExpansion(storage).catch(err => 
-            console.log('⚠️ Business types expansion error:', err.message)
-          );
+          console.log(`🚀 Starting competitor scraping for business type: ${identifiedType}`);
+          const success = await triggerControlledTraining(identifiedType, storage);
+          if (success) {
+            // Retry with fresh data
+            return await getBusinessImagesFromDB(businessName, businessDescription, count, attempt + 1);
+          }
         }
       } else {
-        console.log(`✅ BUSINESS TYPES VALIDATION PASSED: ${totalBusinessTypes} types available (≥5 required)`);
+        console.log(`✅ BUSINESS TYPE DATA FOUND: "${identifiedType}" has valid patterns`);
       }
       
       // 🛡️ STEP 2.1: Check if we have the specific business type needed
