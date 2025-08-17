@@ -373,10 +373,34 @@ class DesignIntelligence {
     }
 
     calculateConfidenceScore(colors, fonts, layout) {
-        const scores = [colors.confidence, fonts.confidence, layout.confidence];
-        const weights = { high: 100, medium: 70, low: 40 };
-        const average = scores.reduce((sum, score) => sum + weights[score], 0) / scores.length;
-        return Math.round(average);
+        // 🛡️ SAFETY: Handle undefined inputs
+        if (!colors || !fonts || !layout) {
+            console.log('⚠️ Missing design components, returning default confidence');
+            return 75;
+        }
+        
+        // 🔄 NORMALIZE: Convert different confidence formats to numbers
+        const normalizeConfidence = (conf) => {
+            if (typeof conf === 'number') return Math.min(Math.max(conf, 0), 100);
+            if (typeof conf === 'string') {
+                const weights = { high: 90, medium: 70, low: 50 };
+                return weights[conf.toLowerCase()] || 60;
+            }
+            return 60; // Default fallback
+        };
+        
+        const colorScore = normalizeConfidence(colors.confidence || colors.score || 70);
+        const fontScore = normalizeConfidence(fonts.confidence || fonts.score || 70);
+        const layoutScore = normalizeConfidence(layout.confidence || layout.score || 70);
+        
+        const scores = [colorScore, fontScore, layoutScore].filter(score => !isNaN(score));
+        if (scores.length === 0) return 75; // Fallback if all scores are NaN
+        
+        const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+        const finalScore = Math.round(Math.min(Math.max(average, 50), 95));
+        
+        console.log(`🎯 Confidence calculation: colors=${colorScore}, fonts=${fontScore}, layout=${layoutScore} → ${finalScore}%`);
+        return finalScore;
     }
 
     // ... Altri metodi di utilità per CSS generation, spacing, etc.

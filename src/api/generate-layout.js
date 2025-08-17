@@ -178,9 +178,19 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
   }
 }
 
-// 🚀 Training in background SENZA ricorsione (Memory Safe)
+// 🚀 Training in background SENZA ricorsione (Memory Safe + Deduplication)
 async function triggerBackgroundTraining(businessType) {
   try {
+    // 🔒 DEDUPLICATION: Check if training is already running
+    if (global.activeTraining && global.activeTraining[businessType]) {
+      console.log(`⚠️ Training already active for ${businessType}, skipping duplicate`);
+      return false;
+    }
+    
+    // Mark training as active
+    if (!global.activeTraining) global.activeTraining = {};
+    global.activeTraining[businessType] = Date.now();
+    
     console.log(`🤖 Starting background competitor discovery for: ${businessType}`);
     
     // 🎯 STEP 1: Genera competitor con OpenAI
@@ -188,6 +198,7 @@ async function triggerBackgroundTraining(businessType) {
     
     if (!competitorSites || competitorSites.length === 0) {
       console.log(`⚠️ No competitors generated for: ${businessType}`);
+      delete global.activeTraining[businessType];
       return false;
     }
     
@@ -198,13 +209,20 @@ async function triggerBackgroundTraining(businessType) {
     
     // Non aspettiamo il risultato per evitare timeout
     trainingPromise
-      .then(() => console.log(`✅ Background training completed for: ${businessType}`))
-      .catch(err => console.log(`⚠️ Background training failed for ${businessType}:`, err.message));
+      .then(() => {
+        console.log(`✅ Background training completed for: ${businessType}`);
+        delete global.activeTraining[businessType];
+      })
+      .catch(err => {
+        console.log(`⚠️ Background training failed for ${businessType}:`, err.message);
+        delete global.activeTraining[businessType];
+      });
     
     return true; // Ritorna subito
     
   } catch (error) {
     console.log('❌ Background training error:', error.message);
+    if (global.activeTraining) delete global.activeTraining[businessType];
     return false;
   }
 }
@@ -512,17 +530,19 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     let designData;
     
     try {
-      designData = await designIntelligence.generateDesignForBusiness(detectedBusinessType, style);
+      designData = await designIntelligence.generateCompleteDesignRecommendation(detectedBusinessType, { style });
       console.log('✅ Design Intelligence generated:', {
-        colors: designData.colors,
-        typography: designData.typography?.primary,
+        colors: designData.design?.colors,
+        typography: designData.design?.typography?.primary,
         confidence: designData.confidence
       });
     } catch (designError) {
       console.log('⚠️ Design Intelligence fallback:', designError.message);
       designData = {
-        colors: { primary: '#3B82F6', secondary: '#10B981', accent: '#F59E0B' },
-        typography: { primary: 'Inter', secondary: 'system-ui' },
+        design: {
+          colors: { primary: '#3B82F6', secondary: '#10B981', accent: '#F59E0B' },
+          typography: { primary: 'Inter', secondary: 'system-ui' }
+        },
         confidence: 70
       };
     }

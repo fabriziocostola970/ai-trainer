@@ -291,11 +291,18 @@ class DatabaseStorage {
     }
   }
 
-  // � Public query method wrapper
+  // 🔌 Public query method wrapper (MEMORY SAFE)
   async query(sql, params = []) {
+    // 🔄 Auto-initialize if not connected
+    if (!this.isConnected && !this.fallbackToFiles) {
+      console.log('🔄 Auto-initializing database connection...');
+      await this.initialize();
+    }
+    
     if (!this.isConnected || this.fallbackToFiles) {
       throw new Error('Database not connected - use initialize() first');
     }
+    
     return await this.pool.query(sql, params);
   }
 
