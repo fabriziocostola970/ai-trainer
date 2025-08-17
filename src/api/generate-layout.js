@@ -112,9 +112,22 @@ Business type:`;
   }
 }
 
-// 🖼️ DATABASE-DRIVEN Gallery Images (DINAMICO - Auto-genera competitor)
+// 🖼️ DATABASE-DRIVEN Gallery Images (DINAMICO - MEMORY SAFE)
 async function getBusinessImagesFromDB(businessName, businessDescription, count = 4, attempt = 1) {
-  const maxAttempts = 2; // Evita loop infiniti
+  const maxAttempts = 1; // 🔒 MEMORY PROTECTION: Solo 1 tentativo per evitare loop infiniti
+  
+  // 🛡️ EMERGENCY PROTECTION: Controllo memoria heap
+  const memUsage = process.memoryUsage();
+  if (memUsage.heapUsed > 1024 * 1024 * 1024) { // 1GB limit
+    console.log('🚨 MEMORY PROTECTION: Heap usage too high, using fallback');
+    return generateFallbackStockImages('business', count);
+  }
+  
+  // 🔒 STRICT ATTEMPT LIMIT 
+  if (attempt > maxAttempts) {
+    console.log(`⚠️ Max attempts reached (${attempt}), using fallback`);
+    return generateFallbackStockImages('business', count);
+  }
   
   try {
     const storage = new DatabaseStorage();
@@ -142,23 +155,17 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
       return images.gallery ? images.gallery.slice(0, count) : [];
     }
     
-    // 🚀 STEP 3: Business type non trovato → Sistema dinamico
+    // 🚀 STEP 3: Business type non trovato → SOLO al primo tentativo (NO RICORSIONE)
     if (attempt === 1) {
-      console.log(`🔍 NEW BUSINESS TYPE "${identifiedType}" - Starting competitor analysis...`);
+      console.log(`🔍 NEW BUSINESS TYPE "${identifiedType}" - Starting background training...`);
       
-      // 🤖 STEP 4: Chiedi 5 competitor per questo business type
-      const competitorSites = await generateCompetitorSites(identifiedType);
+      // 🤖 STEP 4: Avvia training in background (ASINCRONO)
+      triggerBackgroundTraining(identifiedType)
+        .catch(err => console.log('Background training error:', err.message));
       
-      if (competitorSites && competitorSites.length > 0) {
-        // 🕷️ STEP 5: Avvia scraping automatico
-        const success = await triggerDynamicTraining(identifiedType, competitorSites);
-        
-        if (success) {
-          // 🔄 STEP 6: Ricorsione per usare i nuovi dati
-          console.log(`🔄 Recursive call to get newly generated data for: ${identifiedType}`);
-          return await getBusinessImagesFromDB(businessName, businessDescription, count, attempt + 1);
-        }
-      }
+      // 🔄 IMMEDIATE FALLBACK: Non aspettiamo il training
+      console.log(`⚡ Using fallback images for immediate response`);
+      return generateFallbackStockImages(identifiedType.toLowerCase(), count);
     }
     
     // 🆘 Fallback finale  
@@ -168,6 +175,37 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
   } catch (error) {
     console.log('⚠️ Database error, using fallback stock images:', error.message);
     return generateFallbackStockImages('business', count);
+  }
+}
+
+// 🚀 Training in background SENZA ricorsione (Memory Safe)
+async function triggerBackgroundTraining(businessType) {
+  try {
+    console.log(`🤖 Starting background competitor discovery for: ${businessType}`);
+    
+    // 🎯 STEP 1: Genera competitor con OpenAI
+    const competitorSites = await generateCompetitorSites(businessType);
+    
+    if (!competitorSites || competitorSites.length === 0) {
+      console.log(`⚠️ No competitors generated for: ${businessType}`);
+      return false;
+    }
+    
+    console.log(`✅ Generated ${competitorSites.length} competitors for ${businessType}`);
+    
+    // 🕷️ STEP 2: Avvia training senza aspettare (Fire and Forget)
+    const trainingPromise = triggerDynamicTraining(businessType, competitorSites);
+    
+    // Non aspettiamo il risultato per evitare timeout
+    trainingPromise
+      .then(() => console.log(`✅ Background training completed for: ${businessType}`))
+      .catch(err => console.log(`⚠️ Background training failed for ${businessType}:`, err.message));
+    
+    return true; // Ritorna subito
+    
+  } catch (error) {
+    console.log('❌ Background training error:', error.message);
+    return false;
   }
 }
 
