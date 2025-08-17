@@ -291,7 +291,15 @@ class DatabaseStorage {
     }
   }
 
-  // 📋 Verify VendiOnline AI Training Tables
+  // � Public query method wrapper
+  async query(sql, params = []) {
+    if (!this.isConnected || this.fallbackToFiles) {
+      throw new Error('Database not connected - use initialize() first');
+    }
+    return await this.pool.query(sql, params);
+  }
+
+  // �📋 Verify VendiOnline AI Training Tables
   async verifyVendiOnlineTables() {
     try {
       const requiredTables = [
