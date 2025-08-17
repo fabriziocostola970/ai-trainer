@@ -66,8 +66,26 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     
     console.log(`🔄 Business type mapping: ${businessType} → ${englishBusinessType}`);
 
-    // Utilizza Design Intelligence per generare design ottimizzato
+    // Verifica disponibilità database prima di procedere
     const designAI = new DesignIntelligence();
+    
+    try {
+      // Test rapido per verificare se il database design_patterns esiste
+      await designAI.pool.query('SELECT 1 FROM design_patterns LIMIT 1');
+    } catch (dbError) {
+      console.log(`❌ Database design_patterns not available: ${dbError.message}`);
+      await designAI.close();
+      
+      // Restituisci modalità manutenzione quando il database non è disponibile
+      return res.status(503).json({
+        success: false,
+        error: 'Service temporarily unavailable - database maintenance in progress',
+        isFallback: true,
+        redirect: '/maintenance'
+      });
+    }
+
+    // Utilizza Design Intelligence per generare design ottimizzato
     const designRecommendation = await designAI.generateCompleteDesignRecommendation(englishBusinessType, {
       style,
       contentType: 'layout',
