@@ -77,7 +77,35 @@ async function generateBusinessContentWithAI(businessType, businessName) {
   }
 }
 
-// 🔢 Count valid business types in database (NEW VALIDATION FUNCTION)
+// �️ Validate business image data quality (VALIDATION FUNCTION)
+function isValidBusinessImageData(gallery, businessType) {
+  if (!gallery || !Array.isArray(gallery)) {
+    console.log(`⚠️ Invalid gallery data for ${businessType}: not an array`);
+    return false;
+  }
+  
+  if (gallery.length < 5) {
+    console.log(`⚠️ Insufficient images for ${businessType}: ${gallery.length}/5 required`);
+    return false;
+  }
+  
+  // Check that all images are valid URLs
+  const validImages = gallery.filter(url => {
+    return typeof url === 'string' && 
+           url.length > 10 && 
+           (url.includes('unsplash.com') || url.includes('pexels.com') || url.includes('pixabay.com'));
+  });
+  
+  if (validImages.length < 5) {
+    console.log(`⚠️ Invalid image URLs for ${businessType}: ${validImages.length}/${gallery.length} valid`);
+    return false;
+  }
+  
+  console.log(`✅ Valid business image data for ${businessType}: ${validImages.length} valid images`);
+  return true;
+}
+
+// �🔢 Count valid business types in database (NEW VALIDATION FUNCTION)
 async function countValidBusinessTypes(storage) {
   try {
     const result = await storage.query(`
@@ -201,7 +229,24 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
       const images = result.rows[0].business_images;
       const gallery = images.unsplash_gallery || images.gallery || [];
       
-      // 🛡️ BUSINESS VALIDATION: Minimum 5 images required
+      // 🛡️ STEP 2.1: Validate minimum business types in database FIRST (CRITICAL CHECK)
+      const totalBusinessTypes = await countValidBusinessTypes(storage);
+      if (totalBusinessTypes < 5) {
+        console.log(`⚠️ CRITICAL: Only ${totalBusinessTypes}/5 business types in database`);
+        console.log(`🔄 System MUST expand business diversity - triggering expansion`);
+        
+        // 🚀 Trigger background expansion of business types (PRIORITY ACTION)
+        if (attempt === 1) {
+          console.log(`🚀 Starting business types expansion to reach minimum 5 types`);
+          triggerBusinessTypesExpansion(storage).catch(err => 
+            console.log('⚠️ Business types expansion error:', err.message)
+          );
+        }
+      } else {
+        console.log(`✅ BUSINESS TYPES VALIDATION PASSED: ${totalBusinessTypes} types available (≥5 required)`);
+      }
+      
+      // 🛡️ STEP 2.2: Validate individual business image data quality (SECONDARY CHECK)
       if (!isValidBusinessImageData(gallery, identifiedType)) {
         console.log(`⚠️ Invalid business data for ${identifiedType}: insufficient images (${gallery.length}), triggering regeneration`);
         
@@ -221,22 +266,6 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
       }
       
       console.log(`�📊 Returning ${gallery.length} valid images from database`);
-      
-      // 🛡️ STEP 2.2: Validate minimum business types in database (NEW REQUIREMENT)
-      const totalBusinessTypes = await countValidBusinessTypes(storage);
-      if (totalBusinessTypes < 5) {
-        console.log(`⚠️ VALIDATION FAILED: Only ${totalBusinessTypes}/5 business types in database`);
-        console.log(`🔄 Using found data for ${identifiedType} but system needs more business diversity`);
-        
-        // 🚀 Trigger background expansion of business types (non-blocking)
-        if (attempt === 1) {
-          triggerBusinessTypesExpansion(storage).catch(err => 
-            console.log('⚠️ Background business types expansion error:', err.message)
-          );
-        }
-      } else {
-        console.log(`✅ VALIDATION PASSED: ${totalBusinessTypes} business types available (≥5 required)`);
-      }
       
       return gallery.slice(0, count);
     }
