@@ -325,7 +325,11 @@ async function triggerControlledTraining(businessType, storage) {
           'Authorization': `Bearer ${process.env.AI_TRAINER_API_KEY || 'ai-trainer-local-dev'}`
         },
         body: JSON.stringify({
-          customSites: competitorSites.map(site => site.url), // FIXED: was "sites", now "customSites"
+          customSites: competitorSites.map(site => ({
+            url: site.url,
+            businessType: businessType,
+            style: 'modern'
+          })), // FIXED: Pass objects with url property, not just strings
           businessType: businessType,
           extractDesignPatterns: true,  // 🎨 Extract CSS, colors, fonts
           extractImages: true,          // 🖼️ Extract real images
