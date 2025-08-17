@@ -539,6 +539,84 @@ body { font-family: var(--font-secondary); font-size: ${fonts.sizes?.body || 16}
 }`;
     }
 
+    /**
+     * 🎯 Default Layout Suggestions (fallback when no data available)
+     */
+    getDefaultLayoutSuggestions(businessType) {
+        console.log(`📐 Using default layout suggestions for ${businessType}`);
+        
+        const defaultLayouts = {
+            restaurant: ['hero', 'about', 'menu', 'gallery', 'contact'],
+            business: ['hero', 'about', 'services', 'team', 'contact'],
+            ecommerce: ['hero', 'products', 'categories', 'about', 'contact'],
+            portfolio: ['hero', 'portfolio', 'about', 'skills', 'contact'],
+            blog: ['hero', 'posts', 'about', 'categories', 'contact'],
+            nonprofit: ['hero', 'mission', 'programs', 'donate', 'contact'],
+            health: ['hero', 'services', 'team', 'testimonials', 'contact'],
+            education: ['hero', 'courses', 'about', 'faculty', 'contact'],
+            tech: ['hero', 'products', 'solutions', 'team', 'contact'],
+            default: ['hero', 'about', 'services', 'contact']
+        };
+
+        const layout = defaultLayouts[businessType] || defaultLayouts.default;
+        
+        return {
+            layout: layout,
+            confidence: 0.6,
+            method: 'fallback',
+            source: 'default_patterns',
+            semanticScore: 70,
+            designScore: 65
+        };
+    }
+
+    /**
+     * 🎨 Default Color Palette (fallback when no data available)
+     */
+    getDefaultColorPalette(businessType) {
+        console.log(`🎨 Using default color palette for ${businessType}`);
+        
+        const defaultPalettes = {
+            restaurant: {
+                primary: '#8B4513',
+                secondary: '#D2691E', 
+                accent: '#FFD700',
+                background: '#FFFFFF',
+                text: '#333333'
+            },
+            business: {
+                primary: '#2563EB',
+                secondary: '#1E40AF',
+                accent: '#F59E0B',
+                background: '#FFFFFF',
+                text: '#1F2937'
+            },
+            health: {
+                primary: '#059669',
+                secondary: '#065F46',
+                accent: '#10B981',
+                background: '#F0FDF4',
+                text: '#1F2937'
+            },
+            tech: {
+                primary: '#7C3AED',
+                secondary: '#5B21B6',
+                accent: '#06B6D4',
+                background: '#FFFFFF',
+                text: '#111827'
+            },
+            default: {
+                primary: '#3B82F6',
+                secondary: '#1E40AF',
+                accent: '#F59E0B',
+                background: '#FFFFFF',
+                text: '#1F2937'
+            }
+        };
+
+        return defaultPalettes[businessType] || defaultPalettes.default;
+    }
+
     async close() {
         await this.pool.end();
     }
