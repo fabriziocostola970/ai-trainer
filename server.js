@@ -4,6 +4,44 @@ const helmet = require('helmet');
 const path = require('path');
 require('dotenv').config();
 
+// 🗄️ Auto-migration function
+async function runDatabaseMigration() {
+  try {
+    console.log('🗄️ Checking database schema...');
+    
+    const { Pool } = require('pg');
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL || process.env.RAILWAY_DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
+
+    // Check if business_images column exists
+    const result = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'ai_design_patterns' 
+      AND column_name = 'business_images'
+    `);
+
+    if (result.rows.length === 0) {
+      console.log('🔄 Adding business_images column to ai_design_patterns table...');
+      
+      await pool.query(`
+        ALTER TABLE ai_design_patterns 
+        ADD COLUMN business_images JSONB DEFAULT '{}'
+      `);
+      
+      console.log('✅ Migration completed: business_images column added');
+    } else {
+      console.log('✅ Database schema up to date');
+    }
+
+    await pool.end();
+  } catch (error) {
+    console.warn('⚠️ Database migration failed (non-critical):', error.message);
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 
@@ -296,30 +334,39 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🤖 AI-Trainer server running on port ${PORT}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`🌐 Web Interface: http://localhost:${PORT}/`);
-  console.log(`📊 Training API: http://localhost:${PORT}/training/`);
-  console.log(`🛠️  API Status: http://localhost:${PORT}/status`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+// Start server with auto-migration
+async function startServer() {
+  // Run database migration first
+  await runDatabaseMigration();
   
-  // Check if training system is available
-  try {
-    require('./src/training/training-interface');
-    console.log(`✅ Training system loaded successfully`);
-  } catch (error) {
-    console.warn(`⚠️  Training system not available:`, error.message);
-  }
-  
-  // Check if data collector is available
-  try {
-    require('./src/training/data-collector');
-    console.log(`✅ Data collector loaded successfully`);
-  } catch (error) {
-    console.warn(`⚠️  Data collector not available:`, error.message);
-  }
-});
+  // Start the server
+  app.listen(PORT, () => {
+    console.log(`🤖 AI-Trainer server running on port ${PORT}`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    console.log(`🌐 Web Interface: http://localhost:${PORT}/`);
+    console.log(`📊 Training API: http://localhost:${PORT}/training/`);
+    console.log(`🛠️  API Status: http://localhost:${PORT}/status`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Check if training system is available
+    try {
+      require('./src/training/training-interface');
+      console.log(`✅ Training system loaded successfully`);
+    } catch (error) {
+      console.warn(`⚠️  Training system not available:`, error.message);
+    }
+    
+    // Check if data collector is available
+    try {
+      require('./src/training/data-collector');
+      console.log(`✅ Data collector loaded successfully`);
+    } catch (error) {
+      console.warn(`⚠️  Data collector not available:`, error.message);
+    }
+  });
+}
+
+// Start the server
+startServer().catch(console.error);
 
 module.exports = app;
