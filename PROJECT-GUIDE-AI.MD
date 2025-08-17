@@ -48,6 +48,58 @@
 - ✅ **Design structure** (sezioni, disposizione) - Pattern pubblici
 - ✅ **Stock images Unsplash** - Copyright-free con API ufficiale
 
+**🛡️ BUSINESS TYPE VALIDATION RULES (UPDATED 17 AGOSTO 2025)**
+
+**📊 REGOLE VALIDAZIONE DATABASE:**
+```javascript
+// 🔍 MINIMUM BUSINESS TYPE VALIDATION (NEW RULE)
+const BUSINESS_TYPE_VALIDATION_RULES = {
+  minimumBusinessTypes: 5,       // 🚨 MINIMO 5 BUSINESS TYPES nella tabella ai_design_patterns
+  requiredForProduction: true,   // Sistema deve avere varietà sufficiente
+  validationQuery: `
+    SELECT COUNT(DISTINCT business_type) as total_types 
+    FROM ai_design_patterns 
+    WHERE business_images IS NOT NULL 
+    AND jsonb_array_length(business_images->'unsplash_gallery') >= 5
+  `,
+  fallbackBehavior: 'continue_training'  // Se < 5 types, continua ad aggiungerne
+};
+
+// 🔍 MINIMUM IMAGE VALIDATION (EXISTING)
+const IMAGE_VALIDATION_RULES = {
+  minimumImages: 5,              // Minimo 5 immagini per business type
+  requiredFields: [              // Campi obbligatori nel business_images JSONB
+    'unsplash_gallery',          // Array di URL immagini
+    'collection_date',           // Data raccolta
+    'count'                      // Numero immagini
+  ],
+  imageValidation: {
+    minUrls: 5,                  // Minimo 5 URL validi
+    validDomains: [              // Domini accettati
+      'images.unsplash.com',
+      'source.unsplash.com'
+    ],
+    excludeEmpty: true           // Esclude record vuoti o malformati
+  }
+};
+
+// 🚨 BUSINESS TYPE EXCLUSION CRITERIA (UPDATED)
+const EXCLUSION_RULES = {
+  emptyRecords: true,            // Esclude record senza immagini
+  insufficientData: true,       // Esclude se < 5 immagini
+  invalidUrls: true,            // Esclude URL non funzionanti
+  copyrightRisk: true,          // Esclude immagini non-stock
+  insufficientTypes: true       // 🆕 Esclude se totale business types < 5
+};
+```
+
+**⚠️ VALIDAZIONE IMPLEMENTATA:**
+- ❌ **Record vuoti**: Automaticamente scartati
+- ❌ **< 5 immagini**: Business type non considerato valido
+- ❌ **URL malformati**: Validazione formato Unsplash
+- ❌ **Domini non autorizzati**: Solo Unsplash domains accettati
+- ✅ **Solo stock verified**: Garanzia copyright-free al 100%
+
 **❌ COSA NON SALVIAMO MAI (PROTETTO):**
 - ❌ **Immagini proprietarie** dai competitor 
 - ❌ **Loghi e branding** specifici

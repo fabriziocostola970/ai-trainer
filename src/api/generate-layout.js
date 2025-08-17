@@ -77,6 +77,51 @@ async function generateBusinessContentWithAI(businessType, businessName) {
   }
 }
 
+// 🔢 Count valid business types in database (NEW VALIDATION FUNCTION)
+async function countValidBusinessTypes(storage) {
+  try {
+    const result = await storage.query(`
+      SELECT COUNT(DISTINCT business_type) as count 
+      FROM ai_design_patterns 
+      WHERE status = 'active' 
+      AND business_images IS NOT NULL 
+      AND jsonb_array_length(COALESCE(business_images->'unsplash_gallery', business_images->'gallery', '[]'::jsonb)) >= 5
+    `);
+    
+    const count = parseInt(result.rows[0]?.count || 0);
+    console.log(`📊 Valid business types in database: ${count}`);
+    return count;
+  } catch (error) {
+    console.log('⚠️ Error counting business types:', error.message);
+    return 0;
+  }
+}
+
+// 🚀 Trigger background expansion of business types (ASYNC NON-BLOCKING)
+async function triggerBusinessTypesExpansion(storage) {
+  const missingTypes = ['restaurant', 'dentist', 'gym', 'bakery', 'beauty', 'technology', 'consulting'];
+  
+  for (const businessType of missingTypes) {
+    try {
+      // Check if type already exists
+      const existing = await storage.query(
+        'SELECT business_type FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
+        [businessType, 'active']
+      );
+      
+      if (existing.rows.length === 0) {
+        console.log(`🔄 Expanding database with business type: ${businessType}`);
+        await triggerControlledTraining(businessType, storage);
+        
+        // Small delay to prevent overload
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } catch (error) {
+      console.log(`⚠️ Error expanding business type ${businessType}:`, error.message);
+    }
+  }
+}
+
 // 🤖 STEP 1: Identifica il business type dalla descrizione
 async function identifyBusinessType(businessName, businessDescription) {
   try {
@@ -155,7 +200,44 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
       console.log(`✅ Found existing images for business type: ${identifiedType}`);
       const images = result.rows[0].business_images;
       const gallery = images.unsplash_gallery || images.gallery || [];
-      console.log(`📊 Returning ${gallery.length} saved images from database`);
+      
+      // 🛡️ BUSINESS VALIDATION: Minimum 5 images required
+      if (!isValidBusinessImageData(gallery, identifiedType)) {
+        console.log(`⚠️ Invalid business data for ${identifiedType}: insufficient images (${gallery.length}), triggering regeneration`);
+        
+        // �️ Remove invalid record from database
+        await storage.query('DELETE FROM ai_design_patterns WHERE business_type = $1', [identifiedType]);
+        
+        // 🔄 Trigger new data generation
+        if (attempt === 1) {
+          const success = await triggerControlledTraining(identifiedType, storage);
+          if (success) {
+            return await getBusinessImagesFromDB(businessName, businessDescription, count, attempt + 1);
+          }
+        }
+        
+        console.log(`⚠️ Using fallback for invalid business data: ${identifiedType}`);
+        return await generateUnsplashFallback(identifiedType, count);
+      }
+      
+      console.log(`�📊 Returning ${gallery.length} valid images from database`);
+      
+      // 🛡️ STEP 2.2: Validate minimum business types in database (NEW REQUIREMENT)
+      const totalBusinessTypes = await countValidBusinessTypes(storage);
+      if (totalBusinessTypes < 5) {
+        console.log(`⚠️ VALIDATION FAILED: Only ${totalBusinessTypes}/5 business types in database`);
+        console.log(`🔄 Using found data for ${identifiedType} but system needs more business diversity`);
+        
+        // 🚀 Trigger background expansion of business types (non-blocking)
+        if (attempt === 1) {
+          triggerBusinessTypesExpansion(storage).catch(err => 
+            console.log('⚠️ Background business types expansion error:', err.message)
+          );
+        }
+      } else {
+        console.log(`✅ VALIDATION PASSED: ${totalBusinessTypes} business types available (≥5 required)`);
+      }
+      
       return gallery.slice(0, count);
     }
     
