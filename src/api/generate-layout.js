@@ -2,14 +2,17 @@ const express = require('express');
 const router = express.Router();
 const DatabaseStorage = require('../storage/database-storage');
 const DesignIntelligence = require('../ai/design-intelligence');
-const { createOpenAIConnection } = require('../ai/openai-connection');
+const OpenAI = require('openai');
 
 // 🤖 OpenAI content generation with fallback
 async function generateBusinessContentWithAI(businessType, businessName) {
   try {
-    const openai = await createOpenAIConnection();
-    if (!openai) {
-      console.log('⚠️ OpenAI not available, using static content');
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+    
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('⚠️ OpenAI API key not configured, using static content');
       return null;
     }
 
@@ -17,12 +20,43 @@ async function generateBusinessContentWithAI(businessType, businessName) {
     
     Fornisci contenuti in formato JSON per:
     1. Hero section (titolo, sottotitolo, descrizione, CTA)
-    2. Menu/Prodotti (3 elementi con nome, descrizione, prezzo)
+    2. Menu/Prodotti (3 elementi con nome, descrizione, prezzo indicativo)
     3. Galleria (4 descrizioni per immagini)
     4. Recensioni (3 testimonianze con nome cliente e rating)
     5. About section (storia del business)
     
-    Rispondi SOLO con JSON valido, senza markdown:`;
+    Rispondi SOLO con JSON valido, senza markdown:
+    {
+      "hero": {
+        "title": "...",
+        "subtitle": "...",
+        "description": "...",
+        "cta": "..."
+      },
+      "menu": {
+        "title": "...",
+        "subtitle": "...",
+        "description": "...",
+        "items": [{"name": "...", "description": "...", "price": "..."}]
+      },
+      "gallery": {
+        "title": "...",
+        "subtitle": "...",
+        "description": "...",
+        "items": ["descrizione1", "descrizione2", "descrizione3", "descrizione4"]
+      },
+      "reviews": {
+        "title": "...",
+        "subtitle": "...",
+        "description": "...",
+        "testimonials": [{"name": "...", "text": "...", "rating": 5}]
+      },
+      "about": {
+        "title": "...",
+        "subtitle": "...",
+        "description": "..."
+      }
+    }`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
