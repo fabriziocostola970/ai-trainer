@@ -95,6 +95,7 @@ app.use('/api/optimize', authenticateAPI, require('./src/api/optimize-blocks'));
 app.use('/api/validate', authenticateAPI, require('./src/api/validate-template'));
 app.use('/api/training', authenticateAPI, require('./src/api/training'));
 app.use('/api/design', authenticateAPI, require('./src/api/design-routes')); // 🎨 NEW: Design Analysis API
+app.use('/api', authenticateAPI, require('./src/api/setup-database')); // 🗄️ Database setup endpoint
 
 // 🧠 Auto-classification API
 app.use('/api/training', authenticateAPI, require('./src/api/auto-classify'));
