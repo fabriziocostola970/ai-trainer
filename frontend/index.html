@@ -1233,10 +1233,24 @@
         
         async function testAutoClassification() {
             try {
-                logMessage('🧠 Testing auto-classification on 50 diverse test sites...', 'info');
+                // Use selected training sites if available, otherwise use default test sites
+                const sitesToTest = selectedTrainingSites.length > 0 ? 
+                    selectedTrainingSites.map(site => ({
+                        url: typeof site === 'string' ? site : site.url,
+                        expectedType: 'unknown'
+                    })) : 
+                    [
+                        { url: 'https://www.starbucks.com', expectedType: 'restaurant' },
+                        { url: 'https://www.apple.com', expectedType: 'technology' },
+                        { url: 'https://www.amazon.com', expectedType: 'ecommerce' },
+                        { url: 'https://www.airbnb.com', expectedType: 'travel' },
+                        { url: 'https://www.stripe.com', expectedType: 'tech-startup' }
+                    ];
+
+                logMessage(`🧠 Testing auto-classification on ${sitesToTest.length} sites...`, 'info');
                 
-                for (let i = 0; i < testSites.length; i++) {
-                    const site = testSites[i];
+                for (let i = 0; i < sitesToTest.length; i++) {
+                    const site = sitesToTest[i];
                     logMessage(`🔍 Analyzing ${site.url} (expected: ${site.expectedType})...`, 'info');
                     
                     try {
