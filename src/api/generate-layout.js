@@ -110,6 +110,19 @@ router.post('/layout', authenticateAPI, async (req, res) => {
         blocks: semanticBlocks,
         design: designRecommendation.design,
         layout: layoutSuggestions,
+        // 🎨 NEW: Include complete CSS for injection
+        css: designRecommendation.design.css ? {
+          variables: designRecommendation.design.css.rootVariables,
+          typography: designRecommendation.design.css.typography,
+          components: designRecommendation.design.css.components,
+          utilities: designRecommendation.design.css.utilities,
+          combined: [
+            designRecommendation.design.css.rootVariables,
+            designRecommendation.design.css.typography,
+            designRecommendation.design.css.components,
+            designRecommendation.design.css.utilities
+          ].join('\n\n')
+        } : null,
         metadata: {
           businessType: englishBusinessType,
           originalBusinessType: businessType,
@@ -267,6 +280,74 @@ function generateEnhancedBlocks(businessType, businessName, designData, currentB
     const images = businessImages[businessType] || businessImages.default;
     return images[type] || images.hero;
   };
+
+  // 🎨 NEW: Generate complete CSS styles for each block based on design intelligence
+  const generateBlockStyles = (blockType, designData) => {
+    const colors = designData?.colors || {};
+    const typography = designData?.typography || {};
+    const css = designData?.css || {};
+    
+    const baseStyles = {
+      backgroundColor: colors.background || '#FFFFFF',
+      color: colors.text || '#1F2937',
+      fontFamily: typography.primary || 'Inter, sans-serif',
+      fontSize: '16px',
+      lineHeight: '1.6'
+    };
+
+    // Block-specific style overrides
+    const blockSpecificStyles = {
+      'navigation-modern': {
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: `1px solid ${colors.accent || '#E5E7EB'}`,
+        padding: '1rem 0',
+        position: 'sticky',
+        top: '0',
+        zIndex: '1000'
+      },
+      'hero-restaurant-showcase': {
+        background: colors.primary ? 
+          `linear-gradient(135deg, ${colors.primary}, ${colors.secondary || colors.primary})` :
+          'linear-gradient(135deg, #D97706, #DC2626)',
+        color: '#FFFFFF',
+        padding: '5rem 2rem',
+        textAlign: 'center',
+        borderRadius: '12px',
+        marginBottom: '2rem'
+      },
+      'menu-showcase': {
+        backgroundColor: colors.background || '#FFFFFF',
+        border: `1px solid ${colors.accent || '#E5E7EB'}`,
+        borderRadius: '12px',
+        padding: '2rem',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+      },
+      'gallery-food': {
+        backgroundColor: colors.background || '#FFFFFF',
+        borderRadius: '12px',
+        padding: '2rem',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+      },
+      'reviews-customers': {
+        backgroundColor: colors.background || '#F9FAFB',
+        border: `1px solid ${colors.accent || '#E5E7EB'}`,
+        borderRadius: '12px',
+        padding: '2rem'
+      }
+    };
+
+    return {
+      ...baseStyles,
+      ...(blockSpecificStyles[blockType] || {}),
+      // Add CSS custom properties for dynamic styling
+      '--primary-color': colors.primary || '#3B82F6',
+      '--secondary-color': colors.secondary || '#8B5CF6',
+      '--accent-color': colors.accent || '#F59E0B',
+      '--font-primary': typography.primary || 'Inter',
+      '--font-secondary': typography.secondary || 'system-ui'
+    };
+  };
   
   const blocks = [];
   
@@ -279,11 +360,8 @@ function generateEnhancedBlocks(businessType, businessName, designData, currentB
       logo: getWorkingImage('logo', businessType),
       menuItems: ['Home', 'Servizi', 'Chi Siamo', 'Contatti']
     },
-    style: {
-      backgroundColor: designData?.backgroundColor || '#FFFFFF',
-      textColor: designData?.textColor || '#1F2937',
-      primaryFont: designData?.typography?.primaryFont || 'Inter'
-    },
+    style: generateBlockStyles('navigation-modern', designData),
+    cssClass: 'ai-navigation-modern',
     aiEnhanced: true,
     confidence: 95
   });
@@ -299,18 +377,24 @@ function generateEnhancedBlocks(businessType, businessName, designData, currentB
       image: getWorkingImage('hero', businessType),
       cta: getBusinessCTA(businessType)
     },
-    style: {
-      backgroundColor: designData?.primaryColor || '#3B82F6',
-      textColor: '#FFFFFF',
-      accentColor: designData?.accentColor || '#F59E0B'
-    },
+    style: generateBlockStyles('hero-restaurant-showcase', designData),
+    cssClass: 'ai-hero-section',
     aiEnhanced: true,
     confidence: 90
   });
   
-  // 3. Content blocks basati sui pattern estratti
+  // 3. Content blocks basati sui pattern estratti con stili AI
   const contentBlocks = generateBusinessSpecificBlocks(businessType, businessName, designData);
-  blocks.push(...contentBlocks);
+  
+  // Apply AI styles to content blocks
+  const styledContentBlocks = contentBlocks.map(block => ({
+    ...block,
+    style: generateBlockStyles(block.type, designData),
+    cssClass: `ai-${block.type.replace('-', '_')}`,
+    aiEnhanced: true
+  }));
+  
+  blocks.push(...styledContentBlocks);
   
   return blocks;
 }
@@ -488,11 +572,7 @@ function generateBusinessSpecificBlocks(businessType, businessName, designData) 
     id: `${block.type}-${Date.now()}-${index}`,
     type: block.type,
     content: block.content,
-    style: {
-      backgroundColor: designData?.backgroundColor || '#FFFFFF',
-      textColor: designData?.textColor || '#1F2937',
-      primaryColor: designData?.primaryColor || '#3B82F6'
-    },
+    // Style will be applied by generateBlockStyles in the calling function
     aiEnhanced: true,
     confidence: Math.max(85 - (block.priority * 5), 70),
     priority: block.priority
