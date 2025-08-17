@@ -127,9 +127,17 @@ async function countValidBusinessTypes(storage) {
 
 // 🚀 Trigger background expansion of business types (ASYNC NON-BLOCKING)
 async function triggerBusinessTypesExpansion(storage) {
-  const missingTypes = ['restaurant', 'dentist', 'gym', 'bakery', 'beauty', 'technology', 'consulting'];
+  const missingTypes = ['restaurant', 'dentist', 'gym']; // REDUCED to prevent overload
+  
+  let successCount = 0;
+  const maxSuccess = 2; // LIMIT expansion to prevent infinite loops
   
   for (const businessType of missingTypes) {
+    if (successCount >= maxSuccess) {
+      console.log(`🛑 Expansion limit reached (${maxSuccess}), stopping to prevent overload`);
+      break;
+    }
+    
     try {
       // Check if type already exists
       const existing = await storage.query(
@@ -139,15 +147,22 @@ async function triggerBusinessTypesExpansion(storage) {
       
       if (existing.rows.length === 0) {
         console.log(`🔄 Expanding database with business type: ${businessType}`);
-        await triggerControlledTraining(businessType, storage);
+        const success = await triggerControlledTraining(businessType, storage);
+        
+        if (success) {
+          successCount++;
+          console.log(`✅ Successfully expanded: ${businessType} (${successCount}/${maxSuccess})`);
+        }
         
         // Small delay to prevent overload
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     } catch (error) {
       console.log(`⚠️ Error expanding business type ${businessType}:`, error.message);
     }
   }
+  
+  console.log(`🎯 Business expansion completed: ${successCount} new types added`);
 }
 
 // 🤖 STEP 1: Identifica il business type dalla descrizione
@@ -317,7 +332,12 @@ async function triggerControlledTraining(businessType, storage) {
     console.log(`🔍 Starting REAL scraping for ${businessType} competitors...`);
     
     try {
-      const trainingResponse = await fetch(`http://localhost:${process.env.PORT || 8080}/api/training/custom`, {
+      // Get the correct base URL for the environment
+      const baseUrl = process.env.RAILWAY_STATIC_URL || 
+                     process.env.RAILWAY_PUBLIC_DOMAIN || 
+                     `http://localhost:${process.env.PORT || 8080}`;
+      
+      const trainingResponse = await fetch(`${baseUrl}/api/training/custom`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -337,18 +357,18 @@ async function triggerControlledTraining(businessType, storage) {
         const trainingResult = await trainingResponse.json();
         console.log(`✅ Real scraping started for ${businessType}:`, trainingResult);
         
-        // 🕰️ Wait for training completion (with timeout)
-        const maxWaitTime = 60000; // 60 seconds
+        // 🕰️ Wait for training completion (with REDUCED timeout to prevent infinite loops)
+        const maxWaitTime = 15000; // REDUCED to 15 seconds to prevent loops
         const startTime = Date.now();
         
         while (Date.now() - startTime < maxWaitTime) {
-          // Check if data was saved in database
+          // Check if data was saved in database - USING REAL COLUMNS
           const checkResult = await storage.query(
-            'SELECT business_images, pattern_data FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
+            'SELECT business_images, color_palette, font_families, css_content FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
             [businessType, 'active']
           );
           
-          if (checkResult.rows.length > 0 && checkResult.rows[0].pattern_data) {
+          if (checkResult.rows.length > 0 && checkResult.rows[0].color_palette) {
             console.log(`✅ Real training completed for ${businessType} - data saved in database`);
             return true;
           }
