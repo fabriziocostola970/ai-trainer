@@ -222,79 +222,6 @@ async function startAutomaticTraining(businessType, competitorSites) {
   }
 }
 
-// 🤖 AUTOMATIC COMPETITOR GENERATION & SCRAPING per nuovi business types
-async function generateAndScrapeCompetitors(businessType) {
-  try {
-    console.log(`🤖 Starting OpenAI competitor generation for: ${businessType}`);
-    
-    // 1. Chiama OpenAI per generare 5 competitor sites
-    const competitorSites = await generateCompetitorSitesWithOpenAI(businessType);
-    
-    if (competitorSites && competitorSites.length > 0) {
-      console.log(`✅ Generated ${competitorSites.length} competitor sites for ${businessType}`);
-      
-      // 2. Avvia training automatico con i siti competitor
-      await startAutomaticTraining(businessType, competitorSites);
-    } else {
-      console.log(`⚠️ No competitor sites generated for ${businessType}, using default stock images`);
-    }
-    
-  } catch (error) {
-    console.log(`❌ Error in automatic competitor generation: ${error.message}`);
-    console.log(`🔄 Continuing with stock images fallback`);
-  }
-}
-
-// 🤖 Genera competitor sites usando OpenAI
-async function generateCompetitorSitesWithOpenAI(businessType) {
-  try {
-    if (!process.env.OPENAI_API_KEY) {
-      console.log('⚠️ OpenAI API key not configured, skipping competitor generation');
-      return null;
-    }
-
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
-
-    const prompt = `Generate exactly 5 real competitor websites for a "${businessType}" business.
-    
-    Requirements:
-    - Must be real, existing websites (not fictional)
-    - Should be well-known brands in the ${businessType} industry
-    - Include diverse examples (local, national, international if possible)
-    - Focus on websites with good design and user experience
-    - Provide complete, working URLs
-    
-    Respond ONLY with JSON format:
-    [
-      {
-        "url": "https://example.com",
-        "name": "Company Name",
-        "description": "Brief description of the business"
-      }
-    ]
-    
-    Business type: ${businessType}`;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 800,
-      temperature: 0.3
-    });
-
-    const competitorSites = JSON.parse(completion.choices[0].message.content);
-    console.log(`🎯 OpenAI generated ${competitorSites.length} competitors for ${businessType}`);
-    
-    return competitorSites;
-    
-  } catch (error) {
-    console.log(`❌ OpenAI competitor generation failed: ${error.message}`);
-    return null;
-  }
-}
-
 // 🎨 Genera immagini stock sicure per settore specifico
 async function generateStockImagesForBusiness(businessType) {
   // 🔍 Mapping intelligente settore → parole chiave Unsplash
@@ -1060,4 +987,3 @@ function calculateSemanticScore(blocks, businessType) {
 }
 
 module.exports = router;
-          images: galleryImages.slice(0, 4),          cta: 'Esplora Categorie'        }),
