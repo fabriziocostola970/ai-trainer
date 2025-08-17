@@ -81,6 +81,9 @@ async function getBusinessImagesFromDB(businessType, count = 4, attempt = 1) {
   
   try {
     const storage = new DatabaseStorage();
+    await storage.initialize(); // ✅ INIZIALIZZA IL DATABASE
+    
+    console.log(`🔍 Checking database for business type: ${businessType} (attempt ${attempt})`);
     
     // 1. Query dal database per immagini esistenti
     const result = await storage.query(
@@ -315,6 +318,9 @@ function getUnsplashPhotoId(keyword, index) {
 async function saveBusinessImages(businessType, businessImages) {
   try {
     const storage = new DatabaseStorage();
+    await storage.initialize(); // ✅ INIZIALIZZA IL DATABASE
+    
+    console.log(`💾 Saving business images for: ${businessType}`);
     
     await storage.query(`
       INSERT INTO ai_design_patterns (business_type, pattern_data, business_images, confidence_score, source)
