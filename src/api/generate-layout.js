@@ -2,9 +2,167 @@ const express = require('express');
 const router = express.Router();
 const DatabaseStorage = require('../storage/database-storage');
 const DesignIntelligence = require('../ai/design-intelligence');
+const { createOpenAIConnection } = require('../ai/openai-connection');
 
-// 🧠 ENHANCED LAYOUT GENERATION
-// Utilizza pattern estratti per layout più intelligenti
+// 🤖 OpenAI content generation with fallback
+async function generateBusinessContentWithAI(businessType, businessName) {
+  try {
+    const openai = await createOpenAIConnection();
+    if (!openai) {
+      console.log('⚠️ OpenAI not available, using static content');
+      return null;
+    }
+
+    const prompt = `Genera contenuti specifici per un business di tipo "${businessType}" chiamato "${businessName}".
+    
+    Fornisci contenuti in formato JSON per:
+    1. Hero section (titolo, sottotitolo, descrizione, CTA)
+    2. Menu/Prodotti (3 elementi con nome, descrizione, prezzo)
+    3. Galleria (4 descrizioni per immagini)
+    4. Recensioni (3 testimonianze con nome cliente e rating)
+    5. About section (storia del business)
+    
+    Rispondi SOLO con JSON valido, senza markdown:`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 1500,
+      temperature: 0.7
+    });
+
+    const content = JSON.parse(completion.choices[0].message.content);
+    console.log('✅ Generated AI content for:', businessName);
+    return content;
+    
+  } catch (error) {
+    console.log('⚠️ AI content generation failed, using fallback:', error.message);
+    return null;
+  }
+}
+
+// �️ DATABASE-DRIVEN Gallery Images (Sicuro - Solo Stock Images)
+async function getBusinessImagesFromDB(businessType, count = 4) {
+  try {
+    const storage = new DatabaseStorage();
+    
+    // 1. Query dal database per immagini esistenti
+    const result = await storage.query(
+      'SELECT business_images FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
+      [businessType, 'active']
+    );
+    
+    if (result.rows.length > 0 && result.rows[0].business_images) {
+      console.log(`✅ Found existing images for business type: ${businessType}`);
+      const images = result.rows[0].business_images;
+      return images.gallery ? images.gallery.slice(0, count) : [];
+    }
+    
+    // 2. Se non esiste, genera immagini stock specifiche per il business
+    console.log(`🔍 Generating new stock images for business type: ${businessType}`);
+    const newImages = await generateStockImagesForBusiness(businessType);
+    
+    // 3. Salva nel database per il futuro
+    await saveBusinessImages(businessType, newImages);
+    
+    return newImages.gallery ? newImages.gallery.slice(0, count) : [];
+    
+  } catch (error) {
+    console.log('⚠️ Database error, using fallback stock images:', error.message);
+    return generateFallbackStockImages(businessType, count);
+  }
+}
+
+// 🎨 Genera immagini stock sicure per settore specifico
+async function generateStockImagesForBusiness(businessType) {
+  // 🔍 Mapping intelligente settore → parole chiave Unsplash
+  const sectorKeywords = {
+    restaurant: ['restaurant', 'food', 'dining', 'chef'],
+    ecommerce: ['shopping', 'products', 'retail', 'store'],
+    technology: ['technology', 'computer', 'office', 'innovation'],
+    fashion: ['fashion', 'clothing', 'style', 'boutique'],
+    dentist: ['dental', 'medical', 'healthcare', 'clinic'],
+    gym: ['fitness', 'workout', 'gym', 'health'],
+    bakery: ['bakery', 'bread', 'pastry', 'oven'],
+    lawyer: ['law', 'justice', 'legal', 'office'],
+    beauty: ['beauty', 'salon', 'spa', 'wellness'],
+    automotive: ['car', 'automotive', 'garage', 'repair'],
+    real_estate: ['house', 'property', 'real-estate', 'home'],
+    photography: ['camera', 'photography', 'studio', 'portrait'],
+    consulting: ['business', 'meeting', 'consulting', 'office'],
+    education: ['education', 'school', 'learning', 'classroom'],
+    default: ['business', 'professional', 'modern', 'clean']
+  };
+  
+  const keywords = sectorKeywords[businessType] || sectorKeywords.default;
+  
+  // ✅ Generate Unsplash URLs (copyright-free)
+  const businessImages = {
+    hero: `https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=1200&h=600&fit=crop&crop=center&q=${keywords[0]}`,
+    logo: `https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=100&fit=crop&crop=center&q=${keywords[1]}`,
+    gallery: keywords.map((keyword, index) => 
+      `https://images.unsplash.com/photo-${getUnsplashPhotoId(keyword, index)}?w=800&h=600&fit=crop&crop=center`
+    )
+  };
+  
+  return businessImages;
+}
+
+// 🎯 Mappa settori specifici a foto Unsplash verificate
+function getUnsplashPhotoId(keyword, index) {
+  const stockPhotos = {
+    restaurant: ['1517248135467-4c7edcad34c4', '1565299624946-b28f40a0ca4b', '1546069901-ba9599a7e63c', '1414235077428-338989a2e8c0'],
+    food: ['1546069901-ba9599a7e63c', '1565299624946-b28f40a0ca4b', '1504674900247-0877df9cc836', '1559339352-11d035aa65de'],
+    technology: ['1460925895917-afdab827c52f', '1552581234-26160f608093', '1518709268805-4e9042af2176', '1504384308090-c894fdcc538d'],
+    shopping: ['1441986300917-64674bd600d8', '1472851294608-062f824d29cc', '1441984904996-e0b6ba687e04', '1556742049-0cfed4f6a45d'],
+    medical: ['1559757148-5c350d0d3c56', '1576091160399-112ba8d25d1f', '1582750433449-648ed127bb54', '1559757175-5c350d0d3c56'],
+    fitness: ['1571019613454-1cb2f99b2d8b', '1534438327276-14e5300c3a48', '1571019614242-c5c5dee9f50b', '1544367567-0f2fcb009e0b'],
+    business: ['1497032628192-86f99bcd76bc', '1552581234-26160f608093', '1507003211169-0a1dd7228f2d', '1554224155-6726b3ff858f'],
+    default: ['1497032628192-86f99bcd76bc', '1552581234-26160f608093', '1507003211169-0a1dd7228f2d', '1554224155-6726b3ff858f']
+  };
+  
+  const photos = stockPhotos[keyword] || stockPhotos.default;
+  return photos[index % photos.length];
+}
+
+// 💾 Salva immagini nel database
+async function saveBusinessImages(businessType, businessImages) {
+  try {
+    const storage = new DatabaseStorage();
+    
+    await storage.query(`
+      INSERT INTO ai_design_patterns (business_type, pattern_data, business_images, confidence_score, source)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (business_type) 
+      DO UPDATE SET 
+        business_images = $3,
+        confidence_score = $4,
+        updated_at = CURRENT_TIMESTAMP
+    `, [
+      businessType,
+      {}, // pattern_data placeholder
+      businessImages,
+      85, // confidence score for stock images
+      'ai-stock-generated'
+    ]);
+    
+    console.log(`✅ Saved stock images for business type: ${businessType}`);
+  } catch (error) {
+    console.log('⚠️ Failed to save business images:', error.message);
+  }
+}
+
+// 🔄 Fallback immagini stock sicure
+function generateFallbackStockImages(businessType, count = 4) {
+  const fallbackImages = [
+    'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1552581234-26160f608093?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&h=600&fit=crop'
+  ];
+  
+  return fallbackImages.slice(0, count);
+}
 
 // 🔄 MAPPING BUSINESS TYPES (Italiano → Inglese per training data)
 const BUSINESS_TYPE_MAPPING = {
@@ -64,6 +222,33 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     // Traduzione business type per compatibilità con training data
     const englishBusinessType = BUSINESS_TYPE_MAPPING[businessType.toLowerCase()]?.[0] || businessType;
     
+    // 🤖 Try to generate content with OpenAI first
+    console.log('🤖 Attempting AI content generation...');
+    const aiContent = await generateBusinessContentWithAI(englishBusinessType, businessName);
+    
+    // 🖼️ Generate gallery images from database (stock images only)
+    const galleryImages = await getBusinessImagesFromDB(englishBusinessType, 6);
+    
+    // 🎨 Initialize Design Intelligence
+    const designIntelligence = new DesignIntelligence();
+    let designData;
+    
+    try {
+      designData = await designIntelligence.generateDesignForBusiness(englishBusinessType, style);
+      console.log('✅ Design Intelligence generated:', {
+        colors: designData.colors,
+        typography: designData.typography?.primary,
+        confidence: designData.confidence
+      });
+    } catch (designError) {
+      console.log('⚠️ Design Intelligence fallback:', designError.message);
+      designData = {
+        colors: { primary: '#3B82F6', secondary: '#10B981', accent: '#F59E0B' },
+        typography: { primary: 'Inter', secondary: 'system-ui' },
+        confidence: 70
+      };
+    }
+    
     console.log(`🔄 Business type mapping: ${businessType} → ${englishBusinessType}`);
 
     // Verifica disponibilità database prima di procedere
@@ -95,12 +280,14 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     const layoutSuggestions = await designAI.generateLayoutSuggestions(englishBusinessType, 'layout');
     await designAI.close();
 
-    // Genera blocchi semantici ottimizzati
+    // Genera blocchi semantici ottimizzati con contenuto AI
     const semanticBlocks = generateEnhancedBlocks(
       englishBusinessType, 
       businessName, 
       designRecommendation.design,
-      currentBlocks
+      currentBlocks,
+      aiContent,
+      galleryImages
     );
     
     const response = {
@@ -253,8 +440,8 @@ function generateFallbackLayout(businessType) {
 /**
  * Genera blocchi migliorati utilizzando i pattern di design estratti
  */
-function generateEnhancedBlocks(businessType, businessName, designData, currentBlocks = []) {
-  console.log(`🧠 Generating enhanced blocks for ${businessType} with AI design data`);
+function generateEnhancedBlocks(businessType, businessName, designData, currentBlocks = [], aiContent = null, galleryImages = []) {
+  console.log(`🧠 Generating enhanced blocks for ${businessType} with AI design data${aiContent ? ' and AI content' : ''}`);
   
   // 🎨 ENHANCED: Working image service function
   const getWorkingImage = (type, businessType) => {
@@ -366,25 +553,33 @@ function generateEnhancedBlocks(businessType, businessName, designData, currentB
     confidence: 95
   });
   
-  // 2. Hero Section (personalizzata per business type con immagine)
+  // 2. Hero Section (personalizzata per business type con immagine e contenuto AI)
+  const heroContent = aiContent?.hero ? {
+    title: aiContent.hero.title || `Benvenuto in ${businessName}`,
+    subtitle: aiContent.hero.subtitle || getBusinessSubtitle(businessType, businessName),
+    description: aiContent.hero.description || getBusinessDescription(businessType),
+    image: getWorkingImage('hero', businessType),
+    cta: aiContent.hero.cta || getBusinessCTA(businessType)
+  } : {
+    title: `Benvenuto in ${businessName}`,
+    subtitle: getBusinessSubtitle(businessType, businessName),
+    description: getBusinessDescription(businessType),
+    image: getWorkingImage('hero', businessType),
+    cta: getBusinessCTA(businessType)
+  };
+
   blocks.push({
     id: `hero-${Date.now()}`,
     type: getOptimalHeroType(businessType),
-    content: {
-      title: `Benvenuto in ${businessName}`,
-      subtitle: getBusinessSubtitle(businessType, businessName),
-      description: getBusinessDescription(businessType),
-      image: getWorkingImage('hero', businessType),
-      cta: getBusinessCTA(businessType)
-    },
+    content: heroContent,
     style: generateBlockStyles('hero-restaurant-showcase', designData),
     cssClass: 'ai-hero-section',
     aiEnhanced: true,
     confidence: 90
   });
   
-  // 3. Content blocks basati sui pattern estratti con stili AI
-  const contentBlocks = generateBusinessSpecificBlocks(businessType, businessName, designData);
+  // 3. Content blocks basati sui pattern estratti con stili AI e contenuto personalizzato
+  const contentBlocks = generateBusinessSpecificBlocks(businessType, businessName, designData, aiContent, galleryImages);
   
   // Apply AI styles to content blocks
   const styledContentBlocks = contentBlocks.map(block => ({
@@ -441,8 +636,8 @@ function getOptimalHeroType(businessType) {
   return heroTypes[businessType] || heroTypes.default;
 }
 
-function generateBusinessSpecificBlocks(businessType, businessName, designData) {
-  // 🎨 ENHANCED: Generate structured content with working images
+function generateBusinessSpecificBlocks(businessType, businessName, designData, aiContent = null, galleryImages = []) {
+  // 🎨 ENHANCED: Generate structured content with working images and AI content
   const getWorkingImage = (type) => {
     const imageServices = {
       'menu-showcase': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&h=600&fit=crop&crop=center',
@@ -458,109 +653,151 @@ function generateBusinessSpecificBlocks(businessType, businessName, designData) 
     return imageServices[type] || 'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=800&h=600&fit=crop&crop=center';
   };
 
+  // 🤖 Use AI content if available, otherwise fallback to static content
+  const getContentWithAI = (blockType, fallbackContent) => {
+    if (!aiContent) return fallbackContent;
+    
+    // Map AI content to specific blocks
+    switch (blockType) {
+      case 'menu-showcase':
+        return {
+          ...fallbackContent,
+          title: aiContent.menu?.title || fallbackContent.title,
+          subtitle: aiContent.menu?.subtitle || fallbackContent.subtitle,
+          description: aiContent.menu?.description || fallbackContent.description,
+          items: aiContent.menu?.items || []
+        };
+      case 'gallery-food':
+      case 'gallery-tech':
+      case 'gallery-products':
+        return {
+          ...fallbackContent,
+          title: aiContent.gallery?.title || fallbackContent.title,
+          subtitle: aiContent.gallery?.subtitle || fallbackContent.subtitle,
+          description: aiContent.gallery?.description || fallbackContent.description,
+          images: galleryImages.slice(0, 4),
+          galleryItems: aiContent.gallery?.items || []
+        };
+      case 'reviews-customers':
+      case 'testimonials-social':
+        return {
+          ...fallbackContent,
+          title: aiContent.reviews?.title || fallbackContent.title,
+          subtitle: aiContent.reviews?.subtitle || fallbackContent.subtitle,
+          description: aiContent.reviews?.description || fallbackContent.description,
+          testimonials: aiContent.reviews?.testimonials || []
+        };
+      default:
+        return fallbackContent;
+    }
+  };
+
   const businessBlocks = {
     restaurant: [
       {
         type: 'menu-showcase',
-        content: {
+        content: getContentWithAI('menu-showcase', {
           title: `Menu ${businessName}`,
           subtitle: 'I nostri piatti più amati dai clienti',
           description: 'Scopri la nostra selezione di specialità culinarie preparate con ingredienti freschi e di alta qualità.',
           image: getWorkingImage('menu-showcase'),
           cta: 'Guarda il Menu'
-        },
+        }),
         priority: 1
       },
       {
         type: 'gallery-food',
-        content: {
+        content: getContentWithAI('gallery-food', {
           title: 'Galleria Gastronomica',
           subtitle: 'Un viaggio visivo nei nostri sapori',
           description: 'Ogni piatto è una piccola opera d\'arte culinaria.',
           image: getWorkingImage('gallery-food'),
+          images: galleryImages.slice(0, 4),
           cta: 'Vedi Tutte le Foto'
-        },
+        }),
         priority: 2
       },
       {
         type: 'reviews-customers',
-        content: {
+        content: getContentWithAI('reviews-customers', {
           title: 'Testimonianze',
           subtitle: 'Cosa dicono i nostri clienti',
           description: 'La soddisfazione dei nostri ospiti è la nostra priorità.',
           image: getWorkingImage('reviews-customers'),
           cta: 'Leggi Tutte le Recensioni'
-        },
+        }),
         priority: 3
       }
     ],
     ecommerce: [
       {
         type: 'featured-products',
-        content: {
+        content: getContentWithAI('featured-products', {
           title: `Prodotti in Evidenza - ${businessName}`,
           subtitle: 'I più venduti del mese',
           description: 'Scopri i prodotti che stanno conquistando i nostri clienti.',
           image: getWorkingImage('featured-products'),
           cta: 'Acquista Ora'
-        },
+        }),
         priority: 1
       },
       {
-        type: 'categories-grid',
-        content: {
-          title: 'Categorie Prodotti',
-          subtitle: 'Trova quello che cerchi',
-          description: 'Naviga tra le nostre categorie per trovare il prodotto perfetto.',
+        type: 'gallery-products',
+        content: getContentWithAI('gallery-products', {
+          title: 'Galleria Prodotti',
+          subtitle: 'La nostra collezione',
+          description: 'Esplora la varietà dei nostri prodotti di alta qualità.',
           image: getWorkingImage('categories-grid'),
+          images: galleryImages.slice(0, 4),
           cta: 'Esplora Categorie'
-        },
+        }),
         priority: 2
       },
       {
         type: 'testimonials-social',
-        content: {
+        content: getContentWithAI('testimonials-social', {
           title: 'Recensioni Clienti',
           subtitle: 'Fiducia e qualità garantita',
           description: 'Migliaia di clienti soddisfatti che ci hanno scelto.',
           image: getWorkingImage('testimonials-social'),
           cta: 'Leggi le Recensioni'
-        },
+        }),
         priority: 3
       }
     ],
     technology: [
       {
         type: 'features-tech',
-        content: {
+        content: getContentWithAI('features-tech', {
           title: `Funzionalità ${businessName}`,
           subtitle: 'Tecnologia all\'avanguardia',
           description: 'Scopri le caratteristiche innovative che rendono unica la nostra soluzione.',
           image: getWorkingImage('features-tech'),
           cta: 'Scopri di Più'
-        },
+        }),
         priority: 1
       },
       {
+        type: 'gallery-tech',
+        content: getContentWithAI('gallery-tech', {
+          title: 'Progetti e Innovazioni',
+          subtitle: 'Le nostre realizzazioni',
+          description: 'Esplora i progetti che abbiamo sviluppato per i nostri clienti.',
+          image: getWorkingImage('case-studies'),
+          images: galleryImages.slice(0, 4),
+          cta: 'Vedi Tutti i Progetti'
+        }),
+        priority: 2
+      },
+      {
         type: 'case-studies',
-        content: {
+        content: getContentWithAI('case-studies', {
           title: 'Casi di Successo',
           subtitle: 'Risultati che parlano da soli',
           description: 'Scopri come abbiamo aiutato i nostri clienti a raggiungere i loro obiettivi.',
           image: getWorkingImage('case-studies'),
           cta: 'Leggi i Casi Studio'
-        },
-        priority: 2
-      },
-      {
-        type: 'pricing-plans',
-        content: {
-          title: 'Piani e Prezzi',
-          subtitle: 'La soluzione giusta per ogni esigenza',
-          description: 'Scegli il piano più adatto al tuo business.',
-          image: getWorkingImage('pricing-plans'),
-          cta: 'Scegli il Tuo Piano'
-        },
+        }),
         priority: 3
       }
     ]

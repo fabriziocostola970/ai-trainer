@@ -118,7 +118,25 @@ CREATE TABLE IF NOT EXISTS system_settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 🎨 AI Design Patterns Table
+CREATE TABLE IF NOT EXISTS ai_design_patterns (
+    id SERIAL PRIMARY KEY,
+    business_type VARCHAR(100) NOT NULL,
+    pattern_data JSONB NOT NULL, -- CSS patterns, colors, typography
+    business_images JSONB DEFAULT '{}', -- Stock images per business type
+    confidence_score INTEGER DEFAULT 0,
+    usage_count INTEGER DEFAULT 0,
+    status VARCHAR(50) DEFAULT 'active', -- 'active', 'deprecated'
+    source VARCHAR(100) DEFAULT 'ai-generated', -- 'ai-generated', 'manual', 'imported'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(business_type)
+);
+
 -- 📋 Indexes for Performance
+CREATE INDEX IF NOT EXISTS idx_ai_design_patterns_business_type ON ai_design_patterns(business_type);
+CREATE INDEX IF NOT EXISTS idx_ai_design_patterns_status ON ai_design_patterns(status);
+
 CREATE INDEX IF NOT EXISTS idx_training_sessions_training_id ON training_sessions(training_id);
 CREATE INDEX IF NOT EXISTS idx_training_sessions_status ON training_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_training_sessions_created_at ON training_sessions(created_at);
@@ -154,6 +172,7 @@ CREATE TRIGGER update_custom_sites_updated_at BEFORE UPDATE ON custom_sites FOR 
 CREATE TRIGGER update_training_samples_updated_at BEFORE UPDATE ON training_samples FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_ai_models_updated_at BEFORE UPDATE ON ai_models FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_generated_layouts_updated_at BEFORE UPDATE ON generated_layouts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_ai_design_patterns_updated_at BEFORE UPDATE ON ai_design_patterns FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_system_settings_updated_at BEFORE UPDATE ON system_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- 📊 Sample Data
