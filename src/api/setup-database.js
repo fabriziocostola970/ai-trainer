@@ -27,29 +27,36 @@ router.post('/setup-database', async (req, res) => {
             );
         `);
         
-        if (tableCheck.rows[0].exists) {
-            console.log('✅ Table design_patterns already exists');
+        // Verifica se la tabella esiste già con il nuovo nome
+        const newTableCheck = await pool.query(`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'ai_design_patterns'
+            );
+        `);
+        
+        if (newTableCheck.rows[0].exists) {
+            console.log('✅ Table ai_design_patterns already exists');
             return res.status(200).json({
                 success: true,
-                message: 'Table design_patterns already exists',
+                message: 'Table ai_design_patterns already exists',
                 tableExists: true
             });
         }
         
-        // Rinomina la tabella per coerenza con lo schema
-        console.log('🔄 Renaming design_patterns to ai_design_patterns for consistency...');
-        await pool.query(`
-            DO $$
-            BEGIN
-                IF EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_name = 'design_patterns'
-                ) THEN
-                    ALTER TABLE design_patterns RENAME TO ai_design_patterns;
-                    RAISE NOTICE 'Table renamed from design_patterns to ai_design_patterns';
-                END IF;
-            END $$;
-        `);
+        // Se esiste design_patterns ma non ai_design_patterns, fai il rename
+        if (tableCheck.rows[0].exists) {
+            console.log('🔄 Renaming design_patterns to ai_design_patterns...');
+            await pool.query(`ALTER TABLE design_patterns RENAME TO ai_design_patterns;`);
+            console.log('✅ Table renamed successfully');
+            
+            return res.status(200).json({
+                success: true,
+                message: 'Table renamed from design_patterns to ai_design_patterns',
+                tableRenamed: true
+            });
+        }
         
         console.log('📋 Creating ai_design_patterns table...');
         
