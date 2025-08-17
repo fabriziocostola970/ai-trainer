@@ -4,6 +4,9 @@ const DatabaseStorage = require('../storage/database-storage');
 const DesignIntelligence = require('../ai/design-intelligence');
 const OpenAI = require('openai');
 
+// 🛑 EMERGENCY: Disable automatic training to prevent loops
+const DISABLE_AUTO_TRAINING = true;
+
 // 🤖 OpenAI content generation with fallback
 async function generateBusinessContentWithAI(businessType, businessName) {
   try {
@@ -155,16 +158,12 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
       return images.gallery ? images.gallery.slice(0, count) : [];
     }
     
-    // 🚀 STEP 3: Business type non trovato → SOLO al primo tentativo (NO RICORSIONE)
+    // 🚀 STEP 3: Business type non trovato → TRAINING DISABILITATO TEMPORANEAMENTE
     if (attempt === 1) {
-      console.log(`🔍 NEW BUSINESS TYPE "${identifiedType}" - Starting background training...`);
+      console.log(`🔍 NEW BUSINESS TYPE "${identifiedType}" - Training disabled to prevent loops`);
       
-      // 🤖 STEP 4: Avvia training in background (ASINCRONO)
-      triggerBackgroundTraining(identifiedType)
-        .catch(err => console.log('Background training error:', err.message));
-      
-      // 🔄 IMMEDIATE FALLBACK: Non aspettiamo il training
-      console.log(`⚡ Using fallback images for immediate response`);
+      // 🛑 TEMPORARY: Training disabled to stop infinite loops
+      console.log(`⚡ Using immediate fallback images - no background training`);
       return generateFallbackStockImages(identifiedType.toLowerCase(), count);
     }
     
@@ -178,8 +177,14 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
   }
 }
 
-// 🚀 Training in background SENZA ricorsione (Memory Safe + Deduplication)
+// 🚀 Training in background SENZA ricorsione (Memory Safe + Emergency Disable)
 async function triggerBackgroundTraining(businessType) {
+  // 🛑 EMERGENCY: Check if training is disabled
+  if (DISABLE_AUTO_TRAINING) {
+    console.log(`🛑 EMERGENCY: Auto-training disabled to prevent loops for ${businessType}`);
+    return false;
+  }
+  
   try {
     // 🔒 DEDUPLICATION: Check if training is already running
     if (global.activeTraining && global.activeTraining[businessType]) {
