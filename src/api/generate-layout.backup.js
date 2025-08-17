@@ -183,7 +183,7 @@ async function getBusinessImagesFromDB(businessName, businessDescription, count 
   }
 }
 
-// 🚀 Training controllato SENZA scraping (solo Unsplash API libere)
+// 🚀 Training controllato SENZA loop infiniti (con Unsplash Scraping)
 async function triggerControlledTraining(businessType, storage) {
   try {
     console.log(`🤖 Starting controlled training for: ${businessType}`);
@@ -385,32 +385,28 @@ async function saveBusinessImagesPattern(businessType, images, storage) {
   }
 }
 
-// 🆘 FALLBACK UNSPLASH API DIRETTA (Fixed API Key)
+// 🆘 FALLBACK UNSPLASH API DIRETTA
 async function generateUnsplashFallback(businessType, count = 4) {
   try {
     console.log(`🔗 Using Unsplash API fallback for ${businessType}`);
     
-    // 🔑 Temporary API key for testing (should be in environment)
-    const unsplashKey = process.env.UNSPLASH_ACCESS_KEY || 'tLFEH-8sI4xZXGgwWLhgT1J5Qi-y0LvCRF1bJz5k_W8';
-    
-    if (!unsplashKey) {
+    if (!process.env.UNSPLASH_ACCESS_KEY) {
       console.log('⚠️ Unsplash API key not configured, using hardcoded stock');
       return getHardcodedStockImages(businessType, count);
     }
     
     // Query di ricerca per business type
     const searchQuery = getUnsplashQuery(businessType);
-    console.log(`🔍 Searching Unsplash for: "${searchQuery}"`);
     
     // Chiama Unsplash API direttamente
     const response = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchQuery)}&per_page=${count}&orientation=landscape&content_filter=high`, {
       headers: {
-        'Authorization': `Client-ID ${unsplashKey}`
+        'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
       }
     });
     
     if (!response.ok) {
-      throw new Error(`Unsplash API error: ${response.status} - ${response.statusText}`);
+      throw new Error(`Unsplash API error: ${response.status}`);
     }
     
     const data = await response.json();
@@ -421,15 +417,13 @@ async function generateUnsplashFallback(businessType, count = 4) {
         thumb: photo.urls.small,
         alt: photo.alt_description || `${businessType} image`,
         photographer: photo.user.name,
-        source: 'unsplash_api',
-        unsplash_id: photo.id
+        source: 'unsplash_api'
       }));
       
       console.log(`✅ Generated ${images.length} Unsplash images for ${businessType}`);
       return images.map(img => img.url); // Return only URLs for compatibility
     }
     
-    console.log(`⚠️ No Unsplash results for "${searchQuery}", using hardcoded stock`);
     return getHardcodedStockImages(businessType, count);
     
   } catch (error) {
@@ -438,20 +432,20 @@ async function generateUnsplashFallback(businessType, count = 4) {
   }
 }
 
-// 🔍 Query ottimizzate per business type (Improved for florists)
+// 🔍 Query ottimizzate per business type
 function getUnsplashQuery(businessType) {
   const queries = {
-    florist: 'flowers bouquet roses orchid tulips beautiful arrangement colorful',
-    dentist: 'dental clinic teeth smile healthcare medical professional',
-    restaurant: 'restaurant food dining cuisine chef delicious meal',
-    gym: 'fitness gym workout exercise health training sports',
-    bakery: 'bakery bread pastry cake dessert artisan fresh',
-    technology: 'technology computer office modern business innovation',
-    fashion: 'fashion clothing style boutique elegant designer',
-    beauty: 'beauty salon spa wellness massage relaxing treatment',
-    automotive: 'car automotive garage mechanic repair professional',
-    real_estate: 'house property real estate home modern architecture',
-    business: 'business office professional modern workplace corporate'
+    florist: 'flowers bouquet florist shop roses tulips orchids',
+    dentist: 'dental clinic dentist teeth medical healthcare',
+    restaurant: 'restaurant food dining cuisine chef kitchen',
+    gym: 'fitness gym workout exercise health sports',
+    bakery: 'bakery bread pastry cake dessert',
+    technology: 'technology computer office modern business',
+    fashion: 'fashion clothing style boutique elegant',
+    beauty: 'beauty salon spa wellness massage',
+    automotive: 'car automotive garage mechanic repair',
+    real_estate: 'house property real estate home modern',
+    business: 'business office professional modern workplace'
   };
   
   return queries[businessType] || queries.business;
