@@ -4,8 +4,6 @@ const DatabaseStorage = require('../storage/database-storage');
 const DesignIntelligence = require('../ai/design-intelligence');
 const OpenAI = require('openai');
 
-// � Dynamic training enabled with loop protection
-
 // 🤖 OpenAI content generation with fallback
 async function generateBusinessContentWithAI(businessType, businessName) {
   try {
@@ -77,793 +75,224 @@ async function generateBusinessContentWithAI(businessType, businessName) {
   }
 }
 
-// �️ Validate business image data quality (VALIDATION FUNCTION)
-function isValidBusinessImageData(gallery, businessType) {
-  if (!gallery || !Array.isArray(gallery)) {
-    console.log(`⚠️ Invalid gallery data for ${businessType}: not an array`);
-    return false;
-  }
-  
-  if (gallery.length < 5) {
-    console.log(`⚠️ Insufficient images for ${businessType}: ${gallery.length}/5 required`);
-    return false;
-  }
-  
-  // Check that all images are valid URLs
-  const validImages = gallery.filter(url => {
-    return typeof url === 'string' && 
-           url.length > 10 && 
-           (url.includes('unsplash.com') || url.includes('pexels.com') || url.includes('pixabay.com'));
-  });
-  
-  if (validImages.length < 5) {
-    console.log(`⚠️ Invalid image URLs for ${businessType}: ${validImages.length}/${gallery.length} valid`);
-    return false;
-  }
-  
-  console.log(`✅ Valid business image data for ${businessType}: ${validImages.length} valid images`);
-  return true;
-}
-
-// �🔢 Count valid business types in database (NEW VALIDATION FUNCTION)
-// ❌ REMOVED countValidBusinessTypes - was counting ALL business types instead of specific one
-
-// 🎯 Check if we have MINIMUM 5 records for SPECIFIC business type
-async function hasValidBusinessTypeData(businessType, storage) {
+// �️ DATABASE-DRIVEN Gallery Images (Sicuro - Solo Stock Images)
+async function getBusinessImagesFromDB(businessType, count = 4) {
   try {
-    const result = await storage.query(`
-      SELECT COUNT(*) as count 
-      FROM ai_design_patterns 
-      WHERE business_type = $1 
-      AND status = 'active' 
-      AND business_images IS NOT NULL 
-      AND color_palette IS NOT NULL
-      AND jsonb_array_length(COALESCE(business_images->'unsplash_gallery', business_images->'gallery', '[]'::jsonb)) >= 5
-    `, [businessType]);
+    const storage = new DatabaseStorage();
     
-    const count = parseInt(result.rows[0]?.count || 0);
-    console.log(`📊 Valid records for business type "${businessType}": ${count}/5 required`);
-    return count >= 5; // MUST HAVE AT LEAST 5 RECORDS!
-  } catch (error) {
-    console.log(`⚠️ Error checking business type ${businessType}:`, error.message);
-    return false;
-  }
-}
-
-// 🚀 Trigger background expansion of business types (ASYNC NON-BLOCKING)
-// ❌ REMOVED triggerBusinessTypesExpansion - was adding random business types
-// 🎯 Now we only scrape competitors for the SPECIFIC business type requested
-
-// 🤖 STEP 1: Identifica il business type dalla descrizione
-async function identifyBusinessType(businessName, businessDescription) {
-  try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // 1. Query dal database per immagini esistenti
+    const result = await storage.query(
+      'SELECT business_images FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
+      [businessType, 'active']
+    );
     
-    if (!process.env.OPENAI_API_KEY) {
-      console.log('⚠️ OpenAI API key not configured');
-      return null;
+    if (result.rows.length > 0 && result.rows[0].business_images) {
+      console.log(`✅ Found existing images for business type: ${businessType}`);
+      const images = result.rows[0].business_images;
+      return images.gallery ? images.gallery.slice(0, count) : [];
     }
     
-    const prompt = `Analyze this business and identify its type:
+    // 2. Se non esiste, prima genera competitor con OpenAI e scraping
+    console.log(`🤖 Business type "${businessType}" not found in database. Generating competitor sites with OpenAI...`);
+    
+    // 2.1 Genera competitor sites con OpenAI
+    await generateAndScrapeCompetitors(businessType);
+    
+    // 2.2 Dopo lo scraping, genera immagini stock specifiche per il business
+    console.log(`🔍 Generating new stock images for business type: ${businessType}`);
+    const newImages = await generateStockImagesForBusiness(businessType);
+    
+    // 3. Salva nel database per il futuro
+    await saveBusinessImages(businessType, newImages);
+    
+    return newImages.gallery ? newImages.gallery.slice(0, count) : [];
+    
+  } catch (error) {
+    console.log('⚠️ Database error, using fallback stock images:', error.message);
+    return generateFallbackStockImages(businessType, count);
+  }
+}
 
-Business Name: "${businessName}"
-Business Description: "${businessDescription || businessName}"
+// 🤖 AUTOMATIC COMPETITOR GENERATION & SCRAPING per nuovi business types
+async function generateAndScrapeCompetitors(businessType) {
+  try {
+    console.log(`🤖 Starting OpenAI competitor generation for: ${businessType}`);
+    
+    // 1. Chiama OpenAI per generare 5 competitor sites
+    const competitorSites = await generateCompetitorSitesWithOpenAI(businessType);
+    
+    if (competitorSites && competitorSites.length > 0) {
+      console.log(`✅ Generated ${competitorSites.length} competitor sites for ${businessType}`);
+      
+      // 2. Avvia training automatico con i siti competitor
+      await startAutomaticTraining(businessType, competitorSites);
+    } else {
+      console.log(`⚠️ No competitor sites generated for ${businessType}, using default stock images`);
+    }
+    
+  } catch (error) {
+    console.log(`❌ Error in automatic competitor generation: ${error.message}`);
+    console.log(`🔄 Continuing with stock images fallback`);
+  }
+}
 
-Return ONLY the business type in English (one word, lowercase).
-Examples: restaurant, florist, dentist, gym, bakery, beauty, technology, ecommerce, fashion, consulting
+// 🤖 Genera competitor sites usando OpenAI
+async function generateCompetitorSitesWithOpenAI(businessType) {
+  try {
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('⚠️ OpenAI API key not configured, skipping competitor generation');
+      return null;
+    }
 
-Business type:`;
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+
+    const prompt = `Generate exactly 5 real competitor websites for a "${businessType}" business.
+    
+    Requirements:
+    - Must be real, existing websites (not fictional)
+    - Should be well-known brands in the ${businessType} industry
+    - Include diverse examples (local, national, international if possible)
+    - Focus on websites with good design and user experience
+    - Provide complete, working URLs
+    
+    Respond ONLY with JSON format:
+    [
+      {
+        "url": "https://example.com",
+        "name": "Company Name",
+        "description": "Brief description of the business"
+      }
+    ]
+    
+    Business type: ${businessType}`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 10,
-      temperature: 0.1
+      max_tokens: 800,
+      temperature: 0.3
     });
 
-    const businessType = completion.choices[0].message.content.trim().toLowerCase();
-    console.log(`🤖 OpenAI identified business type: "${businessName}" → "${businessType}"`);
-    return businessType;
+    const competitorSites = JSON.parse(completion.choices[0].message.content);
+    console.log(`🎯 OpenAI generated ${competitorSites.length} competitors for ${businessType}`);
+    
+    return competitorSites;
     
   } catch (error) {
-    console.log('⚠️ OpenAI business type identification failed:', error.message);
+    console.log(`❌ OpenAI competitor generation failed: ${error.message}`);
     return null;
   }
 }
 
-// 🖼️ DATABASE-DRIVEN Gallery Images (SISTEMA DINAMICO COMPLETO)
-async function getBusinessImagesFromDB(businessName, businessDescription, count = 4, attempt = 1) {
-  const maxAttempts = 2; // 🔒 MEMORY PROTECTION: Max 2 tentativi
-  
-  // 🛡️ EMERGENCY PROTECTION: Controllo memoria heap
-  const memUsage = process.memoryUsage();
-  if (memUsage.heapUsed > 1024 * 1024 * 1024) { // 1GB limit
-    console.log('🚨 MEMORY PROTECTION: Heap usage too high, using Unsplash fallback');
-    return await generateUnsplashFallback('business', count);
-  }
-  
-  // 🔒 STRICT ATTEMPT LIMIT 
-  if (attempt > maxAttempts) {
-    console.log(`⚠️ Max attempts reached (${attempt}), using Unsplash API`);
-    return await generateUnsplashFallback('business', count);
-  }
-  
+// 🚀 Avvia training automatico con competitor sites
+async function startAutomaticTraining(businessType, competitorSites) {
   try {
-    const storage = new DatabaseStorage();
-    await storage.initialize(); // ✅ INIZIALIZZA IL DATABASE
+    console.log(`🚀 Starting automatic training for ${businessType} with ${competitorSites.length} sites`);
     
-    // 🤖 STEP 1: Identifica il business type con OpenAI
-    const identifiedType = await identifyBusinessType(businessName, businessDescription);
+    // Usa l'endpoint /api/training/custom per avviare training con siti specifici
+    const trainingPayload = {
+      customSites: competitorSites,
+      businessType: businessType,
+      aiAnalysis: true,
+      saveLocal: true,
+      autoGenerated: true
+    };
     
-    if (!identifiedType) {
-      console.log('⚠️ Could not identify business type, using Unsplash fallback');
-      return await generateUnsplashFallback('business', count);
-    }
-    
-    console.log(`🔍 Checking database for business type: ${identifiedType} (attempt ${attempt})`);
-    
-    // 💾 STEP 2: Cerca nel database ai_design_patterns
-    const result = await storage.query(
-      'SELECT business_images FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
-      [identifiedType, 'active']
-    );
-    
-    if (result.rows.length > 0 && result.rows[0].business_images) {
-      console.log(`✅ Found existing images for business type: ${identifiedType}`);
-      const images = result.rows[0].business_images;
-      const gallery = images.unsplash_gallery || images.gallery || [];
-      
-      // 🛡️ STEP 2.1: CRITICAL - Must have MINIMUM 5 records for this business type
-      const hasValidData = await hasValidBusinessTypeData(identifiedType, storage);
-      if (!hasValidData) {
-        console.log(`⚠️ CRITICAL: Insufficient records for business type "${identifiedType}" (need minimum 5)`);
-        console.log(`🔄 System MUST scrape MORE competitors for "${identifiedType}" - triggering training`);
-        
-        // 🚀 Trigger training for THIS SPECIFIC business type to reach 5 records
-        if (attempt === 1) {
-          console.log(`🚀 Starting competitor scraping for business type: ${identifiedType} (targeting 5 records)`);
-          const success = await triggerControlledTraining(identifiedType, storage);
-          if (success) {
-            // Retry with fresh data
-            return await getBusinessImagesFromDB(businessName, businessDescription, count, attempt + 1);
-          }
-        }
-      } else {
-        console.log(`✅ BUSINESS TYPE VALIDATION PASSED: "${identifiedType}" has minimum 5 records`);
-      }
-      
-      // 🛡️ STEP 2.1: Check if we have the specific business type needed
-      // Note: We only generate data for the REQUESTED business type, not random expansion
-      console.log(`� Checking database for specific business type: ${identifiedType}`);
-      
-      // 🛡️ STEP 2.2: Validate individual business image data quality
-      if (!isValidBusinessImageData(gallery, identifiedType)) {
-        console.log(`⚠️ Invalid business data for ${identifiedType}: insufficient images (${gallery.length}), triggering regeneration`);
-        
-        // �️ Remove invalid record from database
-        // ✅ NEVER DELETE USER DATA! Preserve existing data always!
-        
-        // 🔄 Trigger new data generation
-        if (attempt === 1) {
-          const success = await triggerControlledTraining(identifiedType, storage);
-          if (success) {
-            return await getBusinessImagesFromDB(businessName, businessDescription, count, attempt + 1);
-          }
-        }
-        
-        console.log(`⚠️ Using fallback for invalid business data: ${identifiedType}`);
-        return await generateUnsplashFallback(identifiedType, count);
-      }
-      
-      console.log(`�📊 Returning ${gallery.length} valid images from database`);
-      
-      return gallery.slice(0, count);
-    }
-    
-    // 🚀 STEP 3: Business type non trovato → Sistema dinamico CONTROLLATO
-    if (attempt === 1) {
-      console.log(`🔍 NEW BUSINESS TYPE "${identifiedType}" - Starting controlled dynamic discovery...`);
-      
-      // 🎯 STEP 4: Genera competitor e avvia scraping CONTROLLATO
-      const success = await triggerControlledTraining(identifiedType, storage);
-      
-      if (success) {
-        // 🔄 STEP 5: Una sola ricorsione controllata
-        console.log(`🔄 Controlled recursive call for newly saved data: ${identifiedType}`);
-        return await getBusinessImagesFromDB(businessName, businessDescription, count, attempt + 1);
-      }
-    }
-    
-    // 🆘 Fallback finale con Unsplash API diretta
-    console.log(`⚠️ Using Unsplash API fallback for: ${identifiedType} (attempt ${attempt})`);
-    return await generateUnsplashFallback(identifiedType, count);
-    
-  } catch (error) {
-    console.log('⚠️ Database error, using Unsplash fallback:', error.message);
-    return await generateUnsplashFallback('business', count);
-  }
-}
-
-// 🚀 Training controllato con SCRAPING REALE (updated per business type specifico)
-async function triggerControlledTraining(businessType, storage) {
-  try {
-    console.log(`🤖 Starting controlled training for: ${businessType}`);
-    
-    // 🎯 STEP 1: Genera competitor con OpenAI
-    const competitorSites = await generateCompetitorSites(businessType);
-    
-    if (!competitorSites || competitorSites.length === 0) {
-      console.log(`⚠️ No competitors generated for ${businessType}, using fallback`);
-      return false;
-    }
-    
-    console.log(`✅ Generated ${competitorSites.length} competitors for ${businessType}`);
-    
-    // 🕷️ STEP 2: SCRAPING REALE dei competitor sites
-    console.log(`🔍 Starting REAL scraping for ${businessType} competitors...`);
-    
-    try {
-      // Get the correct base URL for the environment - FORCE https for Railway
-      let baseUrl;
-      if (process.env.RAILWAY_STATIC_URL && process.env.RAILWAY_STATIC_URL.startsWith('http')) {
-        baseUrl = process.env.RAILWAY_STATIC_URL;
-      } else if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-        baseUrl = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
-      } else if (process.env.RAILWAY_STATIC_URL) {
-        // Force https if RAILWAY_STATIC_URL exists but no protocol
-        baseUrl = `https://${process.env.RAILWAY_STATIC_URL}`;
-      } else {
-        baseUrl = `http://localhost:${process.env.PORT || 8080}`;
-      }
-      
-      console.log(`🌐 Training API URL: ${baseUrl}/api/training/custom`);
-      
-      const trainingResponse = await fetch(`${baseUrl}/api/training/custom`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.AI_TRAINER_API_KEY || 'ai-trainer-local-dev'}`
-        },
-        body: JSON.stringify({
-          customSites: competitorSites.map(site => site.url), // FIXED: was "sites", now "customSites"
-          businessType: businessType,
-          extractDesignPatterns: true,  // 🎨 Extract CSS, colors, fonts
-          extractImages: true,          // 🖼️ Extract real images
-          saveToDatabase: true,         // 💾 Save in ai_design_patterns
-          specificBusinessType: businessType, // 🎯 Save only for this business type
-          aiAnalysis: true              // Enable AI analysis
-        })
-      });
-      
-      if (trainingResponse.ok) {
-        const trainingResult = await trainingResponse.json();
-        console.log(`✅ Real scraping started for ${businessType}:`, trainingResult);
-        
-        // 🕰️ Wait for training completion (with REDUCED timeout to prevent infinite loops)
-        const maxWaitTime = 15000; // REDUCED to 15 seconds to prevent loops
-        const startTime = Date.now();
-        
-        while (Date.now() - startTime < maxWaitTime) {
-          // Check if data was saved in database - USING REAL COLUMNS
-          const checkResult = await storage.query(
-            'SELECT business_images, color_palette, font_families, css_content FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
-            [businessType, 'active']
-          );
-          
-          if (checkResult.rows.length > 0 && checkResult.rows[0].color_palette) {
-            console.log(`✅ Real training completed for ${businessType} - data saved in database`);
-            return true;
-          }
-          
-          // Wait 3 seconds before next check
-          await new Promise(resolve => setTimeout(resolve, 3000));
-        }
-        
-        console.log(`⏰ Training timeout for ${businessType}, using fallback`);
-      } else {
-        console.log(`⚠️ Training API failed for ${businessType}, using fallback`);
-      }
-      
-    } catch (fetchError) {
-      console.log(`⚠️ Training fetch error for ${businessType}:`, fetchError.message);
-    }
-    
-    // 🔄 FALLBACK: If real training fails, use stock images only
-    console.log(`🔄 Using stock images fallback for ${businessType}`);
-    const stockImages = await generateUnsplashFallback(businessType, 6);
-    
-    if (stockImages.length > 0) {
-      await saveBusinessImagesPattern(businessType, stockImages, storage);
-      console.log(`✅ Fallback training completed for: ${businessType}`);
-      return true;
-    }
-    
-    return false;
-    
-    return false;
-    
-  } catch (error) {
-    console.log('❌ Controlled training error:', error.message);
-    return false;
-  }
-}
-
-// 🕷️ SCRAPING DINAMICO - Solo immagini Unsplash/stock dai competitor
-async function scrapeUnsplashFromCompetitors(competitorSites, businessType) {
-  try {
-    console.log(`🕷️ Scraping Unsplash images from ${competitorSites.length} competitor sites for ${businessType}`);
-    
-    const unsplashImages = [];
-    
-    for (const site of competitorSites.slice(0, 3)) { // Max 3 sites per evitare timeout
+    // Avvia training in background (non bloccante)
+    setTimeout(async () => {
       try {
-        console.log(`🌐 Analyzing: ${site.url}`);
+        // Per ora logghiamo i competitor sites generati
+        // Il training effettivo può essere avviato manualmente dal dashboard
+        console.log(`✅ Automatic training queued for ${businessType} with ${competitorSites.length} competitor sites`);
+        console.log(`🎯 Competitor sites for ${businessType}:`, competitorSites.map(s => s.name).join(', '));
         
-        // 🌐 Fetch della homepage del competitor con timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+        // TODO: In futuro, chiamare direttamente l'endpoint /api/training/custom
         
-        const response = await fetch(site.url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          },
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          console.log(`⚠️ ${site.url} returned ${response.status}`);
-          continue;
-        }
-        
-        const html = await response.text();
-        
-        // 🔍 Estrai solo immagini Unsplash/stock
-        const stockImages = extractStockImages(html, businessType);
-        unsplashImages.push(...stockImages);
-        
-        console.log(`📊 Found ${stockImages.length} stock images from ${site.url}`);
-        
-        if (unsplashImages.length >= 8) break; // Limite per business type
-        
-      } catch (siteError) {
-        console.log(`⚠️ Failed to scrape ${site.url}:`, siteError.message);
+      } catch (trainingError) {
+        console.log(`❌ Automatic training failed for ${businessType}: ${trainingError.message}`);
       }
-    }
+    }, 1000); // Avvia dopo 1 secondo per non bloccare la risposta API
     
-    // 🧹 Deduplication
-    const uniqueImages = [...new Set(unsplashImages)];
-    console.log(`✅ Extracted ${uniqueImages.length} unique stock images for ${businessType}`);
-    
-    return uniqueImages.slice(0, 6); // Max 6 immagini per business type
+    console.log(`🔄 Automatic training queued for ${businessType}`);
     
   } catch (error) {
-    console.log('⚠️ Scraping failed:', error.message);
-    return [];
+    console.log(`❌ Failed to start automatic training: ${error.message}`);
   }
 }
 
-// 🔍 ESTRAZIONE SOLO IMMAGINI STOCK/UNSPLASH
-function extractStockImages(html, businessType) {
-  const stockImages = [];
-  
+// 🤖 AUTOMATIC COMPETITOR GENERATION & SCRAPING per nuovi business types
+async function generateAndScrapeCompetitors(businessType) {
   try {
-    // Pattern per identificare immagini stock sicure
-    const stockPatterns = [
-      /https:\/\/images\.unsplash\.com\/[^"'\s)]+/g,
-      /https:\/\/unsplash\.com\/photos\/[^"'\s)]+/g,
-      /https:\/\/source\.unsplash\.com\/[^"'\s)]+/g,
-      /https:\/\/[^"'\s]*\.unsplash\.com\/[^"'\s)]+/g,
-      /https:\/\/images\.pexels\.com\/[^"'\s)]+/g
-    ];
+    console.log(`🤖 Starting OpenAI competitor generation for: ${businessType}`);
     
-    for (const pattern of stockPatterns) {
-      const matches = html.match(pattern) || [];
-      for (const match of matches) {
-        // Pulizia URL e aggiunta parametri per dimensioni
-        const cleanUrl = match.replace(/['">\s)#].*$/, '');
-        const optimizedUrl = optimizeImageUrl(cleanUrl, businessType);
-        
-        if (optimizedUrl && !stockImages.includes(optimizedUrl)) {
-          stockImages.push(optimizedUrl);
-        }
-      }
-    }
+    // 1. Chiama OpenAI per generare 5 competitor sites
+    const competitorSites = await generateCompetitorSitesWithOpenAI(businessType);
     
-    console.log(`🔍 Extracted ${stockImages.length} stock image URLs`);
-    return stockImages;
-    
-  } catch (error) {
-    console.log('⚠️ Error extracting stock images:', error.message);
-    return [];
-  }
-}
-
-// �️ OTTIMIZZAZIONE URL IMMAGINI
-function optimizeImageUrl(url, businessType) {
-  try {
-    if (url.includes('unsplash.com')) {
-      // Ottimizza Unsplash per qualità e dimensioni
-      const baseUrl = url.split('?')[0];
-      return `${baseUrl}?w=800&h=600&fit=crop&crop=entropy&auto=format&q=80`;
-    }
-    
-    if (url.includes('pexels.com')) {
-      // Ottimizza Pexels
-      return `${url}?auto=compress&cs=tinysrgb&w=800&h=600`;
-    }
-    
-    return url;
-  } catch (error) {
-    return url;
-  }
-}
-
-// 💾 SALVATAGGIO PATTERN NEL DATABASE (Fixed Schema)
-async function saveBusinessImagesPattern(businessType, images, storage, designPatterns = null) {
-  try {
-    const imagePattern = {
-      unsplash_gallery: images,
-      collection_date: new Date().toISOString(),
-      source: 'competitor_analysis',
-      count: images.length,
-      copyright_status: 'free_to_use',
-      business_type: businessType
-    };
-    
-    // 🎨 Generate design patterns if not provided from scraping
-    const patternData = designPatterns || {
-      colors: {
-        primary: getBusinessTypeColor(businessType, 'primary'),
-        secondary: getBusinessTypeColor(businessType, 'secondary'), 
-        accent: getBusinessTypeColor(businessType, 'accent'),
-        background: '#FFFFFF',
-        text: '#1F2937'
-      },
-      fonts: {
-        heading: getBusinessTypeFont(businessType, 'heading'),
-        body: getBusinessTypeFont(businessType, 'body')
-      },
-      layout: {
-        type: 'modern',
-        sections: ['hero', 'about', 'services', 'contact'],
-        business_type: businessType
-      },
-      generated_date: new Date().toISOString(),
-      source: designPatterns ? 'scraped' : 'generated'
-    };
-    
-    console.log(`💾 Saving ${images.length} images + design patterns for business type: ${businessType}`);
-    
-    // 🔧 UPSERT with both business_images AND pattern_data
-    const existingCheck = await storage.query(
-      'SELECT id FROM ai_design_patterns WHERE business_type = $1',
-      [businessType]
-    );
-    
-    if (existingCheck.rows.length > 0) {
-      // Update existing record with REAL database columns
-      await storage.query(`
-        UPDATE ai_design_patterns 
-        SET business_images = $1, 
-            color_palette = $2, 
-            font_families = $3, 
-            css_content = $4, 
-            design_analysis = $5, 
-            updated_at = NOW()
-        WHERE business_type = $6
-      `, [
-        JSON.stringify(imagePattern), 
-        JSON.stringify(patternData.colors), 
-        JSON.stringify(patternData.fonts), 
-        patternData.css || '',
-        JSON.stringify(patternData.layout), 
-        businessType
-      ]);
-      console.log(`✅ Updated existing data for business type: ${businessType}`);
-    } else {
-      // Insert new record with REAL database columns
-      await storage.query(`
-        INSERT INTO ai_design_patterns (
-          business_type, 
-          business_images, 
-          color_palette, 
-          font_families, 
-          css_content, 
-          design_analysis, 
-          status, 
-          created_at
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, 'active', NOW())
-      `, [
-        businessType, 
-        JSON.stringify(imagePattern), 
-        JSON.stringify(patternData.colors), 
-        JSON.stringify(patternData.fonts), 
-        patternData.css || '',
-        JSON.stringify(patternData.layout)
-      ]);
-      console.log(`✅ Inserted new data for business type: ${businessType}`);
-    }
-    
-  } catch (error) {
-    console.log('⚠️ Failed to save business images pattern:', error.message);
-    throw error;
-  }
-}
-
-// 🆘 FALLBACK UNSPLASH API DIRETTA (Fixed API Key)
-async function generateUnsplashFallback(businessType, count = 4) {
-  try {
-    console.log(`🔗 Using Unsplash API fallback for ${businessType}`);
-    
-    // 🔑 Fixed API key for testing (replace with environment variable)
-    const unsplashKey = process.env.UNSPLASH_ACCESS_KEY || 'Client-ID-DEMO-REPLACED-WITH-VALID-KEY';
-    
-    if (!unsplashKey || unsplashKey === 'Client-ID-DEMO-REPLACED-WITH-VALID-KEY') {
-      console.log('⚠️ Unsplash API key not configured, using hardcoded stock');
-      return getHardcodedStockImages(businessType, count);
-    }
-    
-    // Query di ricerca per business type
-    const searchQuery = getUnsplashQuery(businessType);
-    console.log(`🔍 Searching Unsplash for: "${searchQuery}"`);
-    
-    // Chiama Unsplash API direttamente
-    const response = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchQuery)}&per_page=${count}&orientation=landscape&content_filter=high`, {
-      headers: {
-        'Authorization': `Client-ID ${unsplashKey}`
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Unsplash API error: ${response.status} - ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.results && data.results.length > 0) {
-      const images = data.results.map(photo => ({
-        url: photo.urls.regular,
-        thumb: photo.urls.small,
-        alt: photo.alt_description || `${businessType} image`,
-        photographer: photo.user.name,
-        source: 'unsplash_api',
-        unsplash_id: photo.id
-      }));
+    if (competitorSites && competitorSites.length > 0) {
+      console.log(`✅ Generated ${competitorSites.length} competitor sites for ${businessType}`);
       
-      console.log(`✅ Generated ${images.length} Unsplash images for ${businessType}`);
-      return images.map(img => img.url); // Return only URLs for compatibility
+      // 2. Avvia training automatico con i siti competitor
+      await startAutomaticTraining(businessType, competitorSites);
+    } else {
+      console.log(`⚠️ No competitor sites generated for ${businessType}, using default stock images`);
     }
     
-    console.log(`⚠️ No Unsplash results for "${searchQuery}", using hardcoded stock`);
-    return getHardcodedStockImages(businessType, count);
-    
   } catch (error) {
-    console.log('⚠️ Unsplash API failed:', error.message);
-    return getHardcodedStockImages(businessType, count);
+    console.log(`❌ Error in automatic competitor generation: ${error.message}`);
+    console.log(`🔄 Continuing with stock images fallback`);
   }
 }
 
-// 🔍 Query ottimizzate per business type (Improved for florists)
-function getUnsplashQuery(businessType) {
-  const queries = {
-    florist: 'flowers bouquet roses orchid tulips beautiful arrangement colorful',
-    dentist: 'dental clinic teeth smile healthcare medical professional',
-    restaurant: 'restaurant food dining cuisine chef delicious meal',
-    gym: 'fitness gym workout exercise health training sports',
-    bakery: 'bakery bread pastry cake dessert artisan fresh',
-    technology: 'technology computer office modern business innovation',
-    fashion: 'fashion clothing style boutique elegant designer',
-    beauty: 'beauty salon spa wellness massage relaxing treatment',
-    automotive: 'car automotive garage mechanic repair professional',
-    real_estate: 'house property real estate home modern architecture',
-    business: 'business office professional modern workplace corporate'
-  };
-  
-  return queries[businessType] || queries.business;
-}
-
-// 📦 IMMAGINI STOCK HARDCODED (ultima risorsa)
-function getHardcodedStockImages(businessType, count = 4) {
-  const STOCK_IMAGES = {
-    florist: [
-      "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800&h=600&fit=crop", // Rose rosse fresche
-      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&h=600&fit=crop", // Bouquet misto elegante
-      "https://images.unsplash.com/photo-1487070183336-b863922373d4?w=800&h=600&fit=crop", // Tulipani colorati
-      "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=800&h=600&fit=crop", // Orchidee esotiche
-      "https://images.unsplash.com/photo-1478432432450-5e6d70a0e9ce?w=800&h=600&fit=crop", // Negozio fiori
-      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop", // Composizione floreale
-      "https://images.unsplash.com/photo-1464207687429-7505649dae38?w=800&h=600&fit=crop", // Girasoli brillanti
-      "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop"  // Peonie delicate
-    ],
-    dentist: [
-      "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop"
-    ],
-    restaurant: [
-      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=600&fit=crop"
-    ],
-    business: [
-      "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=800&h=600&fit=crop"
-    ]
-  };
-  
-  const images = STOCK_IMAGES[businessType] || STOCK_IMAGES.business;
-  return images.slice(0, count);
-}
-
-// 🤖 Chiama OpenAI per generare competitor automaticamente
-async function generateCompetitorSites(businessType) {
+// 🤖 Genera competitor sites usando OpenAI
+async function generateCompetitorSitesWithOpenAI(businessType) {
   try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    
     if (!process.env.OPENAI_API_KEY) {
-      console.log('⚠️ OpenAI API key not configured for competitor generation');
-      return [];
+      console.log('⚠️ OpenAI API key not configured, skipping competitor generation');
+      return null;
     }
-    
-    const prompt = `Find 15 real competitor websites for a "${businessType}" business in Italy.
-    
-    Return ONLY a JSON array with this exact format:
-    [
-      {
-        "name": "Nome Azienda",
-        "url": "https://example.com",
-        "description": "Breve descrizione del business"
-      }
-    ]
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+
+    const prompt = `Generate exactly 5 real competitor websites for a "${businessType}" business.
     
     Requirements:
-    - Real, existing Italian websites only
-    - Include local and national competitors  
-    - Websites that likely use Unsplash or stock images
-    - No major corporations with strict copyright
-    - Focus on small to medium businesses`;
+    - Must be real, existing websites (not fictional)
+    - Should be well-known brands in the ${businessType} industry
+    - Include diverse examples (local, national, international if possible)
+    - Focus on websites with good design and user experience
+    - Provide complete, working URLs
+    
+    Respond ONLY with JSON format:
+    [
+      {
+        "url": "https://example.com",
+        "name": "Company Name",
+        "description": "Brief description of the business"
+      }
+    ]
+    
+    Business type: ${businessType}`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 1200, // AUMENTATO da 600 a 1200 per gestire 15 siti
+      max_tokens: 800,
       temperature: 0.3
     });
 
-    // 🆕 LOG COMPLETO DELLA RISPOSTA OPENAI
-    console.log('🤖 OpenAI raw response:', completion.choices[0].message.content);
-    console.log('🤖 Response length:', completion.choices[0].message.content.length);
-    console.log('🤖 First 200 chars:', completion.choices[0].message.content.substring(0, 200));
-    console.log('🤖 Last 200 chars:', completion.choices[0].message.content.slice(-200));
-
-    const sites = JSON.parse(completion.choices[0].message.content);
-    console.log(`✅ Generated ${sites.length} competitor sites for ${businessType}`);
+    const competitorSites = JSON.parse(completion.choices[0].message.content);
+    console.log(`🎯 OpenAI generated ${competitorSites.length} competitors for ${businessType}`);
     
-    // 🔍 LOG THE ACTUAL SITES GENERATED
-    sites.forEach((site, index) => {
-      console.log(`  ${index + 1}. ${site.name}: ${site.url}`);
-    });
-    
-    return sites;
+    return competitorSites;
     
   } catch (error) {
-    console.log('⚠️ OpenAI competitor generation failed:', error.message);
-    // 🆕 LOG PER DEBUG JSON PARSE ERROR
-    if (error.message.includes('JSON') || error.message.includes('Unexpected')) {
-      console.log('🔍 JSON Parse Error - Raw response was:', completion?.choices?.[0]?.message?.content || 'No response available');
-    }
-    return [];
+    console.log(`❌ OpenAI competitor generation failed: ${error.message}`);
+    return null;
   }
-}
-
-// 🚀 Trigger training usando l'endpoint esistente /api/training/start
-async function triggerDynamicTraining(businessType, competitorSites) {
-  try {
-    console.log(`🚀 Starting dynamic training for ${businessType} with ${competitorSites.length} sites`);
-    
-    // Costruisce il payload per l'endpoint esistente
-    const trainingPayload = {
-      businessType: businessType,
-      sites: competitorSites.map(site => site.url), // Array di URL come si aspetta l'endpoint
-      autoGenerated: true,
-      extractOptions: {
-        images: true,
-        colors: true, 
-        layouts: true,
-        onlyStockImages: true, // 🔒 SOLO IMMAGINI COPYRIGHT-FREE
-        maxSites: 5
-      }
-    };
-    
-    // Get the correct base URL for the environment (FIXED for Railway)
-    let trainingBaseUrl;
-    if (process.env.RAILWAY_STATIC_URL) {
-      trainingBaseUrl = process.env.RAILWAY_STATIC_URL;
-    } else if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-      trainingBaseUrl = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
-    } else {
-      trainingBaseUrl = `http://localhost:${process.env.PORT || 4000}`;
-    }
-    
-    console.log(`🌐 Training endpoint: ${trainingBaseUrl}/api/training/start`);
-    
-    // Chiama l'endpoint di training esistente tramite HTTP
-    const response = await fetch(`${trainingBaseUrl}/api/training/start`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.AI_TRAINER_API_KEY}`,
-        'User-Agent': 'AI-Trainer-Internal'
-      },
-      body: JSON.stringify(trainingPayload)
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      console.log(`✅ Training started for ${businessType}:`, result.sessionId || 'no-session-id');
-      
-      // Attendi il completamento del training
-      return await waitForTrainingCompletion(businessType, result.sessionId);
-    } else {
-      const errorText = await response.text();
-      console.log(`❌ Training failed for ${businessType}:`, response.status, errorText);
-      return false;
-    }
-    
-  } catch (error) {
-    console.log('⚠️ Dynamic training trigger failed:', error.message);
-    return false;
-  }
-}
-
-// ⏰ Attende completamento training e verifica salvataggio nel DB
-async function waitForTrainingCompletion(businessType, sessionId, maxWait = 120000) {
-  const startTime = Date.now();
-  const checkInterval = 15000; // 15 secondi
-  
-  console.log(`⏰ Waiting for training completion for ${businessType}... (max ${maxWait/1000}s)`);
-  
-  while (Date.now() - startTime < maxWait) {
-    try {
-      // Controlla se i dati sono stati salvati nel database
-      const storage = new DatabaseStorage();
-      const result = await storage.query(
-        'SELECT business_images, pattern_data FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
-        [businessType, 'active']
-      );
-      
-      if (result.rows.length > 0) {
-        const row = result.rows[0];
-        const images = row.business_images;
-        const patterns = row.pattern_data;
-        
-        // Verifica che abbia dati validi
-        if (images && images.gallery && images.gallery.length > 0) {
-          console.log(`✅ Training completed successfully for ${businessType}`);
-          console.log(`📸 Extracted ${images.gallery.length} copyright-free images`);
-          console.log(`🎨 Extracted design patterns:`, patterns ? Object.keys(patterns).length : 0);
-          return true;
-        }
-      }
-      
-      const elapsed = Math.round((Date.now() - startTime) / 1000);
-      console.log(`⏰ Still training ${businessType}... (${elapsed}s elapsed)`);
-      await new Promise(resolve => setTimeout(resolve, checkInterval));
-      
-    } catch (error) {
-      console.log('⚠️ Error checking training progress:', error.message);
-    }
-  }
-  
-  console.log(`⚠️ Training timeout for ${businessType} after ${maxWait/1000}s`);
-  return false;
 }
 
 // 🎨 Genera immagini stock sicure per settore specifico
@@ -922,9 +351,6 @@ function getUnsplashPhotoId(keyword, index) {
 async function saveBusinessImages(businessType, businessImages) {
   try {
     const storage = new DatabaseStorage();
-    await storage.initialize(); // ✅ INIZIALIZZA IL DATABASE
-    
-    console.log(`💾 Saving business images for: ${businessType}`);
     
     await storage.query(`
       INSERT INTO ai_design_patterns (business_type, pattern_data, business_images, confidence_score, source)
@@ -946,6 +372,18 @@ async function saveBusinessImages(businessType, businessImages) {
   } catch (error) {
     console.log('⚠️ Failed to save business images:', error.message);
   }
+}
+
+// 🔄 Fallback immagini stock sicure
+function generateFallbackStockImages(businessType, count = 4) {
+  const fallbackImages = [
+    'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1552581234-26160f608093?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&h=600&fit=crop'
+  ];
+  
+  return fallbackImages.slice(0, count);
 }
 
 // 🔄 MAPPING BUSINESS TYPES (Italiano → Inglese per training data)
@@ -994,51 +432,46 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       timestamp: new Date().toISOString()
     });
 
-    const { businessType, businessName, businessDescription, style = 'modern', currentBlocks = [] } = req.body;
+    const { businessType, businessName, style = 'modern', currentBlocks = [] } = req.body;
     
-    console.log(`📥 RECEIVED REQUEST: businessType="${businessType}", businessName="${businessName}", businessDescription="${businessDescription}"`);
-    
-    if (!businessName) {
+    if (!businessType) {
       return res.status(400).json({
         success: false,
-        error: 'Business name is required'
+        error: 'Business type is required'
       });
     }
 
-    // 🤖 Try to generate content with OpenAI first  
+    // Traduzione business type per compatibilità con training data
+    const englishBusinessType = BUSINESS_TYPE_MAPPING[businessType.toLowerCase()]?.[0] || businessType;
+    
+    // 🤖 Try to generate content with OpenAI first
     console.log('🤖 Attempting AI content generation...');
-    const aiContent = await generateBusinessContentWithAI(businessName, businessName);
+    const aiContent = await generateBusinessContentWithAI(englishBusinessType, businessName);
     
-    // 🖼️ Generate gallery images with DYNAMIC SYSTEM - OpenAI identification + competitor discovery
-    const galleryImages = await getBusinessImagesFromDB(businessName, businessDescription || businessName, 6);
-    
-    // 🔍 Get the identified business type for other operations
-    const detectedBusinessType = await identifyBusinessType(businessName, businessDescription || businessName) || 'business';
-    console.log(`🎯 Using detected business type for design operations: ${detectedBusinessType}`);
+    // 🖼️ Generate gallery images from database (stock images only)
+    const galleryImages = await getBusinessImagesFromDB(englishBusinessType, 6);
     
     // 🎨 Initialize Design Intelligence
     const designIntelligence = new DesignIntelligence();
     let designData;
     
     try {
-      designData = await designIntelligence.generateCompleteDesignRecommendation(detectedBusinessType, { style });
+      designData = await designIntelligence.generateDesignForBusiness(englishBusinessType, style);
       console.log('✅ Design Intelligence generated:', {
-        colors: designData.design?.colors,
-        typography: designData.design?.typography?.primary,
+        colors: designData.colors,
+        typography: designData.typography?.primary,
         confidence: designData.confidence
       });
     } catch (designError) {
       console.log('⚠️ Design Intelligence fallback:', designError.message);
       designData = {
-        design: {
-          colors: { primary: '#3B82F6', secondary: '#10B981', accent: '#F59E0B' },
-          typography: { primary: 'Inter', secondary: 'system-ui' }
-        },
+        colors: { primary: '#3B82F6', secondary: '#10B981', accent: '#F59E0B' },
+        typography: { primary: 'Inter', secondary: 'system-ui' },
         confidence: 70
       };
     }
     
-    console.log(`🔄 Dynamic business type detection: "${businessName}" → "${detectedBusinessType}"`);
+    console.log(`🔄 Business type mapping: ${businessType} → ${englishBusinessType}`);
 
     // Verifica disponibilità database prima di procedere
     const designAI = new DesignIntelligence();
@@ -1060,18 +493,18 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     }
 
     // Utilizza Design Intelligence per generare design ottimizzato
-    const designRecommendation = await designAI.generateCompleteDesignRecommendation(detectedBusinessType, {
+    const designRecommendation = await designAI.generateCompleteDesignRecommendation(englishBusinessType, {
       style,
       contentType: 'layout',
       tone: 'professional'
     });
     
-    const layoutSuggestions = await designAI.generateLayoutSuggestions(detectedBusinessType, 'layout');
+    const layoutSuggestions = await designAI.generateLayoutSuggestions(englishBusinessType, 'layout');
     await designAI.close();
 
     // Genera blocchi semantici ottimizzati con contenuto AI
     const semanticBlocks = generateEnhancedBlocks(
-      detectedBusinessType, 
+      englishBusinessType, 
       businessName, 
       designRecommendation.design,
       currentBlocks,
@@ -1100,16 +533,16 @@ router.post('/layout', authenticateAPI, async (req, res) => {
           ].join('\n\n')
         } : null,
         metadata: {
-          businessType: detectedBusinessType,
-          originalBusinessName: businessName,
+          businessType: englishBusinessType,
+          originalBusinessType: businessType,
           style,
           confidence: designRecommendation.confidence,
           generatedAt: new Date().toISOString(),
           aiEnhanced: true
         }
       },
-      businessType: detectedBusinessType,
-      semanticScore: calculateSemanticScore(semanticBlocks, detectedBusinessType),
+      businessType: englishBusinessType,
+      semanticScore: calculateSemanticScore(semanticBlocks, englishBusinessType),
       suggestedBlocks: semanticBlocks.map(block => block.type),
       designConfidence: designRecommendation.confidence
     };
@@ -1626,76 +1059,5 @@ function calculateSemanticScore(blocks, businessType) {
   return Math.round(Math.min(baseScore + aiBonus, 99));
 }
 
-// 🎨 Business type specific colors
-function getBusinessTypeColor(businessType, colorType) {
-  const businessColors = {
-    florist: {
-      primary: '#E91E63', // Pink
-      secondary: '#4CAF50', // Green
-      accent: '#FFC107' // Amber
-    },
-    restaurant: {
-      primary: '#FF5722', // Red-Orange
-      secondary: '#795548', // Brown
-      accent: '#FFC107' // Amber
-    },
-    dentist: {
-      primary: '#2196F3', // Blue
-      secondary: '#00BCD4', // Cyan
-      accent: '#4CAF50' // Green
-    },
-    gym: {
-      primary: '#FF5722', // Red
-      secondary: '#9E9E9E', // Grey
-      accent: '#FF9800' // Orange
-    },
-    bakery: {
-      primary: '#FF9800', // Orange
-      secondary: '#795548', // Brown
-      accent: '#FFEB3B' // Yellow
-    },
-    default: {
-      primary: '#3B82F6',
-      secondary: '#1E40AF',
-      accent: '#F59E0B'
-    }
-  };
-  
-  const colors = businessColors[businessType] || businessColors.default;
-  return colors[colorType] || colors.primary;
-}
-
-// 📝 Business type specific fonts
-function getBusinessTypeFont(businessType, fontType) {
-  const businessFonts = {
-    florist: {
-      heading: 'Dancing Script',
-      body: 'Open Sans'
-    },
-    restaurant: {
-      heading: 'Playfair Display',
-      body: 'Source Sans Pro'
-    },
-    dentist: {
-      heading: 'Roboto',
-      body: 'Roboto'
-    },
-    gym: {
-      heading: 'Oswald',
-      body: 'Roboto'
-    },
-    bakery: {
-      heading: 'Fredoka One',
-      body: 'Nunito'
-    },
-    default: {
-      heading: 'Inter',
-      body: 'Inter'
-    }
-  };
-  
-  const fonts = businessFonts[businessType] || businessFonts.default;
-  return fonts[fontType] || fonts.heading;
-}
-
 module.exports = router;
+          images: galleryImages.slice(0, 4),          cta: 'Esplora Categorie'        }),

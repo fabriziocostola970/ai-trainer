@@ -239,14 +239,14 @@ class DatabaseStorage {
 
     try {
       const result = await this.pool.query(`
-        UPDATE ai_custom_sites 
-        SET status = $1, "trainingSessionId" = $2, "lastCollected" = $3, "updatedAt" = $4
-        WHERE url = $5 AND "businessType" = $6
+        UPDATE ai_design_patterns 
+        SET status = $1, updated_at = $2
+        WHERE source_url = $3 AND business_type = $4
         RETURNING id
-      `, [status, trainingSessionId, new Date(), new Date(), url, businessType]);
+      `, [status, new Date(), url, businessType]);
 
       if (result.rows.length > 0) {
-        console.log(`✅ Custom site status updated: ${url} -> ${status}`);
+        console.log(`✅ Design pattern status updated: ${url} -> ${status}`);
         return result.rows[0];
       } else {
         console.log(`⚠️ No custom site found to update: ${url} (${businessType})`);
@@ -291,22 +291,7 @@ class DatabaseStorage {
     }
   }
 
-  // 🔌 Public query method wrapper (MEMORY SAFE)
-  async query(sql, params = []) {
-    // 🔄 Auto-initialize if not connected
-    if (!this.isConnected && !this.fallbackToFiles) {
-      console.log('🔄 Auto-initializing database connection...');
-      await this.initialize();
-    }
-    
-    if (!this.isConnected || this.fallbackToFiles) {
-      throw new Error('Database not connected - use initialize() first');
-    }
-    
-    return await this.pool.query(sql, params);
-  }
-
-  // �📋 Verify VendiOnline AI Training Tables
+  // 📋 Verify VendiOnline AI Training Tables
   async verifyVendiOnlineTables() {
     try {
       const requiredTables = [
@@ -523,29 +508,46 @@ class DatabaseStorage {
     }
 
     try {
-      // Clear existing sites (or implement smarter merge logic)
-      await this.pool.query('DELETE FROM ai_custom_sites');
-      
-      // Insert new sites
+      // Insert into ai_design_patterns instead of ai_custom_sites
       for (const site of sites) {
         const query = `
-          INSERT INTO ai_custom_sites (
-            id, 
-            url, 
-            "businessType", 
-            style, 
-            metadata,
-            "createdAt",
-            "updatedAt"
-          ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+          INSERT INTO ai_design_patterns (
+            business_type,
+            source_url, 
+            pattern_data,
+            business_images,
+            confidence_score,
+            source,
+            status,
+            created_at,
+            updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+          ON CONFLICT (business_type, source_url) 
+          DO UPDATE SET 
+            pattern_data = $3,
+            business_images = $4,
+            confidence_score = $5,
+            updated_at = NOW()
         `;
         
         const values = [
-          this.generateId(),
+          site.businessType || 'unknown',
           site.url,
-          site.businessType,
-          site.style,
-          JSON.stringify(site)
+          JSON.stringify({
+            name: site.name,
+            description: site.description,
+            style: site.style || 'modern',
+            scraped_at: new Date().toISOString()
+          }),
+          JSON.stringify({
+            source: 'competitor_analysis',
+            business_type: site.businessType,
+            collection_date: new Date().toISOString(),
+            copyright_status: 'free_to_use'
+          }),
+          75, // confidence_score
+          'ai-competitor-generated', // source
+          'active' // status
         ];
         
         await this.pool.query(query, values);
@@ -564,17 +566,17 @@ class DatabaseStorage {
     }
 
     try {
-      const query = 'SELECT * FROM ai_custom_sites ORDER BY "createdAt" DESC';
+      const query = 'SELECT business_type, source_url, pattern_data, created_at FROM ai_design_patterns WHERE source LIKE \'%competitor%\' ORDER BY created_at DESC';
       const result = await this.pool.query(query);
       
       const sites = result.rows.map(row => ({
-        url: row.url,
-        businessType: row.businessType,
-        style: row.style,
-        priority: row.priority,
-        status: row.status,
-        lastCollected: row.lastCollected,
-        metadata: row.metadata
+        url: row.source_url,
+        businessType: row.business_type,
+        name: row.pattern_data?.name || 'Unknown',
+        description: row.pattern_data?.description || 'Competitor site',
+        style: row.pattern_data?.style || 'modern',
+        lastCollected: row.created_at,
+        metadata: row.pattern_data
       }));
       
       console.log(`📖 Loaded ${sites.length} custom sites from DB`);
@@ -762,7 +764,7 @@ class DatabaseStorage {
           type: 'postgresql',
           samples: 'ai_training_samples table',
           state: 'ai_training_sessions table',
-          customSites: 'ai_custom_sites table'
+          customSites: 'ai_design_patterns table (competitor sites)'
         }
       };
       
