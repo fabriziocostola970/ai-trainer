@@ -75,54 +75,99 @@ async function generateBusinessContentWithAI(businessType, businessName) {
   }
 }
 
+// 🤖 STEP 1: Identifica il business type dalla descrizione
+async function identifyBusinessType(businessName, businessDescription) {
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('⚠️ OpenAI API key not configured');
+      return null;
+    }
+    
+    const prompt = `Analyze this business and identify its type:
+
+Business Name: "${businessName}"
+Business Description: "${businessDescription || businessName}"
+
+Return ONLY the business type in English (one word, lowercase).
+Examples: restaurant, florist, dentist, gym, bakery, beauty, technology, ecommerce, fashion, consulting
+
+Business type:`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 10,
+      temperature: 0.1
+    });
+
+    const businessType = completion.choices[0].message.content.trim().toLowerCase();
+    console.log(`🤖 OpenAI identified business type: "${businessName}" → "${businessType}"`);
+    return businessType;
+    
+  } catch (error) {
+    console.log('⚠️ OpenAI business type identification failed:', error.message);
+    return null;
+  }
+}
+
 // 🖼️ DATABASE-DRIVEN Gallery Images (DINAMICO - Auto-genera competitor)
-async function getBusinessImagesFromDB(businessType, count = 4, attempt = 1) {
+async function getBusinessImagesFromDB(businessName, businessDescription, count = 4, attempt = 1) {
   const maxAttempts = 2; // Evita loop infiniti
   
   try {
     const storage = new DatabaseStorage();
     await storage.initialize(); // ✅ INIZIALIZZA IL DATABASE
     
-    console.log(`🔍 Checking database for business type: ${businessType} (attempt ${attempt})`);
+    // 🤖 STEP 1: Identifica il business type con OpenAI
+    const identifiedType = await identifyBusinessType(businessName, businessDescription);
     
-    // 1. Query dal database per immagini esistenti
+    if (!identifiedType) {
+      console.log('⚠️ Could not identify business type, using fallback');
+      return generateFallbackStockImages('business', count);
+    }
+    
+    console.log(`🔍 Checking database for business type: ${identifiedType} (attempt ${attempt})`);
+    
+    // 💾 STEP 2: Cerca nel database
     const result = await storage.query(
       'SELECT business_images FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
-      [businessType, 'active']
+      [identifiedType, 'active']
     );
     
     if (result.rows.length > 0 && result.rows[0].business_images) {
-      console.log(`✅ Found existing images for business type: ${businessType}`);
+      console.log(`✅ Found existing data for business type: ${identifiedType}`);
       const images = result.rows[0].business_images;
       return images.gallery ? images.gallery.slice(0, count) : [];
     }
     
-    // 2. ⚡ NUOVO BUSINESS TYPE → SISTEMA DINAMICO AUTOMATICO
+    // 🚀 STEP 3: Business type non trovato → Sistema dinamico
     if (attempt === 1) {
-      console.log(`🔍 NEW BUSINESS TYPE "${businessType}" - Starting dynamic competitor analysis...`);
+      console.log(`🔍 NEW BUSINESS TYPE "${identifiedType}" - Starting competitor analysis...`);
       
-      // 2a. Chiama OpenAI per generare 5 competitor reali
-      const competitorSites = await generateCompetitorSites(businessType);
+      // 🤖 STEP 4: Chiedi 5 competitor per questo business type
+      const competitorSites = await generateCompetitorSites(identifiedType);
       
       if (competitorSites && competitorSites.length > 0) {
-        // 2b. Avvia training automatico con le funzioni esistenti
-        const success = await triggerDynamicTraining(businessType, competitorSites);
+        // 🕷️ STEP 5: Avvia scraping automatico
+        const success = await triggerDynamicTraining(identifiedType, competitorSites);
         
         if (success) {
-          // 2c. 🔄 RICORSIONE SICURA: Richiama per usare i nuovi dati
-          console.log(`🔄 Recursive call to get newly generated data for: ${businessType}`);
-          return await getBusinessImagesFromDB(businessType, count, attempt + 1);
+          // 🔄 STEP 6: Ricorsione per usare i nuovi dati
+          console.log(`🔄 Recursive call to get newly generated data for: ${identifiedType}`);
+          return await getBusinessImagesFromDB(businessName, businessDescription, count, attempt + 1);
         }
       }
     }
     
-    // 3. Fallback se tutto fallisce o è il secondo tentativo
-    console.log(`⚠️ Using stock fallback for: ${businessType} (attempt ${attempt})`);
-    return generateFallbackStockImages(businessType, count);
+    // 🆘 Fallback finale  
+    console.log(`⚠️ Using stock fallback for: ${identifiedType} (attempt ${attempt})`);
+    return generateFallbackStockImages(identifiedType, count);
     
   } catch (error) {
     console.log('⚠️ Database error, using fallback stock images:', error.message);
-    return generateFallbackStockImages(businessType, count);
+    return generateFallbackStockImages('business', count);
   }
 }
 
@@ -402,35 +447,34 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       timestamp: new Date().toISOString()
     });
 
-    const { businessType, businessName, style = 'modern', currentBlocks = [] } = req.body;
+    const { businessType, businessName, businessDescription, style = 'modern', currentBlocks = [] } = req.body;
     
-    console.log(`📥 RECEIVED REQUEST: businessType="${businessType}", businessName="${businessName}"`);
+    console.log(`📥 RECEIVED REQUEST: businessType="${businessType}", businessName="${businessName}", businessDescription="${businessDescription}"`);
     
-    if (!businessType) {
+    if (!businessName) {
       return res.status(400).json({
         success: false,
-        error: 'Business type is required'
+        error: 'Business name is required'
       });
     }
 
-    // 🚀 SISTEMA DINAMICO: usa business type originale per attivare discovery automatico
-    const englishBusinessType = businessType; // Mantieni tipo originale per sistema dinamico
-    
-    console.log(`🔍 DEBUG MAPPING: Original=${businessType}, Final=${englishBusinessType}`);
-    
-    // 🤖 Try to generate content with OpenAI first
+    // 🤖 Try to generate content with OpenAI first  
     console.log('🤖 Attempting AI content generation...');
-    const aiContent = await generateBusinessContentWithAI(englishBusinessType, businessName);
+    const aiContent = await generateBusinessContentWithAI(businessName, businessName);
     
-    // 🖼️ Generate gallery images from database (stock images only) - ATTIVA SISTEMA DINAMICO
-    const galleryImages = await getBusinessImagesFromDB(englishBusinessType, 6);
+    // 🖼️ Generate gallery images with DYNAMIC SYSTEM - OpenAI identification + competitor discovery
+    const galleryImages = await getBusinessImagesFromDB(businessName, businessDescription || businessName, 6);
+    
+    // 🔍 Get the identified business type for other operations
+    const detectedBusinessType = await identifyBusinessType(businessName, businessDescription || businessName) || 'business';
+    console.log(`🎯 Using detected business type for design operations: ${detectedBusinessType}`);
     
     // 🎨 Initialize Design Intelligence
     const designIntelligence = new DesignIntelligence();
     let designData;
     
     try {
-      designData = await designIntelligence.generateDesignForBusiness(englishBusinessType, style);
+      designData = await designIntelligence.generateDesignForBusiness(detectedBusinessType, style);
       console.log('✅ Design Intelligence generated:', {
         colors: designData.colors,
         typography: designData.typography?.primary,
@@ -445,7 +489,7 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       };
     }
     
-    console.log(`🔄 Business type mapping: ${businessType} → ${englishBusinessType}`);
+    console.log(`🔄 Dynamic business type detection: "${businessName}" → "${detectedBusinessType}"`);
 
     // Verifica disponibilità database prima di procedere
     const designAI = new DesignIntelligence();
@@ -467,18 +511,18 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     }
 
     // Utilizza Design Intelligence per generare design ottimizzato
-    const designRecommendation = await designAI.generateCompleteDesignRecommendation(englishBusinessType, {
+    const designRecommendation = await designAI.generateCompleteDesignRecommendation(detectedBusinessType, {
       style,
       contentType: 'layout',
       tone: 'professional'
     });
     
-    const layoutSuggestions = await designAI.generateLayoutSuggestions(englishBusinessType, 'layout');
+    const layoutSuggestions = await designAI.generateLayoutSuggestions(detectedBusinessType, 'layout');
     await designAI.close();
 
     // Genera blocchi semantici ottimizzati con contenuto AI
     const semanticBlocks = generateEnhancedBlocks(
-      englishBusinessType, 
+      detectedBusinessType, 
       businessName, 
       designRecommendation.design,
       currentBlocks,
@@ -507,16 +551,16 @@ router.post('/layout', authenticateAPI, async (req, res) => {
           ].join('\n\n')
         } : null,
         metadata: {
-          businessType: englishBusinessType,
-          originalBusinessType: businessType,
+          businessType: detectedBusinessType,
+          originalBusinessName: businessName,
           style,
           confidence: designRecommendation.confidence,
           generatedAt: new Date().toISOString(),
           aiEnhanced: true
         }
       },
-      businessType: englishBusinessType,
-      semanticScore: calculateSemanticScore(semanticBlocks, englishBusinessType),
+      businessType: detectedBusinessType,
+      semanticScore: calculateSemanticScore(semanticBlocks, detectedBusinessType),
       suggestedBlocks: semanticBlocks.map(block => block.type),
       designConfidence: designRecommendation.confidence
     };
