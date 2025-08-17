@@ -541,19 +541,47 @@ async function saveBusinessImagesPattern(businessType, images, storage, designPa
     );
     
     if (existingCheck.rows.length > 0) {
-      // Update existing record with both images and patterns
+      // Update existing record with REAL database columns
       await storage.query(`
         UPDATE ai_design_patterns 
-        SET business_images = $1, pattern_data = $2, updated_at = NOW()
-        WHERE business_type = $3
-      `, [JSON.stringify(imagePattern), JSON.stringify(patternData), businessType]);
+        SET business_images = $1, 
+            color_palette = $2, 
+            font_families = $3, 
+            css_content = $4, 
+            design_analysis = $5, 
+            updated_at = NOW()
+        WHERE business_type = $6
+      `, [
+        JSON.stringify(imagePattern), 
+        JSON.stringify(patternData.colors), 
+        JSON.stringify(patternData.fonts), 
+        patternData.css || '',
+        JSON.stringify(patternData.layout), 
+        businessType
+      ]);
       console.log(`✅ Updated existing data for business type: ${businessType}`);
     } else {
-      // Insert new record with both images and patterns
+      // Insert new record with REAL database columns
       await storage.query(`
-        INSERT INTO ai_design_patterns (business_type, business_images, pattern_data, status, created_at)
-        VALUES ($1, $2, $3, 'active', NOW())
-      `, [businessType, JSON.stringify(imagePattern), JSON.stringify(patternData)]);
+        INSERT INTO ai_design_patterns (
+          business_type, 
+          business_images, 
+          color_palette, 
+          font_families, 
+          css_content, 
+          design_analysis, 
+          status, 
+          created_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, 'active', NOW())
+      `, [
+        businessType, 
+        JSON.stringify(imagePattern), 
+        JSON.stringify(patternData.colors), 
+        JSON.stringify(patternData.fonts), 
+        patternData.css || '',
+        JSON.stringify(patternData.layout)
+      ]);
       console.log(`✅ Inserted new data for business type: ${businessType}`);
     }
     
