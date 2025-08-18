@@ -429,11 +429,7 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     }
 
     // Utilizza Design Intelligence per generare design ottimizzato
-    const designRecommendation = await designAI.generateCompleteDesignRecommendation(englishBusinessType, {
-      style,
-      contentType: 'layout',
-      tone: 'professional'
-    });
+    const designRecommendation = await designAI.generateCompleteDesignRecommendation(englishBusinessType, { style });
     
     const layoutSuggestions = await designAI.generateLayoutSuggestions(englishBusinessType, 'layout');
     await designAI.close();
