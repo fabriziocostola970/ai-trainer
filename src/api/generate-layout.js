@@ -301,7 +301,7 @@ async function saveBusinessImages(businessType, businessImages) {
         {}, // pattern_data placeholder
         businessImages,
         85, // confidence score for stock images
-        'ai-stock-generated'
+        'ai-stock-generated' // <-- CORRETTO: ora usa source_url
       ]);
     
     console.log(`✅ Saved stock images for business type: ${businessType}`);
