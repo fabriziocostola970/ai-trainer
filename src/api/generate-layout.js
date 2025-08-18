@@ -157,22 +157,26 @@ async function generateAndScrapeCompetitors(businessType) {
 
 // 🤖 Genera competitor sites usando OpenAI
 // Ora accetta name e description, e chiede a OpenAI di restituire businessType
+// Aggiornata: chiamata API competitors su Railway
 async function generateCompetitorSitesWithOpenAI(businessName, businessDescription) {
   const axios = require('axios');
   try {
-    const response = await axios.post('https://vendionline-eu-production.up.railway.app/ai-business', {
+    const API_HOST = process.env.AI_TRAINER_API_HOST || 'https://ai-trainer-production.up.railway.app';
+    const response = await axios.post(`${API_HOST}/api/ai/competitors`, {
       businessName,
       description: businessDescription
+    }, {
+      headers: { Authorization: `Bearer ${process.env.AI_TRAINER_API_KEY}` }
     });
     if (response.data && response.data.businessType && Array.isArray(response.data.competitors)) {
-      console.log(`🎯 Endpoint ai-business: ${response.data.businessType}, competitors: ${response.data.competitors.length}`);
+      console.log(`🎯 Endpoint competitors: ${response.data.businessType}, competitors: ${response.data.competitors.length}`);
       return response.data;
     } else {
-      console.log('❌ Risposta endpoint ai-business non valida:', response.data);
+      console.log('❌ Risposta endpoint competitors non valida:', response.data);
       return null;
     }
   } catch (error) {
-    console.log(`❌ Chiamata ai-business fallita: ${error.message}`);
+    console.log(`❌ Chiamata competitors fallita: ${error.message}`);
     return null;
   }
 }
@@ -269,39 +273,32 @@ function getUnsplashPhotoId(keyword, index) {
 async function saveBusinessImages(businessType, businessImages) {
   try {
     const storage = new DatabaseStorage();
-    
-      await storage.pool.query(`
-        INSERT INTO ai_design_patterns (
-          business_type,
-          source_url,
-          business_images,
-          confidence_score,
-          source,
-          status,
-          created_at,
-          updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-        )
-        ON CONFLICT (business_type, source_url)
-        DO UPDATE SET
-          business_images = $3,
-          confidence_score = $4,
-          updated_at = CURRENT_TIMESTAMP,
-          source = $5,
-          status = $6
-      `, [
-        businessType,
-        'ai-stock-generated', // source_url
-        businessImages,
-        85, // confidence score for stock images
-        'ai-stock-generated', // source
-        'active'
-      ]);
-    
+    await storage.pool.query(`
+      INSERT INTO ai_design_patterns (
+        business_type,
+        business_images,
+        confidence_score,
+        status,
+        created_at,
+        updated_at
+      ) VALUES (
+        $1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      )
+      ON CONFLICT (business_type)
+      DO UPDATE SET
+        business_images = $2,
+        confidence_score = $3,
+        updated_at = CURRENT_TIMESTAMP,
+        status = $4
+    `, [
+      businessType,
+      JSON.stringify(businessImages),
+      85, // confidence score for stock images
+      'active'
+    ]);
     console.log(`✅ Saved stock images for business type: ${businessType}`);
   } catch (error) {
-    console.log('⚠️ Failed to save business images:', error.message);
+    console.log(`⚠️ Failed to save business images: ${error.message}`);
   }
 }
 
@@ -439,6 +436,7 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       galleryImages
     );
     
+    const confidenceValue = Number(designRecommendation.confidence) || 70;
     const response = {
       success: true,
       source: 'ai-design-intelligence',
@@ -463,7 +461,7 @@ router.post('/layout', authenticateAPI, async (req, res) => {
           businessType: englishBusinessType,
           originalBusinessType: businessType,
           style,
-          confidence: designRecommendation.confidence,
+          confidence: confidenceValue,
           generatedAt: new Date().toISOString(),
           aiEnhanced: true
         }
@@ -471,10 +469,10 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       businessType: englishBusinessType,
       semanticScore: calculateSemanticScore(semanticBlocks, englishBusinessType),
       suggestedBlocks: semanticBlocks.map(block => block.type),
-      designConfidence: designRecommendation.confidence
+      designConfidence: confidenceValue
     };
     
-    console.log(`✅ AI-enhanced layout generated with ${designRecommendation.confidence}% confidence`);
+    console.log(`✅ AI-enhanced layout generated with ${confidenceValue}% confidence`);
     res.json(response);
     
   } catch (error) {
