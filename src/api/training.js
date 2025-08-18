@@ -283,7 +283,8 @@ router.post('/custom', async (req, res) => {
       });
     }
 
-    // 🔧 Normalize custom sites data - handle both business_type and businessType
+  // 🔧 Normalize custom sites data - handle both business_type and businessType
+  // Correzione query: source -> source_url
     const normalizedSites = customSites.map(site => ({
       url: site.url,
       businessType: site.businessType || site.business_type || 'unknown',

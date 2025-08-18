@@ -287,21 +287,22 @@ async function saveBusinessImages(businessType, businessImages) {
   try {
     const storage = new DatabaseStorage();
     
-    await storage.query(`
-      INSERT INTO ai_design_patterns (business_type, pattern_data, business_images, confidence_score, source)
-      VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (business_type) 
-      DO UPDATE SET 
-        business_images = $3,
-        confidence_score = $4,
-        updated_at = CURRENT_TIMESTAMP
-    `, [
-      businessType,
-      {}, // pattern_data placeholder
-      businessImages,
-      85, // confidence score for stock images
-      'ai-stock-generated'
-    ]);
+      await storage.query(`
+        INSERT INTO ai_design_patterns (business_type, pattern_data, business_images, confidence_score, source_url)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (business_type) 
+        DO UPDATE SET 
+          business_images = $3,
+          confidence_score = $4,
+          updated_at = CURRENT_TIMESTAMP,
+          source_url = $5
+      `, [
+        businessType,
+        {}, // pattern_data placeholder
+        businessImages,
+        85, // confidence score for stock images
+        'ai-stock-generated'
+      ]);
     
     console.log(`✅ Saved stock images for business type: ${businessType}`);
   } catch (error) {

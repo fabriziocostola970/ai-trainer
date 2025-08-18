@@ -566,7 +566,7 @@ class DatabaseStorage {
     }
 
     try {
-      const query = 'SELECT business_type, source_url, design_analysis, created_at FROM ai_design_patterns WHERE source LIKE \'%competitor%\' ORDER BY created_at DESC';
+    const query = 'SELECT business_type, source_url, design_analysis, created_at FROM ai_design_patterns WHERE source_url LIKE \'%competitor%\' ORDER BY created_at DESC';
       const result = await this.pool.query(query);
       
       const sites = result.rows.map(row => ({
