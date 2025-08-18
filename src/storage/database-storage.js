@@ -514,40 +514,29 @@ class DatabaseStorage {
           INSERT INTO ai_design_patterns (
             business_type,
             source_url, 
-            design_analysis,
             business_images,
             confidence_score,
             source,
             status,
             created_at,
             updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-          ON CONFLICT (business_type, source_url) 
-          DO UPDATE SET 
-            design_analysis = $3,
-            business_images = $4,
-            confidence_score = $5,
-            updated_at = NOW()
+          ) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          ON CONFLICT (business_type, source_url)
+          DO UPDATE SET
+            business_images = $3,
+            confidence_score = $4,
+            updated_at = CURRENT_TIMESTAMP,
+            source = $5,
+            status = $6
         `;
         
         const values = [
           site.businessType || 'unknown',
           site.url,
-          JSON.stringify({
-            name: site.name,
-            description: site.description,
-            style: site.style || 'modern',
-            scraped_at: new Date().toISOString()
-          }),
-          JSON.stringify({
-            source: 'competitor_analysis',
-            business_type: site.businessType,
-            collection_date: new Date().toISOString(),
-            copyright_status: 'free_to_use'
-          }),
-          75, // confidence_score
-          'ai-competitor-generated', // source
-          'active' // status
+          JSON.stringify(site.business_images || {}),
+          site.confidence_score || 75,
+          'ai-competitor-generated',
+          site.status || 'active'
         ];
         
         await this.pool.query(query, values);

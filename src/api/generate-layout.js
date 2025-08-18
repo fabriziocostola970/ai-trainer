@@ -156,51 +156,23 @@ async function generateAndScrapeCompetitors(businessType) {
 }
 
 // 🤖 Genera competitor sites usando OpenAI
-async function generateCompetitorSitesWithOpenAI(businessType) {
+// Ora accetta name e description, e chiede a OpenAI di restituire businessType
+async function generateCompetitorSitesWithOpenAI(businessName, businessDescription) {
+  const axios = require('axios');
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      console.log('⚠️ OpenAI API key not configured, skipping competitor generation');
+    const response = await axios.post('https://vendionline-eu-production.up.railway.app/ai-business', {
+      businessName,
+      description: businessDescription
+    });
+    if (response.data && response.data.businessType && Array.isArray(response.data.competitors)) {
+      console.log(`🎯 Endpoint ai-business: ${response.data.businessType}, competitors: ${response.data.competitors.length}`);
+      return response.data;
+    } else {
+      console.log('❌ Risposta endpoint ai-business non valida:', response.data);
       return null;
     }
-
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
-
-    const prompt = `Generate exactly 5 real competitor websites for a "${businessType}" business.
-    
-    Requirements:
-    - Must be real, existing websites (not fictional)
-    - Should be well-known brands in the ${businessType} industry
-    - Include diverse examples (local, national, international if possible)
-    - Focus on websites with good design and user experience
-    - Provide complete, working URLs
-    
-    Respond ONLY with JSON format:
-    [
-      {
-        "url": "https://example.com",
-        "name": "Company Name",
-        "description": "Brief description of the business"
-      }
-    ]
-    
-    Business type: ${businessType}`;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 800,
-      temperature: 0.3
-    });
-
-    const competitorSites = JSON.parse(completion.choices[0].message.content);
-    console.log(`🎯 OpenAI generated ${competitorSites.length} competitors for ${businessType}`);
-    
-    return competitorSites;
-    
   } catch (error) {
-    console.log(`❌ OpenAI competitor generation failed: ${error.message}`);
+    console.log(`❌ Chiamata ai-business fallita: ${error.message}`);
     return null;
   }
 }
@@ -299,20 +271,32 @@ async function saveBusinessImages(businessType, businessImages) {
     const storage = new DatabaseStorage();
     
       await storage.pool.query(`
-        INSERT INTO ai_design_patterns (business_type, pattern_data, business_images, confidence_score, source_url)
-        VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (business_type) 
-        DO UPDATE SET 
+        INSERT INTO ai_design_patterns (
+          business_type,
+          source_url,
+          business_images,
+          confidence_score,
+          source,
+          status,
+          created_at,
+          updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        )
+        ON CONFLICT (business_type, source_url)
+        DO UPDATE SET
           business_images = $3,
           confidence_score = $4,
           updated_at = CURRENT_TIMESTAMP,
-          source_url = $5
+          source = $5,
+          status = $6
       `, [
         businessType,
-        {}, // pattern_data placeholder
+        'ai-stock-generated', // source_url
         businessImages,
         85, // confidence score for stock images
-        'ai-stock-generated' // <-- CORRETTO: ora usa source_url
+        'ai-stock-generated', // source
+        'active'
       ]);
     
     console.log(`✅ Saved stock images for business type: ${businessType}`);
