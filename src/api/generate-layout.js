@@ -1069,4 +1069,59 @@ async function scrapeCompetitorSite(url, businessType) {
   }
 }
 
+// Funzione di orchestrazione del flusso automatico
+async function orchestrateBusinessGeneration({ businessName, businessDescription }) {
+  const axios = require('axios');
+  const storage = new DatabaseStorage();
+  const API_HOST = process.env.AI_TRAINER_API_HOST || 'https://ai-trainer-production.up.railway.app';
+
+  // 1. Ottieni businessType da OpenAI tramite API Railway
+  const response = await axios.post(
+    `${API_HOST}/api/ai/competitors`,
+    { businessName, description: businessDescription },
+    { headers: { Authorization: `Bearer ${process.env.AI_TRAINER_API_KEY}` } }
+  );
+  const { businessType, competitors } = response.data;
+
+  // 2. Verifica se ci sono almeno 5 siti nel DB
+  const result = await storage.pool.query(
+    'SELECT COUNT(*) FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
+    [businessType, 'active']
+  );
+  const siteCount = parseInt(result.rows[0].count);
+
+  // 3. Se meno di 5, chiedi competitor, filtra e fai scraping
+  if (siteCount < 5) {
+    // Se la risposta API non ha già 15 competitor, richiedili
+    let competitorsList = competitors;
+    if (!competitorsList || competitorsList.length < 10) {
+      const compResp = await axios.post(
+        `${API_HOST}/api/ai/competitors`,
+        { businessName, description: businessDescription, count: 15 },
+        { headers: { Authorization: `Bearer ${process.env.AI_TRAINER_API_KEY}` } }
+      );
+      competitorsList = compResp.data.competitors;
+    }
+    // Filtra quelli già presenti
+    const existingResult = await storage.pool.query(
+      'SELECT source_url FROM ai_design_patterns WHERE business_type = $1',
+      [businessType]
+    );
+    const existingUrls = new Set(existingResult.rows.map(row => row.source_url));
+    const newCompetitors = competitorsList.filter(site => !existingUrls.has(site.url));
+
+    // Scraping e salvataggio
+    for (const site of newCompetitors) {
+      const scrapedSite = await scrapeCompetitorSite(site.url, businessType);
+      await storage.saveScrapedCompetitorToDesignPatterns(scrapedSite);
+    }
+  }
+
+  // 4. Genera immagini stock e salvale
+  const businessImages = await generateStockImagesForBusiness(businessType);
+  await saveBusinessImages(businessType, businessImages);
+
+  return { businessType, status: 'completed' };
+}
+
 module.exports = router;

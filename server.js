@@ -117,6 +117,7 @@ app.use('/api/validate', authenticateAPI, require('./src/api/validate-template')
 app.use('/api/training', authenticateAPI, require('./src/api/training'));
 app.use('/api/design', authenticateAPI, require('./src/api/design-routes')); // 🎨 NEW: Design Analysis API
 app.use('/api', authenticateAPI, require('./src/api/setup-database')); // 🗄️ Database setup endpoint
+app.use('/api/ai/competitors', authenticateAPI, require('./src/api/competitors'));
 
 // 🧠 Auto-classification API
 app.use('/api/training', authenticateAPI, require('./src/api/auto-classify'));
@@ -295,6 +296,10 @@ app.get('*', (req, res) => {
   console.log('🔄 Catch-all route: serving clean dashboard');
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
+
+// Competitors API Route
+const competitorsRoute = require('./src/api/competitors');
+app.use('/api/ai/competitors', competitorsRoute);
 
 // Start server
 app.listen(PORT, () => {
