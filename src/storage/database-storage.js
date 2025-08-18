@@ -911,7 +911,7 @@ class DatabaseStorage {
           design_score = $12,
           mobile_responsive = $13,
           status = $14,
-          tags = $15,
+          tags = $15::text[],
           confidence_score = $16,
           training_priority = $17,
           business_images = $18,
@@ -932,7 +932,8 @@ class DatabaseStorage {
         scrapedSite.design_score,
         scrapedSite.mobile_responsive,
         scrapedSite.status || 'active',
-        JSON.stringify(scrapedSite.tags || []),
+        scrapedSite.tags, // <-- array JS, NON JSON.stringify
+        //JSON.stringify(scrapedSite.tags || []),
         scrapedSite.confidence_score || 75,
         scrapedSite.training_priority || 1,
         JSON.stringify(scrapedSite.business_images || {}),
