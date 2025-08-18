@@ -287,7 +287,7 @@ async function saveBusinessImages(businessType, businessImages) {
   try {
     const storage = new DatabaseStorage();
     
-      await storage.query(`
+      await storage.pool.query(`
         INSERT INTO ai_design_patterns (business_type, pattern_data, business_images, confidence_score, source_url)
         VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT (business_type) 
@@ -1047,31 +1047,94 @@ async function scrapeCompetitorSite(url, businessType) {
       confidence_score: 70,
       training_priority: 1,
       business_images: { screenshot }
-    };
-  } catch (error) {
-    if (browser) await browser.close();
-    console.error(`❌ Scraping fallito per ${url}:`, error.message);
-    return {
-      businessType,
-      url,
-      html_content: '',
-      css_content: '',
-      design_analysis: { error: error.message },
-      color_palette: [],
-      font_families: [],
-      layout_structure: {},
-      semantic_analysis: {},
-      performance_metrics: {},
-      accessibility_score: null,
-      design_score: null,
-      mobile_responsive: null,
-      status: "error",
-      tags: ["competitor", businessType],
-      confidence_score: 0,
-      training_priority: 1,
-      business_images: {}
-    };
+    let browser;
+    try {
+      browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+      const page = await browser.newPage();
+      try {
+        await page.goto(url, { waitUntil: 'networkidle2', timeout: 20000 });
+        // Estrai HTML
+        const html_content = await page.content();
+        // Estrai CSS inline (tutti i <style> nel DOM)
+        const css_content = await page.$$eval('style', styles =>
+          styles.map(style => style.innerHTML).join('\n')
+        );
+        // Estrai titolo e meta description
+        const design_analysis = {
+          title: await page.title(),
+          description: await page.$eval('meta[name="description"]', el => el.content).catch(() => ''),
+          businessType,
+          scraped_at: new Date().toISOString()
+        };
+        // Screenshot (opzionale, salva come base64)
+        const screenshot = await page.screenshot({ encoding: 'base64', fullPage: true });
+        await browser.close();
+        return {
+          businessType,
+          url,
+          html_content,
+          css_content,
+          design_analysis,
+          color_palette: [], // Da implementare
+          font_families: [], // Da implementare
+          layout_structure: {}, // Da implementare
+          semantic_analysis: {}, // Da implementare
+          performance_metrics: {}, // Da implementare
+          accessibility_score: null,
+          design_score: null,
+          mobile_responsive: null,
+          status: "active",
+          tags: ["competitor", businessType],
+          confidence_score: 70,
+          training_priority: 1,
+          business_images: { screenshot }
+        };
+      } catch (pageError) {
+        if (browser) await browser.close();
+        console.error(`❌ Scraping fallito per ${url}:`, pageError.message);
+        return {
+          businessType,
+          url,
+          html_content: '',
+          css_content: '',
+          design_analysis: { error: pageError.message },
+          color_palette: [],
+          font_families: [],
+          layout_structure: {},
+          semantic_analysis: {},
+          performance_metrics: {},
+          accessibility_score: null,
+          design_score: null,
+          mobile_responsive: null,
+          status: "error",
+          tags: ["competitor", businessType],
+          confidence_score: 0,
+          training_priority: 1,
+          business_images: {}
+        };
+      }
+    } catch (error) {
+      if (browser) await browser.close();
+      console.error(`❌ Scraping fallito per ${url}:`, error.message);
+      return {
+        businessType,
+        url,
+        html_content: '',
+        css_content: '',
+        design_analysis: { error: error.message },
+        color_palette: [],
+        font_families: [],
+        layout_structure: {},
+        semantic_analysis: {},
+        performance_metrics: {},
+        accessibility_score: null,
+        design_score: null,
+        mobile_responsive: null,
+        status: "error",
+        tags: ["competitor", businessType],
+        confidence_score: 0,
+        training_priority: 1,
+        business_images: {}
+      };
   }
 }
-
-module.exports = router;
