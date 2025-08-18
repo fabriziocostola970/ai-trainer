@@ -869,6 +869,80 @@ class DatabaseStorage {
       console.log('🔌 Database connection closed');
     }
   }
+
+  async saveScrapedCompetitorToDesignPatterns(scrapedSite) {
+    try {
+      const query = `
+        INSERT INTO ai_design_patterns (
+          business_type,
+          source_url,
+          html_content,
+          css_content,
+          design_analysis,
+          color_palette,
+          font_families,
+          layout_structure,
+          semantic_analysis,
+          performance_metrics,
+          accessibility_score,
+          design_score,
+          mobile_responsive,
+          status,
+          tags,
+          confidence_score,
+          training_priority,
+          business_images,
+          created_at,
+          updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW(), NOW()
+        )
+        ON CONFLICT (business_type, source_url)
+        DO UPDATE SET
+          html_content = $3,
+          css_content = $4,
+          design_analysis = $5,
+          color_palette = $6,
+          font_families = $7,
+          layout_structure = $8,
+          semantic_analysis = $9,
+          performance_metrics = $10,
+          accessibility_score = $11,
+          design_score = $12,
+          mobile_responsive = $13,
+          status = $14,
+          tags = $15,
+          confidence_score = $16,
+          training_priority = $17,
+          business_images = $18,
+          updated_at = NOW()
+      `;
+      const values = [
+        scrapedSite.businessType,
+        scrapedSite.url,
+        scrapedSite.html_content,
+        scrapedSite.css_content,
+        JSON.stringify(scrapedSite.design_analysis),
+        JSON.stringify(scrapedSite.color_palette),
+        JSON.stringify(scrapedSite.font_families),
+        JSON.stringify(scrapedSite.layout_structure),
+        JSON.stringify(scrapedSite.semantic_analysis),
+        JSON.stringify(scrapedSite.performance_metrics),
+        scrapedSite.accessibility_score,
+        scrapedSite.design_score,
+        scrapedSite.mobile_responsive,
+        scrapedSite.status || 'active',
+        JSON.stringify(scrapedSite.tags || []),
+        scrapedSite.confidence_score || 75,
+        scrapedSite.training_priority || 1,
+        JSON.stringify(scrapedSite.business_images || {}),
+      ];
+      await this.pool.query(query, values);
+      console.log(`✅ Competitor salvato: ${scrapedSite.url}`);
+    } catch (error) {
+      console.error('❌ Errore salvataggio competitor:', error.message);
+    }
+  }
 }
 
 module.exports = DatabaseStorage;

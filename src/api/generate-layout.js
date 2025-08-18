@@ -3,6 +3,7 @@ const router = express.Router();
 const DatabaseStorage = require('../storage/database-storage');
 const DesignIntelligence = require('../ai/design-intelligence');
 const OpenAI = require('openai');
+const puppeteer = require('puppeteer');
 
 // 🤖 OpenAI content generation with fallback
 async function generateBusinessContentWithAI(businessType, businessName) {
@@ -117,19 +118,26 @@ async function getBusinessImagesFromDB(businessType, count = 4) {
 async function generateAndScrapeCompetitors(businessType) {
   try {
     console.log(`🤖 Starting OpenAI competitor generation for: ${businessType}`);
-    
+
     // 1. Chiama OpenAI per generare 5 competitor sites
     const competitorSites = await generateCompetitorSitesWithOpenAI(businessType);
-    
+
     if (competitorSites && competitorSites.length > 0) {
       console.log(`✅ Generated ${competitorSites.length} competitor sites for ${businessType}`);
-      
-      // 2. Avvia training automatico con i siti competitor
+
+      // 2. Effettua scraping e salva nel database
+      const databaseStorage = new DatabaseStorage();
+      for (const site of competitorSites) {
+        const scrapedSite = await scrapeCompetitorSite(site.url, businessType);
+        await databaseStorage.saveScrapedCompetitorToDesignPatterns(scrapedSite);
+      }
+
+      // 3. Avvia training automatico con i siti competitor
       await startAutomaticTraining(businessType, competitorSites);
     } else {
       console.log(`⚠️ No competitor sites generated for ${businessType}, using default stock images`);
     }
-    
+
   } catch (error) {
     console.log(`❌ Error in automatic competitor generation: ${error.message}`);
     console.log(`🔄 Continuing with stock images fallback`);
@@ -984,6 +992,86 @@ function calculateSemanticScore(blocks, businessType) {
   const aiBonus = blocks.some(block => block.aiEnhanced) ? 10 : 0;
   
   return Math.round(Math.min(baseScore + aiBonus, 99));
+}
+
+/**
+ * Scraping avanzato con Puppeteer.
+ * Estrae HTML, CSS inline, titolo, meta description e screenshot.
+ */
+async function scrapeCompetitorSite(url, businessType) {
+  let browser;
+  try {
+    browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 20000 });
+
+    // Estrai HTML
+    const html_content = await page.content();
+
+    // Estrai CSS inline (tutti i <style> nel DOM)
+    const css_content = await page.$$eval('style', styles =>
+      styles.map(style => style.innerHTML).join('\n')
+    );
+
+    // Estrai titolo e meta description
+    const design_analysis = {
+      title: await page.title(),
+      description: await page.$eval('meta[name="description"]', el => el.content).catch(() => ''),
+      businessType,
+      scraped_at: new Date().toISOString()
+    };
+
+    // Screenshot (opzionale, salva come base64)
+    const screenshot = await page.screenshot({ encoding: 'base64', fullPage: true });
+
+    // Puoi aggiungere qui estrazione di palette colori, font, immagini, ecc.
+
+    await browser.close();
+
+    return {
+      businessType,
+      url,
+      html_content,
+      css_content,
+      design_analysis,
+      color_palette: [], // Da implementare
+      font_families: [], // Da implementare
+      layout_structure: {}, // Da implementare
+      semantic_analysis: {}, // Da implementare
+      performance_metrics: {}, // Da implementare
+      accessibility_score: null,
+      design_score: null,
+      mobile_responsive: null,
+      status: "active",
+      tags: ["competitor", businessType],
+      confidence_score: 70,
+      training_priority: 1,
+      business_images: { screenshot }
+    };
+  } catch (error) {
+    if (browser) await browser.close();
+    console.error(`❌ Scraping fallito per ${url}:`, error.message);
+    return {
+      businessType,
+      url,
+      html_content: '',
+      css_content: '',
+      design_analysis: { error: error.message },
+      color_palette: [],
+      font_families: [],
+      layout_structure: {},
+      semantic_analysis: {},
+      performance_metrics: {},
+      accessibility_score: null,
+      design_score: null,
+      mobile_responsive: null,
+      status: "error",
+      tags: ["competitor", businessType],
+      confidence_score: 0,
+      training_priority: 1,
+      business_images: {}
+    };
+  }
 }
 
 module.exports = router;
