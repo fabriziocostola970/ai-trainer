@@ -4,23 +4,6 @@ const helmet = require('helmet');
 const path = require('path');
 require('dotenv').config();
 
-// 🚨 EMERGENCY PROTECTION: Prevent memory crashes
-process.setMaxListeners(0);
-process.on('uncaughtException', (error) => {
-  console.error('🚨 UNCAUGHT EXCEPTION - RESTARTING:', error.message);
-  setTimeout(() => process.exit(1), 1000); // Give time to log
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('🚨 UNHANDLED REJECTION:', reason);
-});
-
-// Limit memory usage in production
-if (process.env.NODE_ENV === 'production') {
-  // Don't set NODE_OPTIONS here as it's too late
-  console.log('🔧 Production mode: Memory monitoring enabled');
-}
-
 const app = express();
 const PORT = process.env.PORT || 4000;
 
@@ -108,7 +91,7 @@ app.get('/debug/db', async (req, res) => {
     const DatabaseStorage = require('./src/storage/database-storage');
     const storage = new DatabaseStorage();
     
-    const result = await storage.query('SELECT 1 as test');
+    const result = await storage.pool.query('SELECT 1 as test');
     res.json({
       status: 'Database connected',
       timestamp: new Date().toISOString(),
