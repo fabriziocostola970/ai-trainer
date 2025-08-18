@@ -82,7 +82,7 @@ async function getBusinessImagesFromDB(businessType, count = 4) {
     const storage = new DatabaseStorage();
     
     // 1. Query dal database per immagini esistenti
-    const result = await storage.query(
+    const result = await storage.pool.query(
       'SELECT business_images FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
       [businessType, 'active']
     );
@@ -392,7 +392,7 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     let designData;
     
     try {
-      designData = await designIntelligence.generateDesignForBusiness(englishBusinessType, style);
+      designData = await designIntelligence.generateCompleteDesignRecommendation(englishBusinessType, { style });
       console.log('✅ Design Intelligence generated:', {
         colors: designData.colors,
         typography: designData.typography?.primary,
