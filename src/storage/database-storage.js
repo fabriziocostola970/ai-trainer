@@ -277,6 +277,9 @@ class DatabaseStorage {
       // Verify VendiOnline AI training tables exist
       await this.verifyVendiOnlineTables();
       
+      // 🔧 Fix UNIQUE constraint on ai_design_patterns
+      await this.fixUniqueConstraint();
+      
     } catch (error) {
       console.error('❌ PostgreSQL connection failed:', error.message);
       console.log('🔄 Falling back to file storage...');
@@ -291,7 +294,51 @@ class DatabaseStorage {
     }
   }
 
-  // 📋 Verify VendiOnline AI Training Tables
+  // � Fix UNIQUE constraint on ai_design_patterns
+  async fixUniqueConstraint() {
+    try {
+      console.log('🔧 [Schema] Checking ai_design_patterns UNIQUE constraint...');
+      
+      // 1. Check if old constraint exists
+      const constraintCheck = await this.pool.query(`
+        SELECT constraint_name 
+        FROM information_schema.table_constraints 
+        WHERE table_name = 'ai_design_patterns' 
+        AND constraint_type = 'UNIQUE'
+        AND constraint_name LIKE '%business_type%'
+      `);
+      
+      if (constraintCheck.rows.length > 0) {
+        const constraintName = constraintCheck.rows[0].constraint_name;
+        console.log(`🔧 [Schema] Removing old constraint: ${constraintName}`);
+        
+        // Remove old UNIQUE(business_type) constraint
+        await this.pool.query(`ALTER TABLE ai_design_patterns DROP CONSTRAINT IF EXISTS ${constraintName}`);
+      }
+      
+      // 2. Add source_url column if not exists
+      await this.pool.query(`ALTER TABLE ai_design_patterns ADD COLUMN IF NOT EXISTS source_url VARCHAR(2048)`);
+      
+      // 3. Add new UNIQUE(business_type, source_url) constraint
+      await this.pool.query(`
+        ALTER TABLE ai_design_patterns 
+        ADD CONSTRAINT ai_design_patterns_business_type_source_url_unique 
+        UNIQUE(business_type, source_url)
+      `);
+      
+      console.log('✅ [Schema] UNIQUE constraint fixed: business_type + source_url');
+      
+    } catch (error) {
+      // Se il constraint esiste già, ignora l'errore
+      if (error.message.includes('already exists')) {
+        console.log('ℹ️ [Schema] UNIQUE constraint already correct');
+      } else {
+        console.error('❌ [Schema] Error fixing constraint:', error.message);
+      }
+    }
+  }
+
+  // �📋 Verify VendiOnline AI Training Tables
   async verifyVendiOnlineTables() {
     try {
       const requiredTables = [
