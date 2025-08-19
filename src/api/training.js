@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const collector = require('../training/data-collector');
+const collector = require('../training/railway-data-collector');
 const DatabaseStorage = require('../storage/database-storage');
 
 // Inizializza storage
