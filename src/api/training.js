@@ -67,7 +67,6 @@ router.post('/collect-competitors', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-const express = require('express');
 // POST /api/training/collect-competitors - Scraping e salvataggio dei competitors
 const express = require('express');
 const router = express.Router();
