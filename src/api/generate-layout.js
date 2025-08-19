@@ -120,7 +120,7 @@ async function generateAndScrapeCompetitors(businessType) {
     console.log("Starting OpenAI competitor generation for:", businessType);
 
     // 1. Richiedi 15 competitor sites da OpenAI
-    const competitorSites = await generateCompetitorSitesWithOpenAI(businessType);
+    const competitorSites = await generateCompetitorSitesWithOpenAI(businessType, `Business of type ${businessType}`);
 
     if (competitorSites && competitorSites.length > 0) {
       console.log("Generated", competitorSites.length, "competitor sites for", businessType);
