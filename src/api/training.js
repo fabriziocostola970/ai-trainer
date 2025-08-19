@@ -1,3 +1,5 @@
+const express = require('express');
+
 // POST /api/training/collect-competitors - Scraping e salvataggio dei competitors
 router.post('/collect-competitors', async (req, res) => {
   try {
@@ -8,20 +10,20 @@ router.post('/collect-competitors', async (req, res) => {
 
     // Genera la lista di competitors
     const competitors = generateSiteSuggestions(businessType, region);
-  const results = []; // Initialize results array
+    const results = [];
 
     for (const comp of competitors) {
       try {
         // Scraping HTML e CSS
         const htmlContent = await collector.collectHTMLContent(comp.url);
         // Per demo: estrai solo i tag <style> dal HTML come CSS (in produzione, estrai con Puppeteer)
-  let cssContent = ''; // Initialize cssContent variable
+        let cssContent = '';
         if (htmlContent) {
           const styleMatch = htmlContent.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
           cssContent = styleMatch ? styleMatch[1] : '';
         }
 
-  // Insert into the database
+        // Insert into the database
         await storage.pool.query(`
           INSERT INTO ai_design_patterns (
             business_type,
@@ -56,7 +58,7 @@ router.post('/collect-competitors', async (req, res) => {
           htmlContent || '',
           cssContent || ''
         ]);
-  results.push({ url: comp.url, success: true }); // Push successful result
+        results.push({ url: comp.url, success: true });
       } catch (err) {
         results.push({ url: comp.url, success: false, error: err.message });
       }
