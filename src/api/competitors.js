@@ -33,7 +33,7 @@ Business description: "${description}"
    - "travel" for travel agencies, tour operators
    - "services" only for professional services (consulting, legal, accounting)
 
-2. Generate exactly 5 real competitor websites for this businessType.
+2. Generate exactly 15 real competitor websites for this businessType.
 
 IMPORTANT: 
 - Analyze the business description carefully for industry keywords
@@ -46,6 +46,7 @@ Requirements:
 - Include diverse examples (local, national, international if possible)
 - Focus on websites with good design and user experience
 - Provide complete, working URLs
+- Mix of different sizes: large corporations, medium businesses, and boutique/local businesses
 
 Respond ONLY with JSON format:
 {
@@ -62,7 +63,7 @@ Respond ONLY with JSON format:
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 800,
+      max_tokens: 1500,
       temperature: 0.3
     });
 
