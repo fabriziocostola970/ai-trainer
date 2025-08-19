@@ -7,6 +7,48 @@ const DatabaseStorage = require('../storage/database-storage');
 const storage = new DatabaseStorage();
 storage.initialize();
 
+// Funzione per traduzione dinamica con OpenAI
+async function translateToEnglish(businessName, description) {
+  try {
+    const OpenAI = require('openai');
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const prompt = `Translate the following Italian business details to English, maintaining business context and industry terminology:
+
+Business Name: "${businessName}"
+Description: "${description}"
+
+Important translation hints:
+- "Fioraio" = "Florist" or "Flower Shop"
+- "Negozio di fiori" = "Flower Shop"  
+- "Composizioni floreali" = "Floral arrangements"
+- "Panetteria/Panificio" = "Bakery"
+- "Ristorante/Pizzeria" = "Restaurant"
+- "Parrucchiere/Salone" = "Hair Salon"
+- "Palestra" = "Gym"
+
+Return ONLY JSON format:
+{
+  "businessName": "translated business name",
+  "description": "translated description"
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 300,
+      temperature: 0.1
+    });
+
+    const result = JSON.parse(completion.choices[0].message.content);
+    return result;
+  } catch (error) {
+    console.error(`❌ [Translation] Error:`, error.message);
+    // Fallback: ritorna i dati originali se la traduzione fallisce
+    return { businessName, description };
+  }
+}
+
 // POST /api/training/collect-competitors - Scraping e salvataggio dei competitors
 router.post('/collect-competitors', async (req, res) => {
   try {
@@ -50,48 +92,6 @@ router.post('/collect-competitors', async (req, res) => {
       console.error(`❌ [Competitors] Invalid AI response:`, aiRes.data);
       return res.status(500).json({ success: false, error: 'Risposta AI non valida', details: aiRes.data });
     }
-
-// Funzione per traduzione dinamica con OpenAI
-async function translateToEnglish(businessName, description) {
-  try {
-    const OpenAI = require('openai');
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    
-    const prompt = `Translate the following Italian business details to English, maintaining business context and industry terminology:
-
-Business Name: "${businessName}"
-Description: "${description}"
-
-Important translation hints:
-- "Fioraio" = "Florist" or "Flower Shop"
-- "Negozio di fiori" = "Flower Shop"  
-- "Composizioni floreali" = "Floral arrangements"
-- "Panetteria/Panificio" = "Bakery"
-- "Ristorante/Pizzeria" = "Restaurant"
-- "Parrucchiere/Salone" = "Hair Salon"
-- "Palestra" = "Gym"
-
-Return ONLY JSON format:
-{
-  "businessName": "translated business name",
-  "description": "translated description"
-}`;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 300,
-      temperature: 0.1
-    });
-
-    const result = JSON.parse(completion.choices[0].message.content);
-    return result;
-  } catch (error) {
-    console.error(`❌ [Translation] Error:`, error.message);
-    // Fallback: ritorna i dati originali se la traduzione fallisce
-    return { businessName, description };
-  }
-}
 
     console.log(`🕷️ [Competitors] Starting scraping for ${competitors.length} competitors`);
     const results = [];
