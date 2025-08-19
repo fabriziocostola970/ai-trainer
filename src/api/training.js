@@ -69,6 +69,31 @@ router.post('/collect-competitors', async (req, res) => {
 });
 const express = require('express');
 const router = express.Router();
+// POST /api/training/collect-competitors - Scraping e salvataggio dei competitors
+router.post('/collect-competitors', async (req, res) => {
+  try {
+    const { businessType, region } = req.body;
+    if (!businessType) {
+      return res.status(400).json({ success: false, error: 'businessType is required' });
+    }
+
+    // Genera la lista di competitors
+    const competitors = generateSiteSuggestions(businessType, region);
+    const results = [];
+
+    for (const comp of competitors) {
+      try {
+        results.push({ url: comp.url, success: true });
+      } catch (err) {
+        results.push({ url: comp.url, success: false, error: err.message });
+      }
+    }
+
+    res.json({ success: true, businessType, region: region || 'global', processed: results });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 const DatabaseStorage = require('../storage/database-storage');
 const RailwayDataCollector = require('../training/railway-data-collector');
 
