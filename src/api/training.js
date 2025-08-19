@@ -8,6 +8,17 @@ const storage = new DatabaseStorage();
 storage.initialize();
 const collector = new RailwayDataCollector();
 
+// Inizializzazione del collector
+let collectorInitialized = false;
+
+async function initializeCollector() {
+  if (!collectorInitialized) {
+    await collector.initialize();
+    collectorInitialized = true;
+    console.log('✅ [Collector] Initialized successfully');
+  }
+}
+
 // Funzione per traduzione dinamica con OpenAI
 async function translateToEnglish(businessName, description) {
   try {
@@ -59,6 +70,9 @@ router.post('/collect-competitors', async (req, res) => {
     }
 
     console.log(`🤖 [Competitors] Starting collection for: "${businessName}"`);
+    
+    // ✅ Inizializza il collector prima dell'uso
+    await initializeCollector();
     
     // 🌍 Step 1: Traduzione dinamica con OpenAI
     console.log(`🌍 [Translation] Translating to English...`);
