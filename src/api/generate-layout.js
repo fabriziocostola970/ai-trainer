@@ -353,8 +353,9 @@ const authenticateAPI = (req, res, next) => {
 
 // 🧠 POST /api/generate/layout - Enhanced with Design Intelligence
 router.post('/layout', authenticateAPI, async (req, res) => {
+  const startTime = Date.now();
   try {
-    console.log('🧠 AI-Enhanced Layout Generation:', {
+    console.log('🧠 [Layout] Starting AI-Enhanced generation:', {
       businessType: req.body.businessType,
       blocksCount: req.body.currentBlocks?.length || 0,
       timestamp: new Date().toISOString()
@@ -382,19 +383,36 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     // 🎨 Initialize Design Intelligence
     const designIntelligence = new DesignIntelligence();
     let designData;
+    const designStartTime = Date.now();
     
     try {
+      console.log(`🎨 [Design] Generating intelligent design for "${businessName}" (${englishBusinessType})`);
       designData = await designIntelligence.generateCompleteDesignRecommendation(englishBusinessType, { style });
-      console.log('✅ Design Intelligence generated:', {
-        colors: designData.colors,
-        typography: designData.typography?.primary,
-        confidence: designData.confidence
-      });
+      
+      const designTime = Date.now() - designStartTime;
+      console.log(`✅ [Design] Generated in ${designTime}ms - Confidence: ${designData.confidence}%`);
+      console.log(`🎯 [Design] Components: colors✓ typography✓ layout✓ css✓`);
+      
     } catch (designError) {
-      console.log('⚠️ Design Intelligence fallback:', designError.message);
+      console.log(`⚠️ [Design] Fallback mode:`, designError.message);
       designData = {
-        colors: { primary: '#3B82F6', secondary: '#10B981', accent: '#F59E0B' },
-        typography: { primary: 'Inter', secondary: 'system-ui' },
+        design: {
+          colors: { 
+            primary: '#3B82F6', 
+            secondary: '#10B981', 
+            accent: '#F59E0B',
+            background: '#FFFFFF',
+            text: '#1F2937',
+            confidence: 'medium'
+          },
+          typography: { 
+            primary: 'Inter', 
+            secondary: 'system-ui',
+            weights: [400, 600, 700],
+            sizes: { h1: 48, h2: 36, h3: 24, body: 16 },
+            confidence: 'medium'
+          }
+        },
         confidence: 70
       };
     }
@@ -420,8 +438,8 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       });
     }
 
-    // Utilizza Design Intelligence per generare design ottimizzato
-    const designRecommendation = await designAI.generateCompleteDesignRecommendation(englishBusinessType, { style });
+    // Utilizza Design Intelligence già calcolato sopra (rimuove duplicazione)
+    // designData è già stato generato dalla chiamata precedente
     
     const layoutSuggestions = await designAI.generateLayoutSuggestions(englishBusinessType, 'layout');
     await designAI.close();
@@ -430,31 +448,31 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     const semanticBlocks = generateEnhancedBlocks(
       englishBusinessType, 
       businessName, 
-      designRecommendation.design,
+      designData.design,
       currentBlocks,
       aiContent,
       galleryImages
     );
     
-    const confidenceValue = Number(designRecommendation.confidence) || 70;
+    const confidenceValue = Number(designData.confidence) || 70;
     const response = {
       success: true,
       source: 'ai-design-intelligence',
       layoutData: {
         blocks: semanticBlocks,
-        design: designRecommendation.design,
+        design: designData.design,
         layout: layoutSuggestions,
         // 🎨 NEW: Include complete CSS for injection
-        css: designRecommendation.design.css ? {
-          variables: designRecommendation.design.css.rootVariables,
-          typography: designRecommendation.design.css.typography,
-          components: designRecommendation.design.css.components,
-          utilities: designRecommendation.design.css.utilities,
+        css: designData.design.css ? {
+          variables: designData.design.css.rootVariables,
+          typography: designData.design.css.typography,
+          components: designData.design.css.components,
+          utilities: designData.design.css.utilities,
           combined: [
-            designRecommendation.design.css.rootVariables,
-            designRecommendation.design.css.typography,
-            designRecommendation.design.css.components,
-            designRecommendation.design.css.utilities
+            designData.design.css.rootVariables,
+            designData.design.css.typography,
+            designData.design.css.components,
+            designData.design.css.utilities
           ].join('\n\n')
         } : null,
         metadata: {
@@ -472,7 +490,8 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       designConfidence: confidenceValue
     };
     
-    console.log(`✅ AI-enhanced layout generated with ${confidenceValue}% confidence`);
+    const totalTime = Date.now() - startTime;
+    console.log(`✅ [Layout] Generated ${semanticBlocks.length} blocks in ${totalTime}ms (confidence: ${confidenceValue}%)`);
     res.json(response);
     
   } catch (error) {
@@ -617,9 +636,9 @@ function generateEnhancedBlocks(businessType, businessName, designData, currentB
 
   // 🎨 NEW: Generate complete CSS styles for each block based on design intelligence
   const generateBlockStyles = (blockType, designData) => {
-    const colors = designData?.colors || {};
-    const typography = designData?.typography || {};
-    const css = designData?.css || {};
+    const colors = designData?.design?.colors || {};
+    const typography = designData?.design?.typography || {};
+    const css = designData?.design?.css || {};
     
     const baseStyles = {
       backgroundColor: colors.background || '#FFFFFF',

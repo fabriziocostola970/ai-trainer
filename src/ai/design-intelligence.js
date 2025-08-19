@@ -18,7 +18,7 @@ class DesignIntelligence {
      */
     async generateColorPalette(businessType, style = 'modern') {
         try {
-            console.log(`🎨 Generating color palette for ${businessType} (${style})`);
+            // console.log(`🎨 Generating color palette for ${businessType} (${style})`);
             
             // Query per trovare i pattern più efficaci per questo business type
             const query = `
@@ -67,7 +67,7 @@ class DesignIntelligence {
      */
     async recommendFontPairings(businessType, tone = 'professional') {
         try {
-            console.log(`✍️ Recommending fonts for ${businessType} (${tone})`);
+            // console.log(`✍️ Recommending fonts for ${businessType} (${tone})`);
             
             const query = `
                 SELECT 
@@ -111,7 +111,7 @@ class DesignIntelligence {
      */
     async generateLayoutSuggestions(businessType, contentType = 'standard') {
         try {
-            console.log(`📐 Generating layout for ${businessType} (${contentType})`);
+            // console.log(`📐 Generating layout for ${businessType} (${contentType})`);
             
             const query = `
                 SELECT 
@@ -157,7 +157,7 @@ class DesignIntelligence {
      */
     async generateCompleteDesignRecommendation(businessType, requirements = {}) {
         try {
-            console.log(`🎯 Generating complete design for ${businessType}`);
+            console.log(`� [AI] Generating complete design: ${businessType}`);
             
             const style = requirements.style || 'modern';
             const tone = requirements.tone || 'professional';
@@ -170,25 +170,30 @@ class DesignIntelligence {
                 this.generateLayoutSuggestions(businessType, contentType)
             ]);
             
+            // 🛡️ Validazione sicurezza: assicura che nessun valore sia undefined
+            const safeColorPalette = colorPalette || this.getDefaultColorPalette(businessType);
+            const safeFontPairings = fontPairings || this.getDefaultFontPairings(businessType, tone);
+            const safeLayoutSuggestions = layoutSuggestions || this.getDefaultLayoutSuggestions(businessType);
+            
             // Genera raccomandazioni CSS specifiche
             const cssRecommendations = this.generateCSSRecommendations(
-                colorPalette, fontPairings, layoutSuggestions
+                safeColorPalette, safeFontPairings, safeLayoutSuggestions
             );
             
             const completeRecommendation = {
                 businessType,
                 requirements,
                 design: {
-                    colors: colorPalette,
-                    typography: fontPairings,
-                    layout: layoutSuggestions,
+                    colors: safeColorPalette,
+                    typography: safeFontPairings,
+                    layout: safeLayoutSuggestions,
                     css: cssRecommendations
                 },
-                confidence: this.calculateConfidenceScore(colorPalette, fontPairings, layoutSuggestions),
+                confidence: this.calculateConfidenceScore(safeColorPalette, safeFontPairings, safeLayoutSuggestions),
                 timestamp: new Date().toISOString()
             };
             
-            console.log(`✅ Complete design recommendation generated with ${completeRecommendation.confidence}% confidence`);
+            console.log(`✅ [AI] Design complete: ${completeRecommendation.confidence}% confidence`);
             return completeRecommendation;
             
         } catch (error) {
@@ -373,9 +378,24 @@ class DesignIntelligence {
     }
 
     calculateConfidenceScore(colors, fonts, layout) {
-        const scores = [colors.confidence, fonts.confidence, layout.confidence];
-        const weights = { high: 100, medium: 70, low: 40 };
-        const average = scores.reduce((sum, score) => sum + weights[score], 0) / scores.length;
+        const normalizeConfidence = (conf) => {
+            // Handle numeric confidence (0.0 - 1.0)
+            if (typeof conf === 'number') {
+                return Math.round(conf * 100);
+            }
+            
+            // Handle string confidence ('high', 'medium', 'low')
+            const weights = { high: 100, medium: 70, low: 40 };
+            return weights[conf] || 70; // Default to 70 if undefined
+        };
+        
+        const scores = [
+            normalizeConfidence(colors.confidence),
+            normalizeConfidence(fonts.confidence), 
+            normalizeConfidence(layout.confidence)
+        ];
+        
+        const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
         return Math.round(average);
     }
 
@@ -570,7 +590,7 @@ body { font-family: var(--font-secondary); font-size: ${fonts.sizes?.body || 16}
      * 🎯 Default Layout Suggestions (fallback when no data available)
      */
     getDefaultLayoutSuggestions(businessType) {
-        console.log(`📐 Using default layout suggestions for ${businessType}`);
+        // console.log(`📐 Using default layout suggestions for ${businessType}`);
         
         const defaultLayouts = {
             restaurant: ['hero', 'about', 'menu', 'gallery', 'contact'],
@@ -602,7 +622,7 @@ body { font-family: var(--font-secondary); font-size: ${fonts.sizes?.body || 16}
      * 🎨 Default Color Palette (fallback when no data available)
      */
     getDefaultColorPalette(businessType) {
-        console.log(`🎨 Using default color palette for ${businessType}`);
+        // console.log(`🎨 Using default color palette for ${businessType}`);
         
         const defaultPalettes = {
             restaurant: {
@@ -642,7 +662,10 @@ body { font-family: var(--font-secondary); font-size: ${fonts.sizes?.body || 16}
             }
         };
 
-        return defaultPalettes[businessType] || defaultPalettes.default;
+        return {
+            ...(defaultPalettes[businessType] || defaultPalettes.default),
+            confidence: 'medium'
+        };
     }
 
     async close() {
