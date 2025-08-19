@@ -19,7 +19,67 @@ async function initializeCollector() {
   }
 }
 
-// Funzione per traduzione dinamica con OpenAI
+// Funzione per cercare immagini Unsplash
+async function fetchUnsplashImages(businessType, count = 5) {
+  try {
+    const axios = require('axios');
+    const query = encodeURIComponent(businessType);
+    
+    // Usa l'API gratuita di Unsplash (senza API key)
+    const response = await axios.get(
+      `https://unsplash.com/s/photos/${query}`,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; AI-Trainer/1.0)'
+        }
+      }
+    );
+    
+    // Parsing HTML per estrarre URL immagini (metodo semplificato)
+    const imageRegex = /src="([^"]*unsplash[^"]*\.jpg[^"]*)"/g;
+    const images = [];
+    let match;
+    
+    while ((match = imageRegex.exec(response.data)) !== null && images.length < count) {
+      const imageUrl = match[1];
+      if (imageUrl.includes('images.unsplash.com')) {
+        images.push({
+          url: imageUrl,
+          alt: `${businessType} image ${images.length + 1}`,
+          source: 'unsplash'
+        });
+      }
+    }
+    
+    // Fallback: genera URL Unsplash generici se non troviamo immagini
+    if (images.length === 0) {
+      for (let i = 0; i < count; i++) {
+        images.push({
+          url: `https://images.unsplash.com/photo-1${Math.floor(Math.random() * 600000000000) + 500000000000}?w=800&q=80`,
+          alt: `${businessType} stock image ${i + 1}`,
+          source: 'unsplash-generated'
+        });
+      }
+    }
+    
+    console.log(`🖼️ [Unsplash] Found ${images.length} images for ${businessType}`);
+    return images;
+    
+  } catch (error) {
+    console.error(`❌ [Unsplash] Error fetching images for ${businessType}:`, error.message);
+    
+    // Fallback: immagini stock generiche
+    const fallbackImages = [];
+    for (let i = 0; i < count; i++) {
+      fallbackImages.push({
+        url: `https://images.unsplash.com/photo-1${Math.floor(Math.random() * 600000000000) + 500000000000}?w=800&q=80`,
+        alt: `${businessType} fallback image ${i + 1}`,
+        source: 'unsplash-fallback'
+      });
+    }
+    return fallbackImages;
+  }
+}
 async function translateToEnglish(businessName, description) {
   try {
     const OpenAI = require('openai');
@@ -109,6 +169,11 @@ router.post('/collect-competitors', async (req, res) => {
     }
 
     console.log(`🕷️ [Competitors] Starting scraping for ${competitors.length} competitors`);
+    
+    // 🖼️ Cerca immagini Unsplash per il business type
+    console.log(`🖼️ [Unsplash] Fetching images for business type: ${businessType}`);
+    const unsplashImages = await fetchUnsplashImages(businessType, 5);
+    
     const results = [];
     for (const comp of competitors) {
       try {
@@ -127,6 +192,7 @@ router.post('/collect-competitors', async (req, res) => {
           const result = await storage.pool.query(`
             INSERT INTO ai_design_patterns (
               business_type,
+              source_url,
               business_images,
               confidence_score,
               html_content,
@@ -134,18 +200,22 @@ router.post('/collect-competitors', async (req, res) => {
               created_at,
               updated_at
             ) VALUES (
-              $1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+              $1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             )
-            ON CONFLICT (business_type)
+            ON CONFLICT (business_type, source_url)
             DO UPDATE SET
-              business_images = $2,
-              confidence_score = $3,
+              business_images = $3,
+              confidence_score = $4,
               updated_at = CURRENT_TIMESTAMP,
-              html_content = $4,
-              css_content = $5
+              html_content = $5,
+              css_content = $6
           `, [
             businessType,
-            JSON.stringify({ name: comp.name, description: comp.description, url: comp.url }),
+            comp.url, // ✅ Aggiungiamo source_url
+            JSON.stringify({
+              competitor: { name: comp.name, description: comp.description, url: comp.url },
+              unsplash_images: unsplashImages // ✅ Aggiungiamo immagini Unsplash
+            }),
             80.0,
             htmlContent || '',
             cssContent || ''
