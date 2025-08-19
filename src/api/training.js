@@ -80,6 +80,200 @@ async function fetchUnsplashImages(businessType, count = 5) {
     return fallbackImages;
   }
 }
+
+// Funzione per analizzare il design completo del competitor
+async function analyzeCompetitorDesign(htmlContent, cssContent, competitorName, businessType) {
+  try {
+    // 1. Color Palette Analysis
+    const colorPalette = extractColorPalette(cssContent, htmlContent);
+    
+    // 2. Font Families Analysis  
+    const fontFamilies = extractFontFamilies(cssContent, htmlContent);
+    
+    // 3. Layout Structure Analysis
+    const layoutStructure = analyzeLayoutStructure(htmlContent);
+    
+    // 4. Semantic Analysis
+    const semanticAnalysis = analyzeSemanticStructure(htmlContent);
+    
+    // 5. Performance Metrics (basic analysis)
+    const performanceMetrics = calculatePerformanceMetrics(htmlContent, cssContent);
+    
+    // 6. Accessibility Score
+    const accessibilityScore = calculateAccessibilityScore(htmlContent);
+    
+    // 7. Design Score
+    const designScore = calculateDesignScore(colorPalette, fontFamilies, layoutStructure, semanticAnalysis);
+    
+    // 8. Design Analysis Summary
+    const designAnalysis = {
+      competitive_advantages: identifyCompetitiveAdvantages(htmlContent, businessType),
+      design_patterns: identifyDesignPatterns(cssContent),
+      ui_components: extractUIComponents(htmlContent),
+      color_scheme: colorPalette.scheme || 'modern',
+      typography_style: fontFamilies.style || 'professional',
+      layout_type: layoutStructure.type || 'grid',
+      analyzed_at: new Date().toISOString(),
+      competitor_name: competitorName
+    };
+    
+    return {
+      design_analysis: designAnalysis,
+      color_palette: colorPalette,
+      font_families: fontFamilies,
+      layout_structure: layoutStructure,
+      semantic_analysis: semanticAnalysis,
+      performance_metrics: performanceMetrics,
+      accessibility_score: accessibilityScore,
+      design_score: designScore,
+      mobile_responsive: layoutStructure.is_responsive || false
+    };
+    
+  } catch (error) {
+    console.error(`❌ [Design Analysis] Error for ${competitorName}:`, error.message);
+    return getDefaultDesignAnalysis(businessType);
+  }
+}
+
+// Helper functions per analisi design
+function extractColorPalette(cssContent, htmlContent) {
+  const colors = [];
+  const colorRegex = /#[0-9a-fA-F]{3,6}|rgb\([^)]+\)|rgba\([^)]+\)/g;
+  const cssColors = cssContent.match(colorRegex) || [];
+  colors.push(...cssColors);
+  
+  const uniqueColors = [...new Set(colors)].slice(0, 10);
+  return {
+    primary_colors: uniqueColors.slice(0, 3),
+    secondary_colors: uniqueColors.slice(3, 6),
+    accent_colors: uniqueColors.slice(6),
+    scheme: uniqueColors.length > 5 ? 'rich' : 'minimal',
+    total_colors: uniqueColors.length
+  };
+}
+
+function extractFontFamilies(cssContent, htmlContent) {
+  const fontRegex = /font-family:\s*([^;]+)/gi;
+  const fonts = [];
+  let match;
+  while ((match = fontRegex.exec(cssContent)) !== null) {
+    fonts.push(match[1].replace(/['"]/g, '').trim());
+  }
+  const uniqueFonts = [...new Set(fonts)];
+  return {
+    primary_font: uniqueFonts[0] || 'Arial, sans-serif',
+    secondary_fonts: uniqueFonts.slice(1, 3),
+    style: uniqueFonts.some(f => f.includes('serif')) ? 'traditional' : 'modern',
+    total_fonts: uniqueFonts.length
+  };
+}
+
+function analyzeLayoutStructure(htmlContent) {
+  const hasGrid = htmlContent.includes('grid');
+  const hasFlex = htmlContent.includes('flex');
+  const hasNav = htmlContent.includes('<nav');
+  const isResponsive = htmlContent.includes('viewport') || htmlContent.includes('responsive');
+  
+  return {
+    type: hasGrid ? 'grid' : hasFlex ? 'flexbox' : 'traditional',
+    has_navigation: hasNav,
+    has_header: htmlContent.includes('<header'),
+    has_footer: htmlContent.includes('<footer'),
+    is_responsive: isResponsive,
+    sections_count: (htmlContent.match(/<section/g) || []).length,
+    complexity_score: Math.min(Math.floor(htmlContent.length / 10000), 10)
+  };
+}
+
+function analyzeSemanticStructure(htmlContent) {
+  return {
+    heading_structure: analyzeHeadings(htmlContent),
+    semantic_tags: countSemanticTags(htmlContent),
+    accessibility_features: {
+      alt_attributes: (htmlContent.match(/alt=/g) || []).length,
+      aria_labels: (htmlContent.match(/aria-/g) || []).length
+    }
+  };
+}
+
+function calculatePerformanceMetrics(htmlContent, cssContent) {
+  return {
+    html_size_kb: Math.round(htmlContent.length / 1024 * 100) / 100,
+    css_size_kb: Math.round(cssContent.length / 1024 * 100) / 100,
+    total_size_kb: Math.round((htmlContent.length + cssContent.length) / 1024 * 100) / 100,
+    optimization_score: htmlContent.length < 100000 ? 80 : 60
+  };
+}
+
+function calculateAccessibilityScore(htmlContent) {
+  let score = 50;
+  if (htmlContent.includes('alt=')) score += 15;
+  if (htmlContent.includes('aria-')) score += 10;
+  if (htmlContent.includes('<label')) score += 10;
+  return Math.min(score, 100);
+}
+
+function calculateDesignScore(colorPalette, fontFamilies, layoutStructure, semanticAnalysis) {
+  let score = 60;
+  if (colorPalette.total_colors >= 3) score += 10;
+  if (fontFamilies.total_fonts >= 2) score += 10;
+  if (layoutStructure.is_responsive) score += 15;
+  if (semanticAnalysis.semantic_tags > 3) score += 5;
+  return Math.min(score, 100);
+}
+
+function getDefaultDesignAnalysis(businessType) {
+  return {
+    design_analysis: { error: 'Analysis failed', business_type: businessType },
+    color_palette: { primary_colors: ['#333333'], scheme: 'neutral' },
+    font_families: { primary_font: 'Arial, sans-serif', style: 'standard' },
+    layout_structure: { type: 'traditional', complexity_score: 1 },
+    semantic_analysis: { heading_structure: [], semantic_tags: 0 },
+    performance_metrics: { html_size_kb: 0, css_size_kb: 0 },
+    accessibility_score: 30,
+    design_score: 40,
+    mobile_responsive: false
+  };
+}
+
+function analyzeHeadings(html) {
+  const headings = [];
+  for (let i = 1; i <= 6; i++) {
+    const count = (html.match(new RegExp(`<h${i}`, 'g')) || []).length;
+    if (count > 0) headings.push({ level: i, count });
+  }
+  return headings;
+}
+
+function countSemanticTags(html) {
+  const tags = ['header', 'nav', 'main', 'section', 'article', 'aside', 'footer'];
+  return tags.reduce((count, tag) => count + (html.match(new RegExp(`<${tag}`, 'g')) || []).length, 0);
+}
+
+function identifyCompetitiveAdvantages(html, businessType) {
+  const advantages = [];
+  if (html.includes('testimonial')) advantages.push('customer_testimonials');
+  if (html.includes('gallery')) advantages.push('image_gallery');
+  if (html.includes('contact')) advantages.push('easy_contact');
+  return advantages;
+}
+
+function identifyDesignPatterns(css) {
+  const patterns = [];
+  if (css.includes('gradient')) patterns.push('gradients');
+  if (css.includes('shadow')) patterns.push('shadows');
+  if (css.includes('border-radius')) patterns.push('rounded_corners');
+  return patterns;
+}
+
+function extractUIComponents(html) {
+  const components = [];
+  if (html.includes('button')) components.push('buttons');
+  if (html.includes('form')) components.push('forms');
+  if (html.includes('modal')) components.push('modals');
+  return components;
+}
+
 async function translateToEnglish(businessName, description) {
   try {
     const OpenAI = require('openai');
@@ -190,8 +384,12 @@ router.post('/collect-competitors', async (req, res) => {
         
         console.log(`📄 [Competitors] ${comp.name}: HTML=${htmlContent?.length || 0}chars, CSS=${cssContent?.length || 0}chars`);
         
+        // 🎨 Analizza il design del competitor
+        console.log(`🎨 [Design Analysis] Analyzing competitor: ${comp.name}`);
+        const designAnalysis = await analyzeCompetitorDesign(htmlContent, cssContent, comp.name, businessType);
+        
         try {
-          console.log(`💾 [DB] Inserting: business_type="${businessType}", source_url="${comp.url}"`);
+          console.log(`💾 [DB] Inserting with complete analysis: business_type="${businessType}", source_url="${comp.url}"`);
           const result = await storage.pool.query(`
             INSERT INTO ai_design_patterns (
               business_type,
@@ -200,35 +398,71 @@ router.post('/collect-competitors', async (req, res) => {
               confidence_score,
               html_content,
               css_content,
+              design_analysis,
+              color_palette,
+              font_families,
+              layout_structure,
+              semantic_analysis,
+              performance_metrics,
+              accessibility_score,
+              design_score,
+              mobile_responsive,
               created_at,
               updated_at
             ) VALUES (
-              $1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             )
             ON CONFLICT (business_type, source_url)
             DO UPDATE SET
               business_images = $3,
               confidence_score = $4,
-              updated_at = CURRENT_TIMESTAMP,
               html_content = $5,
-              css_content = $6
-            RETURNING id, business_type, source_url
+              css_content = $6,
+              design_analysis = $7,
+              color_palette = $8,
+              font_families = $9,
+              layout_structure = $10,
+              semantic_analysis = $11,
+              performance_metrics = $12,
+              accessibility_score = $13,
+              design_score = $14,
+              mobile_responsive = $15,
+              updated_at = CURRENT_TIMESTAMP
+            RETURNING id, business_type, source_url, design_score, accessibility_score
           `, [
             businessType,
-            comp.url, // ✅ source_url univoco
+            comp.url,
             JSON.stringify({
               competitor: { name: comp.name, description: comp.description, url: comp.url },
               unsplash_images: unsplashImages
             }),
             80.0,
             htmlContent || '',
-            cssContent || ''
+            cssContent || '',
+            JSON.stringify(designAnalysis.design_analysis),
+            JSON.stringify(designAnalysis.color_palette),
+            JSON.stringify(designAnalysis.font_families),
+            JSON.stringify(designAnalysis.layout_structure),
+            JSON.stringify(designAnalysis.semantic_analysis),
+            JSON.stringify(designAnalysis.performance_metrics),
+            designAnalysis.accessibility_score,
+            designAnalysis.design_score,
+            designAnalysis.mobile_responsive
           ]);
           
-          console.log(`✅ [DB] Record saved/updated:`, result.rows[0]);
-          results.push({ url: comp.url, success: true, db_id: result.rows[0]?.id });
-          console.log(`✅ [DB] Pattern saved successfully for ${comp.name} (${businessType})`);
-          results.push({ url: comp.url, success: true });
+          console.log(`✅ [DB] Complete analysis saved:`, {
+            id: result.rows[0]?.id,
+            business_type: result.rows[0]?.business_type,
+            design_score: result.rows[0]?.design_score,
+            accessibility_score: result.rows[0]?.accessibility_score
+          });
+          results.push({ 
+            url: comp.url, 
+            success: true, 
+            db_id: result.rows[0]?.id,
+            design_score: result.rows[0]?.design_score,
+            accessibility_score: result.rows[0]?.accessibility_score
+          });
         } catch (dbErr) {
           console.error(`❌ [DB] Error for ${comp.url}:`, dbErr.message);
           results.push({ url: comp.url, success: false, error: dbErr.message });
