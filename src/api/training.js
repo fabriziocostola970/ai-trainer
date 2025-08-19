@@ -68,7 +68,10 @@ router.post('/collect-competitors', async (req, res) => {
   }
 });
 const express = require('express');
+// POST /api/training/collect-competitors - Scraping e salvataggio dei competitors
+const express = require('express');
 const router = express.Router();
+
 // POST /api/training/collect-competitors - Scraping e salvataggio dei competitors
 router.post('/collect-competitors', async (req, res) => {
   try {
