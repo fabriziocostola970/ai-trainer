@@ -448,8 +448,23 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       });
     }
 
+    // 🤖 SMART CLASSIFICATION: Se abbiamo businessName, riclassifica con OpenAI
+    let correctedBusinessType = businessType;
+    if (businessName && businessType === 'services') {
+      console.log(`🔄 [Smart Classification] Attempting to reclassify "${businessName}" from "services"`);
+      try {
+        const reclassificationResult = await generateCompetitorSitesWithOpenAI(businessName, `Business called ${businessName}`);
+        if (reclassificationResult && reclassificationResult.businessType && reclassificationResult.businessType !== 'services') {
+          correctedBusinessType = reclassificationResult.businessType;
+          console.log(`✅ [Smart Classification] Corrected: "${businessName}" → ${correctedBusinessType}`);
+        }
+      } catch (error) {
+        console.log(`⚠️ [Smart Classification] Failed, using original: ${error.message}`);
+      }
+    }
+
     // Traduzione business type per compatibilità con training data
-    const englishBusinessType = BUSINESS_TYPE_MAPPING[businessType.toLowerCase()]?.[0] || businessType;
+    const englishBusinessType = BUSINESS_TYPE_MAPPING[correctedBusinessType.toLowerCase()]?.[0] || correctedBusinessType;
     
     // 🤖 Try to generate content with OpenAI first
     console.log('🤖 Attempting AI content generation...');
