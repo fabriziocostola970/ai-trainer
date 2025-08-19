@@ -120,16 +120,18 @@ async function generateAndScrapeCompetitors(businessType) {
     console.log("Starting OpenAI competitor generation for:", businessType);
 
     // 1. Richiedi 15 competitor sites da OpenAI
-    const competitorSites = await generateCompetitorSitesWithOpenAI(businessType, `Business of type ${businessType}`);
-
-    if (competitorSites && competitorSites.length > 0) {
-      console.log("Generated", competitorSites.length, "competitor sites for", businessType);
+    const result = await generateCompetitorSitesWithOpenAI(businessType, `Business of type ${businessType}`);
+    
+    if (result && result.competitors && result.competitors.length > 0) {
+      const competitorSites = result.competitors;
+      console.log("Generated", competitorSites.length, "competitor sites for", result.businessType);
 
       // 2. Ottieni gli URL già presenti nel database
       const databaseStorage = new DatabaseStorage();
+      const actualBusinessType = result.businessType; // Usa il business type identificato da OpenAI
       const existingResult = await databaseStorage.pool.query(
         'SELECT source_url FROM ai_design_patterns WHERE business_type = $1',
-        [businessType]
+        [actualBusinessType]
       );
       const existingUrls = new Set(existingResult.rows.map(row => row.source_url));
 
@@ -139,12 +141,12 @@ async function generateAndScrapeCompetitors(businessType) {
 
       // 4. Effettua scraping e salva solo i nuovi nel database
       for (const site of newSites) {
-        const scrapedSite = await scrapeCompetitorSite(site.url, businessType);
+        const scrapedSite = await scrapeCompetitorSite(site.url, actualBusinessType);
         await databaseStorage.saveScrapedCompetitorToDesignPatterns(scrapedSite);
       }
 
       // 5. Avvia training automatico con tutti i competitor (se serve)
-      await startAutomaticTraining(businessType, competitorSites);
+      await startAutomaticTraining(actualBusinessType, competitorSites);
     } else {
       console.log("No competitor sites generated for", businessType, "using default stock images");
     }
@@ -155,28 +157,84 @@ async function generateAndScrapeCompetitors(businessType) {
   }
 }
 
-// 🤖 Genera competitor sites usando OpenAI
-// Ora accetta name e description, e chiede a OpenAI di restituire businessType
-// Aggiornata: chiamata API competitors su Railway
+// 🤖 Genera competitor sites usando OpenAI (chiamata diretta)
 async function generateCompetitorSitesWithOpenAI(businessName, businessDescription) {
-  const axios = require('axios');
   try {
-    const API_HOST = process.env.AI_TRAINER_API_HOST || 'https://ai-trainer-production-8fd9.up.railway.app';
-    const response = await axios.post(`${API_HOST}/api/ai/competitors`, {
-      businessName,
-      description: businessDescription
-    }, {
-      headers: { Authorization: `Bearer ${process.env.AI_TRAINER_API_KEY}` }
-    });
-    if (response.data && response.data.businessType && Array.isArray(response.data.competitors)) {
-      console.log(`🎯 Endpoint competitors: ${response.data.businessType}, competitors: ${response.data.competitors.length}`);
-      return response.data;
-    } else {
-      console.log('❌ Risposta endpoint competitors non valida:', response.data);
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('❌ OpenAI API key not configured');
       return null;
     }
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const prompt = `Given the following business details:
+Business name: "${businessName}"
+Business description: "${businessDescription}"
+
+1. Infer the most appropriate businessType for this business. Use specific categories:
+   - "florist" for flower shops, fioristi, flower arrangements
+   - "bakery" for panetterie, pasticcerie, bread/cake shops
+   - "restaurant" for ristoranti, pizzerie, food establishments
+   - "gym" for palestre, fitness centers
+   - "hotel" for hotels, B&B, hospitality
+   - "retail" for general retail stores, negozi
+   - "beauty" for parrucchieri, saloni di bellezza, spa
+   - "automotive" for car dealers, mechanic shops
+   - "tech-startup" for technology companies, software
+   - "real-estate" for real estate agencies
+   - "travel" for travel agencies, tour operators
+   - "services" only for professional services (consulting, legal, accounting)
+
+2. Generate exactly 15 real competitor websites for this businessType.
+
+IMPORTANT: 
+- Analyze the business description carefully for industry keywords
+- "Fioraio", "fiori", "composizioni floreali" = "florist" NOT "services"
+- "Negozio" can be retail, but check the products sold
+
+Requirements:
+- Must be real, existing websites (not fictional)
+- Should be well-known brands in the inferred businessType industry
+- Include diverse examples (local, national, international if possible)
+- Focus on websites with good design and user experience
+- Provide complete, working URLs
+- Mix of different sizes: large corporations, medium businesses, and boutique/local businesses
+
+Respond ONLY with JSON format:
+{
+  "businessType": "...",
+  "competitors": [
+    {
+      "url": "https://example.com",
+      "name": "Company Name",
+      "description": "Brief description of the business"
+    }
+  ]
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 1500,
+      temperature: 0.3
+    });
+
+    let result;
+    try {
+      result = JSON.parse(completion.choices[0].message.content);
+    } catch (err) {
+      console.log('❌ OpenAI response parsing failed:', completion.choices[0].message.content);
+      return null;
+    }
+
+    if (!result.businessType || !Array.isArray(result.competitors)) {
+      console.log('❌ OpenAI response missing businessType or competitors:', result);
+      return null;
+    }
+
+    console.log(`🎯 OpenAI generated: ${result.businessType}, competitors: ${result.competitors.length}`);
+    return result;
   } catch (error) {
-    console.log(`❌ Chiamata competitors fallita: ${error.message}`);
+    console.log(`❌ OpenAI competitors generation failed: ${error.message}`);
     return null;
   }
 }
