@@ -270,7 +270,7 @@ function getUnsplashPhotoId(keyword, index) {
 }
 
 // 💾 Salva immagini nel database
-async function saveBusinessImages(businessType, businessImages) {
+async function saveBusinessImages(businessType, businessImages, confidence = 85) {
   try {
     const storage = new DatabaseStorage();
     
