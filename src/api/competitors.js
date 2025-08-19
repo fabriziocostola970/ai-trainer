@@ -19,8 +19,26 @@ router.post('/', async (req, res) => {
 Business name: "${businessName}"
 Business description: "${description}"
 
-1. Infer the most appropriate businessType for this business (e.g. "restaurant", "gym", "hotel", "bakery", etc).
+1. Infer the most appropriate businessType for this business. Use specific categories:
+   - "florist" for flower shops, fioristi, flower arrangements
+   - "bakery" for panetterie, pasticcerie, bread/cake shops
+   - "restaurant" for ristoranti, pizzerie, food establishments
+   - "gym" for palestre, fitness centers
+   - "hotel" for hotels, B&B, hospitality
+   - "retail" for general retail stores, negozi
+   - "beauty" for parrucchieri, saloni di bellezza, spa
+   - "automotive" for car dealers, mechanic shops
+   - "tech-startup" for technology companies, software
+   - "real-estate" for real estate agencies
+   - "travel" for travel agencies, tour operators
+   - "services" only for professional services (consulting, legal, accounting)
+
 2. Generate exactly 5 real competitor websites for this businessType.
+
+IMPORTANT: 
+- Analyze the business description carefully for industry keywords
+- "Fioraio", "fiori", "composizioni floreali" = "florist" NOT "services"
+- "Negozio" can be retail, but check the products sold
 
 Requirements:
 - Must be real, existing websites (not fictional)

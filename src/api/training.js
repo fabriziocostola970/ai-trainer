@@ -17,14 +17,22 @@ router.post('/collect-competitors', async (req, res) => {
 
     console.log(`🤖 [Competitors] Starting collection for: "${businessName}"`);
     
-    // Chiamata interna all'API AI competitors
+    // 🌍 Step 1: Traduzione dinamica con OpenAI
+    console.log(`🌍 [Translation] Translating to English...`);
+    const translatedData = await translateToEnglish(businessName, description);
+    console.log(`✅ [Translation] Original: "${businessName}" → English: "${translatedData.businessName}"`);
+    
+    // Chiamata interna all'API AI competitors con dati tradotti
     const axios = require('axios');
     const internalUrl = `${process.env.INTERNAL_API_URL || 'http://localhost:8080'}/api/ai/competitors`;
     console.log(`🔗 [Competitors] Calling OpenAI via: ${internalUrl}`);
     
     const aiRes = await axios.post(
       internalUrl,
-      { businessName, description },
+      { 
+        businessName: translatedData.businessName, 
+        description: translatedData.description 
+      },
       { 
         headers: { Authorization: req.headers.authorization },
         timeout: 30000 // 30 secondi timeout
@@ -42,6 +50,48 @@ router.post('/collect-competitors', async (req, res) => {
       console.error(`❌ [Competitors] Invalid AI response:`, aiRes.data);
       return res.status(500).json({ success: false, error: 'Risposta AI non valida', details: aiRes.data });
     }
+
+// Funzione per traduzione dinamica con OpenAI
+async function translateToEnglish(businessName, description) {
+  try {
+    const OpenAI = require('openai');
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const prompt = `Translate the following Italian business details to English, maintaining business context and industry terminology:
+
+Business Name: "${businessName}"
+Description: "${description}"
+
+Important translation hints:
+- "Fioraio" = "Florist" or "Flower Shop"
+- "Negozio di fiori" = "Flower Shop"  
+- "Composizioni floreali" = "Floral arrangements"
+- "Panetteria/Panificio" = "Bakery"
+- "Ristorante/Pizzeria" = "Restaurant"
+- "Parrucchiere/Salone" = "Hair Salon"
+- "Palestra" = "Gym"
+
+Return ONLY JSON format:
+{
+  "businessName": "translated business name",
+  "description": "translated description"
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 300,
+      temperature: 0.1
+    });
+
+    const result = JSON.parse(completion.choices[0].message.content);
+    return result;
+  } catch (error) {
+    console.error(`❌ [Translation] Error:`, error.message);
+    // Fallback: ritorna i dati originali se la traduzione fallisce
+    return { businessName, description };
+  }
+}
 
     console.log(`🕷️ [Competitors] Starting scraping for ${competitors.length} competitors`);
     const results = [];
@@ -62,41 +112,33 @@ router.post('/collect-competitors', async (req, res) => {
           const result = await storage.pool.query(`
             INSERT INTO ai_design_patterns (
               business_type,
-              source_url,
               business_images,
               confidence_score,
-              source,
-              status,
               html_content,
               css_content,
               created_at,
               updated_at
             ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+              $1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             )
-            ON CONFLICT (business_type, source_url)
+            ON CONFLICT (business_type)
             DO UPDATE SET
-              business_images = $3,
-              confidence_score = $4,
+              business_images = $2,
+              confidence_score = $3,
               updated_at = CURRENT_TIMESTAMP,
-              source = $5,
-              status = $6,
-              html_content = $7,
-              css_content = $8
+              html_content = $4,
+              css_content = $5
           `, [
             businessType,
-            comp.url,
-            JSON.stringify({ name: comp.name, description: comp.description }),
+            JSON.stringify({ name: comp.name, description: comp.description, url: comp.url }),
             80.0,
-            'competitor-ai',
-            'active',
             htmlContent || '',
             cssContent || ''
           ]);
-          console.log(`Query result:`, result);
+          console.log(`✅ [DB] Pattern saved successfully for ${comp.name} (${businessType})`);
           results.push({ url: comp.url, success: true });
         } catch (dbErr) {
-          console.error(`DB ERROR for ${comp.url}:`, dbErr.message);
+          console.error(`❌ [DB] Error for ${comp.url}:`, dbErr.message);
           results.push({ url: comp.url, success: false, error: dbErr.message });
         }
       } catch (err) {
