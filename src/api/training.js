@@ -494,6 +494,58 @@ router.post('/collect-competitors', async (req, res) => {
   }
 });
 
+// POST /api/training/cleanup - Cancella dati specifici per business_type
+router.post('/cleanup', async (req, res) => {
+  try {
+    const { business_type, action } = req.body;
+    
+    if (action !== 'delete' || !business_type) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Richiede action="delete" e business_type specificato' 
+      });
+    }
+    
+    console.log(`🗑️ [Cleanup] Deleting all records for business_type: ${business_type}`);
+    
+    // Cancella tutti i record per il business_type specificato
+    const result = await storage.pool.query(`
+      DELETE FROM ai_design_patterns 
+      WHERE business_type = $1
+    `, [business_type]);
+    
+    console.log(`✅ [Cleanup] Deleted ${result.rowCount} records for ${business_type}`);
+    
+    res.json({ 
+      success: true, 
+      deleted_count: result.rowCount,
+      business_type: business_type,
+      action: 'delete'
+    });
+    
+  } catch (error) {
+    console.error(`❌ [Cleanup] Error:`, error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/training/cleanup - Endpoint temporaneo per cancellare dati
+router.post('/cleanup', async (req, res) => {
+  try {
+    const { business_type } = req.body;
+    if (!business_type) {
+      return res.status(400).json({ success: false, error: 'business_type richiesto' });
+    }
+    
+    const result = await storage.pool.query('DELETE FROM ai_design_patterns WHERE business_type = $1', [business_type]);
+    console.log(`🗑️ [Cleanup] Deleted ${result.rowCount} records for ${business_type}`);
+    
+    res.json({ success: true, deleted_count: result.rowCount, business_type });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // GET /api/training/patterns - Verifica i pattern salvati
 router.get('/patterns', async (req, res) => {
   try {

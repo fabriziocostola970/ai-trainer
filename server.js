@@ -331,29 +331,8 @@ app.listen(PORT, () => {
     console.warn(`⚠️  Data collector not available:`, error.message);
   }
 
-  // Bootstrap: pulizia duplicati e aggiunta UNIQUE constraint
-  (async () => {
-    try {
-      const { Pool } = require('pg');
-      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-
-      // 1. Rimuovi duplicati su business_type
-      await pool.query(`DELETE FROM ai_design_patterns a USING ai_design_patterns b WHERE a.business_type = b.business_type AND a.id > b.id;`);
-      console.log('✅ Duplicati business_type rimossi');
-
-      // 2. Aggiungi UNIQUE constraint se non presente
-      const res = await pool.query(`SELECT constraint_name FROM information_schema.table_constraints WHERE table_name = 'ai_design_patterns' AND constraint_type = 'UNIQUE' AND constraint_name = 'ai_design_patterns_business_type_unique';`);
-      if (res.rowCount === 0) {
-        await pool.query(`ALTER TABLE ai_design_patterns ADD CONSTRAINT ai_design_patterns_business_type_unique UNIQUE (business_type);`);
-        console.log('✅ UNIQUE constraint aggiunta su business_type');
-      } else {
-        console.log('ℹ️ UNIQUE constraint già presente su business_type');
-      }
-      await pool.end();
-    } catch (err) {
-      console.error('❌ Errore bootstrap DB:', err.message);
-    }
-  })();
+  // ✅ AI Design Patterns schema ready (supports multiple competitors per business_type)
+  console.log('✅ AI Design Patterns schema ready (supports multiple competitors per business_type)');
 });
 
 module.exports = app;
