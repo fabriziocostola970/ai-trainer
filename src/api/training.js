@@ -33,36 +33,31 @@ async function generateCompetitorsWithOpenAI(businessName, businessDescription) 
 Business name: "${businessName}"
 Business description: "${businessDescription}"
 
-1. Infer the most appropriate businessType for this business. Use specific categories:
-   - "florist" for flower shops, fioristi, flower arrangements
-   - "bakery" for panetterie, pasticcerie, bread/cake shops
-   - "restaurant" for ristoranti, pizzerie, food establishments
-   - "gym" for palestre, fitness centers
-   - "hotel" for hotels, B&B, hospitality
-   - "retail" for general retail stores, negozi
-   - "beauty" for parrucchieri, saloni di bellezza, spa
-   - "automotive" for car dealers, mechanic shops
-   - "tech-startup" for technology companies, software
-   - "real-estate" for real estate agencies
-   - "travel" for travel agencies, tour operators
-   - "services" only for professional services (consulting, legal, accounting)
+CLASSIFICATION RULES:
+1. Analyze the business description VERY CAREFULLY for industry keywords
+2. "Fioraio", "fiori", "flower", "floral", "composizioni floreali" = ALWAYS "florist"
+3. "Panetteria", "bakery", "bread", "pastry" = ALWAYS "bakery"  
+4. "Ristorante", "restaurant", "pizzeria", "food" = ALWAYS "restaurant"
 
-2. Generate exactly 15 real competitor websites for this businessType.
+Primary business categories (choose the MOST SPECIFIC one):
+- "florist" for ANY flower-related business (shops, arrangements, events)
+- "bakery" for bread, pastry, cake shops
+- "restaurant" for food establishments, pizzerias
+- "gym" for fitness centers
+- "hotel" for hospitality, B&B
+- "retail" for general stores
+- "beauty" for salons, spas
+- "automotive" for car services
+- "tech-startup" for technology
+- "real-estate" for property
+- "travel" for travel agencies
+- "services" ONLY for pure professional consulting (legal, accounting, business consulting)
 
-IMPORTANT: 
-- Analyze the business description carefully for industry keywords
-- "Fioraio", "fiori", "composizioni floreali" = "florist" NOT "services"
-- "Negozio" can be retail, but check the products sold
+CRITICAL: If ANY flower/floral keywords are present, businessType MUST be "florist", NOT "services"
 
-Requirements:
-- Must be real, existing websites (not fictional)
-- Should be well-known brands in the inferred businessType industry
-- Include diverse examples (local, national, international if possible)
-- Focus on websites with good design and user experience
-- Provide complete, working URLs
-- Mix of different sizes: large corporations, medium businesses, and boutique/local businesses
+Generate exactly 15 real competitor websites for the identified businessType.
 
-Respond ONLY with JSON format:
+Respond ONLY with JSON:
 {
   "businessType": "...",
   "competitors": [
