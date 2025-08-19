@@ -129,20 +129,23 @@ router.post('/collect-competitors', async (req, res) => {
 // GET /api/training/patterns - Verifica i pattern salvati
 router.get('/patterns', async (req, res) => {
   try {
+    // Prima verifichiamo la struttura della tabella
+    const tableInfo = await storage.pool.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'ai_design_patterns'
+      ORDER BY ordinal_position
+    `);
+    
     const result = await storage.pool.query(`
       SELECT 
         business_type,
-        source_url,
-        source,
-        status,
         confidence_score,
-        LENGTH(html_content) as html_size,
-        LENGTH(css_content) as css_size,
-        created_at
+        created_at,
+        updated_at
       FROM ai_design_patterns 
-      WHERE source = 'competitor-ai'
       ORDER BY created_at DESC 
-      LIMIT 20
+      LIMIT 10
     `);
     
     const summary = await storage.pool.query(`
@@ -151,13 +154,13 @@ router.get('/patterns', async (req, res) => {
         COUNT(*) as count,
         AVG(confidence_score) as avg_confidence
       FROM ai_design_patterns 
-      WHERE source = 'competitor-ai'
       GROUP BY business_type
       ORDER BY count DESC
     `);
     
     res.json({
       success: true,
+      tableStructure: tableInfo.rows,
       recentPatterns: result.rows,
       summary: summary.rows,
       total: result.rows.length
