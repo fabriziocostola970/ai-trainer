@@ -117,6 +117,11 @@ app.use('/api/validate', authenticateAPI, require('./src/api/validate-template')
 app.use('/api/training', authenticateAPI, require('./src/api/training'));
 app.use('/api/design', authenticateAPI, require('./src/api/design-routes')); // 🎨 NEW: Design Analysis API
 app.use('/api', authenticateAPI, require('./src/api/setup-database')); // 🗄️ Database setup endpoint
+
+// DB Admin API Route (deve essere dichiarata prima dei catch-all e dei 404 handler)
+const dbAdminRoute = require('./src/api/db-admin');
+app.use('/api/db-admin', dbAdminRoute);
+
 app.use('/api/ai/competitors', authenticateAPI, require('./src/api/competitors'));
 
 // 🧠 Auto-classification API
