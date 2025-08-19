@@ -8,20 +8,20 @@ router.post('/collect-competitors', async (req, res) => {
 
     // Genera la lista di competitors
     const competitors = generateSiteSuggestions(businessType, region);
-    const results = [];
+  const results = []; // Initialize results array
 
     for (const comp of competitors) {
       try {
         // Scraping HTML e CSS
         const htmlContent = await collector.collectHTMLContent(comp.url);
         // Per demo: estrai solo i tag <style> dal HTML come CSS (in produzione, estrai con Puppeteer)
-        let cssContent = '';
+  let cssContent = ''; // Initialize cssContent variable
         if (htmlContent) {
           const styleMatch = htmlContent.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
           cssContent = styleMatch ? styleMatch[1] : '';
         }
 
-        // Inserisci nel database
+  // Insert into the database
         await storage.pool.query(`
           INSERT INTO ai_design_patterns (
             business_type,
@@ -56,7 +56,7 @@ router.post('/collect-competitors', async (req, res) => {
           htmlContent || '',
           cssContent || ''
         ]);
-        results.push({ url: comp.url, success: true });
+  results.push({ url: comp.url, success: true }); // Push successful result
       } catch (err) {
         results.push({ url: comp.url, success: false, error: err.message });
       }
