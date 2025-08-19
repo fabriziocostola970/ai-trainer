@@ -19,6 +19,88 @@ async function initializeCollector() {
   }
 }
 
+// 🤖 Genera competitors usando OpenAI (chiamata diretta)
+async function generateCompetitorsWithOpenAI(businessName, businessDescription) {
+  try {
+    const OpenAI = require('openai');
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('❌ OpenAI API key not configured');
+      return null;
+    }
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const prompt = `Given the following business details:
+Business name: "${businessName}"
+Business description: "${businessDescription}"
+
+1. Infer the most appropriate businessType for this business. Use specific categories:
+   - "florist" for flower shops, fioristi, flower arrangements
+   - "bakery" for panetterie, pasticcerie, bread/cake shops
+   - "restaurant" for ristoranti, pizzerie, food establishments
+   - "gym" for palestre, fitness centers
+   - "hotel" for hotels, B&B, hospitality
+   - "retail" for general retail stores, negozi
+   - "beauty" for parrucchieri, saloni di bellezza, spa
+   - "automotive" for car dealers, mechanic shops
+   - "tech-startup" for technology companies, software
+   - "real-estate" for real estate agencies
+   - "travel" for travel agencies, tour operators
+   - "services" only for professional services (consulting, legal, accounting)
+
+2. Generate exactly 15 real competitor websites for this businessType.
+
+IMPORTANT: 
+- Analyze the business description carefully for industry keywords
+- "Fioraio", "fiori", "composizioni floreali" = "florist" NOT "services"
+- "Negozio" can be retail, but check the products sold
+
+Requirements:
+- Must be real, existing websites (not fictional)
+- Should be well-known brands in the inferred businessType industry
+- Include diverse examples (local, national, international if possible)
+- Focus on websites with good design and user experience
+- Provide complete, working URLs
+- Mix of different sizes: large corporations, medium businesses, and boutique/local businesses
+
+Respond ONLY with JSON format:
+{
+  "businessType": "...",
+  "competitors": [
+    {
+      "url": "https://example.com",
+      "name": "Company Name",
+      "description": "Brief description of the business"
+    }
+  ]
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 1500,
+      temperature: 0.3
+    });
+
+    let result;
+    try {
+      result = JSON.parse(completion.choices[0].message.content);
+    } catch (err) {
+      console.log('❌ OpenAI response parsing failed:', completion.choices[0].message.content);
+      return null;
+    }
+
+    if (!result.businessType || !Array.isArray(result.competitors)) {
+      console.log('❌ OpenAI response missing businessType or competitors:', result);
+      return null;
+    }
+
+    return result;
+  } catch (error) {
+    console.log(`❌ OpenAI competitors generation failed: ${error.message}`);
+    return null;
+  }
+}
+
 // Funzione per cercare immagini Unsplash
 async function fetchUnsplashImages(businessType, count = 5) {
   try {
@@ -333,34 +415,17 @@ router.post('/collect-competitors', async (req, res) => {
     const translatedData = await translateToEnglish(businessName, description);
     console.log(`✅ [Translation] Original: "${businessName}" → English: "${translatedData.businessName}"`);
     
-    // Chiamata interna all'API AI competitors con dati tradotti
-    const axios = require('axios');
-    const internalUrl = `${process.env.INTERNAL_API_URL || 'http://localhost:8080'}/api/ai/competitors`;
-    console.log(`🔗 [Competitors] Calling OpenAI via: ${internalUrl}`);
+    // 🤖 Step 2: Genera competitors con OpenAI (chiamata diretta)
+    console.log(`🤖 [Competitors] Generating competitors with OpenAI...`);
+    const competitorsResult = await generateCompetitorsWithOpenAI(translatedData.businessName, translatedData.description);
     
-    const aiRes = await axios.post(
-      internalUrl,
-      { 
-        businessName: translatedData.businessName, 
-        description: translatedData.description 
-      },
-      { 
-        headers: { Authorization: req.headers.authorization },
-        timeout: 30000 // 30 secondi timeout
-      }
-    );
-
-    console.log(`✅ [Competitors] OpenAI response:`, {
-      status: aiRes.status,
-      businessType: aiRes.data?.businessType,
-      competitorsCount: aiRes.data?.competitors?.length || 0
-    });
-
-    const { businessType, competitors } = aiRes.data;
-    if (!businessType || !Array.isArray(competitors)) {
-      console.error(`❌ [Competitors] Invalid AI response:`, aiRes.data);
-      return res.status(500).json({ success: false, error: 'Risposta AI non valida', details: aiRes.data });
+    if (!competitorsResult || !competitorsResult.businessType || !Array.isArray(competitorsResult.competitors)) {
+      console.error(`❌ [Competitors] Failed to generate competitors`);
+      return res.status(500).json({ success: false, error: 'Failed to generate competitors' });
     }
+
+    const { businessType, competitors } = competitorsResult;
+    console.log(`✅ [Competitors] Generated: ${businessType}, competitors: ${competitors.length}`);
 
     console.log(`🕷️ [Competitors] Starting scraping for ${competitors.length} competitors`);
     console.log(`🔍 [Debug] Competitors URLs:`, competitors.map(c => c.url));
