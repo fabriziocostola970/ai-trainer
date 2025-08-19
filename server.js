@@ -306,10 +306,6 @@ app.get('*', (req, res) => {
 const competitorsRoute = require('./src/api/competitors');
 app.use('/api/ai/competitors', competitorsRoute);
 
-// DB Admin API Route
-const dbAdminRoute = require('./src/api/db-admin');
-app.use('/api/db-admin', dbAdminRoute);
-
 // Start server
 app.listen(PORT, () => {
   console.log(`🤖 AI-Trainer server running on port ${PORT}`);
