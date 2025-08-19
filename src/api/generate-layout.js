@@ -161,7 +161,7 @@ async function generateAndScrapeCompetitors(businessType) {
 async function generateCompetitorSitesWithOpenAI(businessName, businessDescription) {
   const axios = require('axios');
   try {
-    const API_HOST = process.env.AI_TRAINER_API_HOST || 'https://ai-trainer-production.up.railway.app';
+    const API_HOST = process.env.AI_TRAINER_API_HOST || 'https://ai-trainer-production-8fd9.up.railway.app';
     const response = await axios.post(`${API_HOST}/api/ai/competitors`, {
       businessName,
       description: businessDescription
