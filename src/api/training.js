@@ -15,44 +15,49 @@ router.post('/collect-competitors', async (req, res) => {
       return res.status(400).json({ success: false, error: 'businessName e description sono richiesti' });
     }
 
+    console.log(`🤖 [Competitors] Starting collection for: "${businessName}"`);
+    
     // Chiamata interna all'API AI competitors
     const axios = require('axios');
+    const internalUrl = `${process.env.INTERNAL_API_URL || 'http://localhost:8080'}/api/ai/competitors`;
+    console.log(`🔗 [Competitors] Calling OpenAI via: ${internalUrl}`);
+    
     const aiRes = await axios.post(
-      `${process.env.INTERNAL_API_URL || 'http://localhost:8080'}/api/ai/competitors`,
+      internalUrl,
       { businessName, description },
-      { headers: { Authorization: req.headers.authorization } }
+      { 
+        headers: { Authorization: req.headers.authorization },
+        timeout: 30000 // 30 secondi timeout
+      }
     );
+
+    console.log(`✅ [Competitors] OpenAI response:`, {
+      status: aiRes.status,
+      businessType: aiRes.data?.businessType,
+      competitorsCount: aiRes.data?.competitors?.length || 0
+    });
 
     const { businessType, competitors } = aiRes.data;
     if (!businessType || !Array.isArray(competitors)) {
+      console.error(`❌ [Competitors] Invalid AI response:`, aiRes.data);
       return res.status(500).json({ success: false, error: 'Risposta AI non valida', details: aiRes.data });
     }
 
+    console.log(`🕷️ [Competitors] Starting scraping for ${competitors.length} competitors`);
     const results = [];
     for (const comp of competitors) {
       try {
+        console.log(`🔍 [Competitors] Scraping: ${comp.url}`);
         const htmlContent = await collector.collectHTMLContent(comp.url);
         let cssContent = '';
-        console.log(`--- COMPETITOR ---`);
-        console.log(`URL: ${comp.url}`);
-        console.log(`Name: ${comp.name}`);
-        console.log(`Description: ${comp.description}`);
-        console.log(`HTML content length: ${htmlContent ? htmlContent.length : 0}`);
+        
         if (htmlContent) {
           const styleMatch = htmlContent.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
           cssContent = styleMatch ? styleMatch[1] : '';
         }
-        console.log(`CSS content length: ${cssContent ? cssContent.length : 0}`);
-        console.log(`Query params:`, [
-          businessType,
-          comp.url,
-          JSON.stringify({ name: comp.name, description: comp.description }),
-          80.0,
-          'competitor-ai',
-          'active',
-          htmlContent || '',
-          cssContent || ''
-        ]);
+        
+        console.log(`📄 [Competitors] ${comp.name}: HTML=${htmlContent?.length || 0}chars, CSS=${cssContent?.length || 0}chars`);
+        
         try {
           const result = await storage.pool.query(`
             INSERT INTO ai_design_patterns (
@@ -101,7 +106,22 @@ router.post('/collect-competitors', async (req, res) => {
     }
 
     res.json({ success: true, businessType, processed: results });
+    
   } catch (error) {
+    // Gestione errori specifici per chiamata OpenAI
+    if (error.response) {
+      console.error(`❌ [Competitors] OpenAI API error:`, {
+        status: error.response.status,
+        data: error.response.data
+      });
+      return res.status(500).json({ 
+        success: false, 
+        error: 'OpenAI API call failed', 
+        details: error.response.data 
+      });
+    }
+    
+    console.error(`❌ [Competitors] General error:`, error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
