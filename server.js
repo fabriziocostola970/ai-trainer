@@ -127,8 +127,8 @@ app.use('/api/ai/competitors', authenticateAPI, require('./src/api/competitors')
 // 🧠 Auto-classification API
 app.use('/api/training', authenticateAPI, require('./src/api/auto-classify'));
 
-// 🔧 Admin API (schema management)
-app.use('/api/admin', require('./src/api/admin'));
+/* // 🔧 Admin API (schema management)
+app.use('/api/admin', require('./src/api/admin')); */
 
 // 🔧 DEBUG: Training endpoint WITHOUT authentication for testing
 app.use('/debug/training', require('./src/api/training'));
