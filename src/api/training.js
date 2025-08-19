@@ -169,15 +169,17 @@ router.post('/collect-competitors', async (req, res) => {
     }
 
     console.log(`🕷️ [Competitors] Starting scraping for ${competitors.length} competitors`);
+    console.log(`🔍 [Debug] Competitors URLs:`, competitors.map(c => c.url));
     
     // 🖼️ Cerca immagini Unsplash per il business type
     console.log(`🖼️ [Unsplash] Fetching images for business type: ${businessType}`);
     const unsplashImages = await fetchUnsplashImages(businessType, 5);
     
     const results = [];
-    for (const comp of competitors) {
+    for (let i = 0; i < competitors.length; i++) {
+      const comp = competitors[i];
       try {
-        console.log(`🔍 [Competitors] Scraping: ${comp.url}`);
+        console.log(`🔍 [Competitors] Processing ${i+1}/${competitors.length}: ${comp.url}`);
         const htmlContent = await collector.collectHTMLContent(comp.url);
         let cssContent = '';
         
@@ -189,6 +191,7 @@ router.post('/collect-competitors', async (req, res) => {
         console.log(`📄 [Competitors] ${comp.name}: HTML=${htmlContent?.length || 0}chars, CSS=${cssContent?.length || 0}chars`);
         
         try {
+          console.log(`💾 [DB] Inserting: business_type="${businessType}", source_url="${comp.url}"`);
           const result = await storage.pool.query(`
             INSERT INTO ai_design_patterns (
               business_type,
@@ -209,17 +212,21 @@ router.post('/collect-competitors', async (req, res) => {
               updated_at = CURRENT_TIMESTAMP,
               html_content = $5,
               css_content = $6
+            RETURNING id, business_type, source_url
           `, [
             businessType,
-            comp.url, // ✅ Aggiungiamo source_url
+            comp.url, // ✅ source_url univoco
             JSON.stringify({
               competitor: { name: comp.name, description: comp.description, url: comp.url },
-              unsplash_images: unsplashImages // ✅ Aggiungiamo immagini Unsplash
+              unsplash_images: unsplashImages
             }),
             80.0,
             htmlContent || '',
             cssContent || ''
           ]);
+          
+          console.log(`✅ [DB] Record saved/updated:`, result.rows[0]);
+          results.push({ url: comp.url, success: true, db_id: result.rows[0]?.id });
           console.log(`✅ [DB] Pattern saved successfully for ${comp.name} (${businessType})`);
           results.push({ url: comp.url, success: true });
         } catch (dbErr) {
