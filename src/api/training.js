@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const collector = require('../training/railway-data-collector');
+const RailwayDataCollector = require('../training/railway-data-collector');
 const DatabaseStorage = require('../storage/database-storage');
 
-// Inizializza storage
+// Inizializza storage e collector
 const storage = new DatabaseStorage();
 storage.initialize();
+const collector = new RailwayDataCollector();
 
 // Funzione per traduzione dinamica con OpenAI
 async function translateToEnglish(businessName, description) {
