@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const collector = require('../training/data-collector');
@@ -19,7 +18,7 @@ router.post('/collect-competitors', async (req, res) => {
     // Chiamata interna all'API AI competitors
     const axios = require('axios');
     const aiRes = await axios.post(
-      `${process.env.INTERNAL_API_URL || 'http://localhost:4000'}/api/ai/competitors`,
+      `${process.env.INTERNAL_API_URL || 'http://localhost:8080'}/api/ai/competitors`,
       { businessName, description },
       { headers: { Authorization: req.headers.authorization } }
     );
@@ -113,180 +112,7 @@ router.post('/collect-competitors', async (req, res) => {
   console.log(`📊 Current sessions: ${healthCheck.totalSessions || 0}`);
 })(); */
 
-// POST /api/training/generate-sites - Genera siti con OpenAI
-router.post('/generate-sites', async (req, res) => {
-  try {
-    const { businessType, region } = req.body;
-    
-    if (!businessType) {
-      return res.status(400).json({
-        success: false,
-        error: 'businessType is required'
-      });
-    }
 
-    // For now, provide intelligent defaults based on business type and region
-    // In future, integrate with OpenAI API
-    const siteSuggestions = generateSiteSuggestions(businessType, region);
-    
-    res.json({
-      success: true,
-      sites: siteSuggestions,
-      businessType,
-      region: region || 'global',
-      timestamp: new Date().toISOString()
-    });
-    
-  } catch (error) {
-    console.error('❌ Generate sites error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Helper function to generate site suggestions
-function generateSiteSuggestions(businessType, region = 'global') {
-  const businessTemplates = {
-    'restaurant': [
-      { url: 'https://www.mcdonalds.com', name: 'McDonald\'s', description: 'Global fast food chain' },
-      { url: 'https://www.starbucks.com', name: 'Starbucks', description: 'Coffee chain' },
-      { url: 'https://www.subway.com', name: 'Subway', description: 'Sandwich restaurant' },
-      { url: 'https://www.kfc.com', name: 'KFC', description: 'Fried chicken restaurant' },
-      { url: 'https://www.dominos.com', name: 'Domino\'s', description: 'Pizza delivery' }
-    ],
-    'e-commerce': [
-      { url: 'https://www.amazon.com', name: 'Amazon', description: 'Online marketplace' },
-      { url: 'https://www.shopify.com', name: 'Shopify', description: 'E-commerce platform' },
-      { url: 'https://www.etsy.com', name: 'Etsy', description: 'Handmade marketplace' },
-      { url: 'https://www.ebay.com', name: 'eBay', description: 'Auction marketplace' },
-      { url: 'https://www.alibaba.com', name: 'Alibaba', description: 'B2B marketplace' }
-    ],
-    'ecommerce': [ // Handle alternative spelling
-      { url: 'https://www.amazon.com', name: 'Amazon', description: 'Online marketplace' },
-      { url: 'https://www.shopify.com', name: 'Shopify', description: 'E-commerce platform' },
-      { url: 'https://www.etsy.com', name: 'Etsy', description: 'Handmade marketplace' },
-      { url: 'https://www.ebay.com', name: 'eBay', description: 'Auction marketplace' },
-      { url: 'https://www.alibaba.com', name: 'Alibaba', description: 'B2B marketplace' }
-    ],
-    'technology': [
-      { url: 'https://www.apple.com', name: 'Apple', description: 'Technology company' },
-      { url: 'https://www.microsoft.com', name: 'Microsoft', description: 'Software company' },
-      { url: 'https://www.google.com', name: 'Google', description: 'Search engine' },
-      { url: 'https://www.tesla.com', name: 'Tesla', description: 'Electric vehicles' },
-      { url: 'https://www.meta.com', name: 'Meta', description: 'Social media platform' }
-    ],
-    'tech-startup': [
-      { url: 'https://www.stripe.com', name: 'Stripe', description: 'Payment processing' },
-      { url: 'https://www.slack.com', name: 'Slack', description: 'Team communication' },
-      { url: 'https://www.notion.so', name: 'Notion', description: 'Productivity workspace' },
-      { url: 'https://www.figma.com', name: 'Figma', description: 'Design tool' },
-      { url: 'https://www.vercel.com', name: 'Vercel', description: 'Web deployment' }
-    ],
-    'healthcare': [
-      { url: 'https://www.mayoclinic.org', name: 'Mayo Clinic', description: 'Medical center' },
-      { url: 'https://www.webmd.com', name: 'WebMD', description: 'Health information' },
-      { url: 'https://www.who.int', name: 'WHO', description: 'World Health Organization' },
-      { url: 'https://www.medscape.com', name: 'Medscape', description: 'Medical news' },
-      { url: 'https://www.healthline.com', name: 'Healthline', description: 'Health guide' }
-    ],
-    'education': [
-      { url: 'https://www.harvard.edu', name: 'Harvard', description: 'University' },
-      { url: 'https://www.mit.edu', name: 'MIT', description: 'Technology institute' },
-      { url: 'https://www.stanford.edu', name: 'Stanford', description: 'University' },
-      { url: 'https://www.coursera.org', name: 'Coursera', description: 'Online courses' },
-      { url: 'https://www.edx.org', name: 'edX', description: 'Online education' }
-    ],
-    'finance': [
-      { url: 'https://www.chase.com', name: 'Chase', description: 'Bank' },
-      { url: 'https://www.paypal.com', name: 'PayPal', description: 'Payment service' },
-      { url: 'https://www.bloomberg.com', name: 'Bloomberg', description: 'Financial news' },
-      { url: 'https://www.schwab.com', name: 'Schwab', description: 'Investment firm' },
-      { url: 'https://www.fidelity.com', name: 'Fidelity', description: 'Investment company' }
-    ],
-    'travel': [
-      { url: 'https://www.booking.com', name: 'Booking.com', description: 'Hotel booking' },
-      { url: 'https://www.expedia.com', name: 'Expedia', description: 'Travel booking' },
-      { url: 'https://www.airbnb.com', name: 'Airbnb', description: 'Home sharing' },
-      { url: 'https://www.tripadvisor.com', name: 'TripAdvisor', description: 'Travel reviews' },
-      { url: 'https://www.kayak.com', name: 'Kayak', description: 'Travel search' }
-    ],
-    'real-estate': [
-      { url: 'https://www.zillow.com', name: 'Zillow', description: 'Real estate platform' },
-      { url: 'https://www.realtor.com', name: 'Realtor.com', description: 'Property listings' },
-      { url: 'https://www.redfin.com', name: 'Redfin', description: 'Real estate service' },
-      { url: 'https://www.trulia.com', name: 'Trulia', description: 'Home search' },
-      { url: 'https://www.apartments.com', name: 'Apartments.com', description: 'Rental listings' }
-    ],
-    'portfolio': [
-      { url: 'https://www.dribbble.com', name: 'Dribbble', description: 'Design portfolio' },
-      { url: 'https://www.behance.net', name: 'Behance', description: 'Creative portfolio' },
-      { url: 'https://www.awwwards.com', name: 'Awwwards', description: 'Web design showcase' },
-      { url: 'https://www.pinterest.com', name: 'Pinterest', description: 'Visual discovery' },
-      { url: 'https://www.unsplash.com', name: 'Unsplash', description: 'Photography platform' }
-    ],
-    'wellness': [
-      { url: 'https://www.headspace.com', name: 'Headspace', description: 'Meditation app' },
-      { url: 'https://www.calm.com', name: 'Calm', description: 'Relaxation app' },
-      { url: 'https://www.myfitnesspal.com', name: 'MyFitnessPal', description: 'Fitness tracking' },
-      { url: 'https://www.peloton.com', name: 'Peloton', description: 'Fitness platform' },
-      { url: 'https://www.lululemon.com', name: 'Lululemon', description: 'Athletic wear' }
-    ]
-  };
-
-  // Regional variations
-  const regionalSites = {
-    'europe': {
-      'restaurant': [
-        { url: 'https://www.deliveroo.com', name: 'Deliveroo', description: 'Food delivery (EU)' },
-        { url: 'https://www.just-eat.com', name: 'Just Eat', description: 'Food delivery (EU)' }
-      ],
-      'e-commerce': [
-        { url: 'https://www.zalando.com', name: 'Zalando', description: 'Fashion retailer (EU)' },
-        { url: 'https://www.otto.de', name: 'Otto', description: 'Online retailer (DE)' }
-      ],
-      'ecommerce': [
-        { url: 'https://www.zalando.com', name: 'Zalando', description: 'Fashion retailer (EU)' },
-        { url: 'https://www.otto.de', name: 'Otto', description: 'Online retailer (DE)' }
-      ],
-      'travel': [
-        { url: 'https://www.ryanair.com', name: 'Ryanair', description: 'Low-cost airline (EU)' },
-        { url: 'https://www.easyjet.com', name: 'EasyJet', description: 'Low-cost airline (EU)' }
-      ]
-    },
-    'asia': {
-      'restaurant': [
-        { url: 'https://www.foodpanda.com', name: 'Foodpanda', description: 'Food delivery (Asia)' },
-        { url: 'https://www.ubereats.com', name: 'Uber Eats', description: 'Food delivery (Global)' }
-      ],
-      'e-commerce': [
-        { url: 'https://www.tmall.com', name: 'Tmall', description: 'E-commerce (China)' },
-        { url: 'https://www.rakuten.com', name: 'Rakuten', description: 'E-commerce (Japan)' }
-      ],
-      'ecommerce': [
-        { url: 'https://www.tmall.com', name: 'Tmall', description: 'E-commerce (China)' },
-        { url: 'https://www.rakuten.com', name: 'Rakuten', description: 'E-commerce (Japan)' }
-      ],
-      'technology': [
-        { url: 'https://www.samsung.com', name: 'Samsung', description: 'Electronics (Korea)' },
-        { url: 'https://www.sony.com', name: 'Sony', description: 'Electronics (Japan)' }
-      ]
-    }
-  };
-
-  let sites = businessTemplates[businessType.toLowerCase()] || businessTemplates['technology'];
-  
-  // Mix in regional sites if available
-  if (region && region !== 'global' && regionalSites[region.toLowerCase()]) {
-    const regionalOptions = regionalSites[region.toLowerCase()][businessType.toLowerCase()];
-    if (regionalOptions) {
-      sites = [...sites.slice(0, 3), ...regionalOptions];
-    }
-  }
-
-  return sites.slice(0, 5);
-}
 
 // POST /api/training/start - Avvia training collection
 router.post('/start', async (req, res) => {
