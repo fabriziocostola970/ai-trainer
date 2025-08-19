@@ -125,6 +125,50 @@ router.post('/collect-competitors', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// GET /api/training/patterns - Verifica i pattern salvati
+router.get('/patterns', async (req, res) => {
+  try {
+    const result = await storage.pool.query(`
+      SELECT 
+        business_type,
+        source_url,
+        source,
+        status,
+        confidence_score,
+        LENGTH(html_content) as html_size,
+        LENGTH(css_content) as css_size,
+        created_at
+      FROM ai_design_patterns 
+      WHERE source = 'competitor-ai'
+      ORDER BY created_at DESC 
+      LIMIT 20
+    `);
+    
+    const summary = await storage.pool.query(`
+      SELECT 
+        business_type,
+        COUNT(*) as count,
+        AVG(confidence_score) as avg_confidence
+      FROM ai_design_patterns 
+      WHERE source = 'competitor-ai'
+      GROUP BY business_type
+      ORDER BY count DESC
+    `);
+    
+    res.json({
+      success: true,
+      recentPatterns: result.rows,
+      summary: summary.rows,
+      total: result.rows.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fetching patterns:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Inizializzazione e funzioni già presenti
   
 /*   const healthCheck = await storage.healthCheck();
