@@ -1,3 +1,72 @@
+// POST /api/training/collect-competitors - Scraping e salvataggio dei competitors
+router.post('/collect-competitors', async (req, res) => {
+  try {
+    const { businessType, region } = req.body;
+    if (!businessType) {
+      return res.status(400).json({ success: false, error: 'businessType is required' });
+    }
+
+    // Genera la lista di competitors
+    const competitors = generateSiteSuggestions(businessType, region);
+    const results = [];
+
+    for (const comp of competitors) {
+      try {
+        // Scraping HTML e CSS
+        const htmlContent = await collector.collectHTMLContent(comp.url);
+        // Per demo: estrai solo i tag <style> dal HTML come CSS (in produzione, estrai con Puppeteer)
+        let cssContent = '';
+        if (htmlContent) {
+          const styleMatch = htmlContent.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+          cssContent = styleMatch ? styleMatch[1] : '';
+        }
+
+        // Inserisci nel database
+        await storage.pool.query(`
+          INSERT INTO ai_design_patterns (
+            business_type,
+            source_url,
+            business_images,
+            confidence_score,
+            source,
+            status,
+            html_content,
+            css_content,
+            created_at,
+            updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          )
+          ON CONFLICT (business_type, source_url)
+          DO UPDATE SET
+            business_images = $3,
+            confidence_score = $4,
+            updated_at = CURRENT_TIMESTAMP,
+            source = $5,
+            status = $6,
+            html_content = $7,
+            css_content = $8
+        `, [
+          businessType,
+          comp.url,
+          JSON.stringify({ name: comp.name, description: comp.description }),
+          80.0,
+          'competitor-scraper',
+          'active',
+          htmlContent || '',
+          cssContent || ''
+        ]);
+        results.push({ url: comp.url, success: true });
+      } catch (err) {
+        results.push({ url: comp.url, success: false, error: err.message });
+      }
+    }
+
+    res.json({ success: true, businessType, region: region || 'global', processed: results });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 const express = require('express');
 const router = express.Router();
 const DatabaseStorage = require('../storage/database-storage');
@@ -1418,6 +1487,10 @@ router.post('/auto-finalize', async (req, res) => {
       for (const pattern of designPatterns) {
         try {
           const timestamp = new Date();
+          // Valorizza i campi source_url, html_content, css_content
+          const sourceUrl = pattern.source_url || `https://ai-generated/${pattern.pattern_name}`;
+          const htmlContent = pattern.html_content || `<div class="${pattern.pattern_name}">Generated HTML content</div>`;
+          const cssContent = pattern.css_rules || '';
           await storage.pool.query(`
             INSERT INTO ai_design_patterns (
               business_type,
@@ -1426,10 +1499,12 @@ router.post('/auto-finalize', async (req, res) => {
               confidence_score,
               source,
               status,
+              html_content,
+              css_content,
               created_at,
               updated_at
             ) VALUES (
-              $1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+              $1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             )
             ON CONFLICT (business_type, source_url)
             DO UPDATE SET
@@ -1437,13 +1512,13 @@ router.post('/auto-finalize', async (req, res) => {
               confidence_score = $4,
               updated_at = CURRENT_TIMESTAMP,
               source = $5,
-              status = $6
+              status = $6,
+              html_content = $7,
+              css_content = $8
           `, [
             pattern.business_type,
-            `https://ai-generated/${pattern.pattern_name}`,
+            sourceUrl,
             JSON.stringify({
-              html: `<div class="${pattern.pattern_name}">Generated HTML content</div>`,
-              css: pattern.css_rules,
               color_palette: pattern.color_palette,
               font_families: pattern.font_families,
               layout_structure: pattern.layout_structure,
@@ -1453,7 +1528,9 @@ router.post('/auto-finalize', async (req, res) => {
             }),
             85.5,
             'ai-generated',
-            'active'
+            'active',
+            htmlContent,
+            cssContent
           ]);
           insertCount++;
           console.log(`✅ Inserted pattern: ${pattern.pattern_name}`);
