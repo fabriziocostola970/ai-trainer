@@ -69,30 +69,12 @@ router.post('/collect-competitors', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-// POST /api/training/collect-competitors - Scraping e salvataggio dei competitors
-const express = require('express');
-const router = express.Router();
-
-const DatabaseStorage = require('../storage/database-storage');
-const RailwayDataCollector = require('../training/railway-data-collector');
-
-// �️ Initialize PostgreSQL storage with file fallback
-const storage = new DatabaseStorage();
-const collector = new RailwayDataCollector();
-let trainingState = null;
-let customSites = [];
-
-// Initialize storage on startup
-(async () => {
-  await storage.initialize();
-  await collector.initialize();
-  trainingState = await storage.loadTrainingState();
-  customSites = await storage.loadCustomSites();
+// Inizializzazione e funzioni già presenti
   
-  const healthCheck = await storage.healthCheck();
+/*   const healthCheck = await storage.healthCheck();
   console.log(`🚀 Training API initialized with ${healthCheck.storage} storage`);
   console.log(`📊 Current sessions: ${healthCheck.totalSessions || 0}`);
-})();
+})(); */
 
 // POST /api/training/generate-sites - Genera siti con OpenAI
 router.post('/generate-sites', async (req, res) => {
