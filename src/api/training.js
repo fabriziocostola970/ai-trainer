@@ -1,6 +1,12 @@
 
 const express = require('express');
 const router = express.Router();
+const collector = require('../training/data-collector');
+const DatabaseStorage = require('../storage/database-storage');
+
+// Inizializza storage
+const storage = new DatabaseStorage();
+storage.initialize();
 
 // POST /api/training/collect-competitors - Scraping e salvataggio dei competitors
 router.post('/collect-competitors', async (req, res) => {
