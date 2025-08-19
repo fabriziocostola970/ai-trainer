@@ -5,27 +5,33 @@ const router = express.Router();
 // POST /api/training/collect-competitors - Scraping e salvataggio dei competitors
 router.post('/collect-competitors', async (req, res) => {
   try {
-    const { businessType, region } = req.body;
-    if (!businessType) {
-      return res.status(400).json({ success: false, error: 'businessType is required' });
+    const { businessName, description } = req.body;
+    if (!businessName || !description) {
+      return res.status(400).json({ success: false, error: 'businessName e description sono richiesti' });
     }
 
-    // Genera la lista di competitors
-    const competitors = generateSiteSuggestions(businessType, region);
-    const results = [];
+    // Chiamata interna all'API AI competitors
+    const axios = require('axios');
+    const aiRes = await axios.post(
+      `${process.env.INTERNAL_API_URL || 'http://localhost:4000'}/api/ai/competitors`,
+      { businessName, description },
+      { headers: { Authorization: req.headers.authorization } }
+    );
 
+    const { businessType, competitors } = aiRes.data;
+    if (!businessType || !Array.isArray(competitors)) {
+      return res.status(500).json({ success: false, error: 'Risposta AI non valida', details: aiRes.data });
+    }
+
+    const results = [];
     for (const comp of competitors) {
       try {
-        // Scraping HTML e CSS
         const htmlContent = await collector.collectHTMLContent(comp.url);
-        // Per demo: estrai solo i tag <style> dal HTML come CSS (in produzione, estrai con Puppeteer)
         let cssContent = '';
         if (htmlContent) {
           const styleMatch = htmlContent.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
           cssContent = styleMatch ? styleMatch[1] : '';
         }
-
-        // Insert into the database
         await storage.pool.query(`
           INSERT INTO ai_design_patterns (
             business_type,
@@ -55,7 +61,7 @@ router.post('/collect-competitors', async (req, res) => {
           comp.url,
           JSON.stringify({ name: comp.name, description: comp.description }),
           80.0,
-          'competitor-scraper',
+          'competitor-ai',
           'active',
           htmlContent || '',
           cssContent || ''
@@ -66,7 +72,7 @@ router.post('/collect-competitors', async (req, res) => {
       }
     }
 
-    res.json({ success: true, businessType, region: region || 'global', processed: results });
+    res.json({ success: true, businessType, processed: results });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
