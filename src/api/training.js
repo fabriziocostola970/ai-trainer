@@ -28,35 +28,17 @@ router.post('/collect-competitors', async (req, res) => {
       try {
         const htmlContent = await collector.collectHTMLContent(comp.url);
         let cssContent = '';
+        console.log(`--- COMPETITOR ---`);
+        console.log(`URL: ${comp.url}`);
+        console.log(`Name: ${comp.name}`);
+        console.log(`Description: ${comp.description}`);
+        console.log(`HTML content length: ${htmlContent ? htmlContent.length : 0}`);
         if (htmlContent) {
           const styleMatch = htmlContent.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
           cssContent = styleMatch ? styleMatch[1] : '';
         }
-        await storage.pool.query(`
-          INSERT INTO ai_design_patterns (
-            business_type,
-            source_url,
-            business_images,
-            confidence_score,
-            source,
-            status,
-            html_content,
-            css_content,
-            created_at,
-            updated_at
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-          )
-          ON CONFLICT (business_type, source_url)
-          DO UPDATE SET
-            business_images = $3,
-            confidence_score = $4,
-            updated_at = CURRENT_TIMESTAMP,
-            source = $5,
-            status = $6,
-            html_content = $7,
-            css_content = $8
-        `, [
+        console.log(`CSS content length: ${cssContent ? cssContent.length : 0}`);
+        console.log(`Query params:`, [
           businessType,
           comp.url,
           JSON.stringify({ name: comp.name, description: comp.description }),
@@ -66,8 +48,49 @@ router.post('/collect-competitors', async (req, res) => {
           htmlContent || '',
           cssContent || ''
         ]);
-        results.push({ url: comp.url, success: true });
+        try {
+          const result = await storage.pool.query(`
+            INSERT INTO ai_design_patterns (
+              business_type,
+              source_url,
+              business_images,
+              confidence_score,
+              source,
+              status,
+              html_content,
+              css_content,
+              created_at,
+              updated_at
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            )
+            ON CONFLICT (business_type, source_url)
+            DO UPDATE SET
+              business_images = $3,
+              confidence_score = $4,
+              updated_at = CURRENT_TIMESTAMP,
+              source = $5,
+              status = $6,
+              html_content = $7,
+              css_content = $8
+          `, [
+            businessType,
+            comp.url,
+            JSON.stringify({ name: comp.name, description: comp.description }),
+            80.0,
+            'competitor-ai',
+            'active',
+            htmlContent || '',
+            cssContent || ''
+          ]);
+          console.log(`Query result:`, result);
+          results.push({ url: comp.url, success: true });
+        } catch (dbErr) {
+          console.error(`DB ERROR for ${comp.url}:`, dbErr.message);
+          results.push({ url: comp.url, success: false, error: dbErr.message });
+        }
       } catch (err) {
+        console.error(`SCRAPING ERROR for ${comp.url}:`, err.message);
         results.push({ url: comp.url, success: false, error: err.message });
       }
     }
