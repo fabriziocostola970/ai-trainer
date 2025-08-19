@@ -273,29 +273,49 @@ function getUnsplashPhotoId(keyword, index) {
 async function saveBusinessImages(businessType, businessImages) {
   try {
     const storage = new DatabaseStorage();
-    await storage.pool.query(`
-      INSERT INTO ai_design_patterns (
-        business_type,
-        business_images,
-        confidence_score,
-        status,
-        created_at,
-        updated_at
-      ) VALUES (
-        $1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-      )
-      ON CONFLICT (business_type)
-      DO UPDATE SET
-        business_images = $2,
-        confidence_score = $3,
-        updated_at = CURRENT_TIMESTAMP,
-        status = $4
-    `, [
-      businessType,
-      JSON.stringify(businessImages),
-      85, // confidence score for stock images
-      'active'
-    ]);
+    
+    // Prima verifichiamo se esiste già un record per questo business_type senza source_url
+    const existingRecord = await storage.pool.query(`
+      SELECT id FROM ai_design_patterns 
+      WHERE business_type = $1 AND source_url IS NULL
+    `, [businessType]);
+    
+    if (existingRecord.rows.length > 0) {
+      // Aggiorniamo il record esistente
+      await storage.pool.query(`
+        UPDATE ai_design_patterns SET
+          business_images = $2,
+          confidence_score = $3,
+          updated_at = CURRENT_TIMESTAMP,
+          status = $4
+        WHERE business_type = $1 AND source_url IS NULL
+      `, [
+        businessType,
+        JSON.stringify(businessImages),
+        confidence,
+        'completed'
+      ]);
+    } else {
+      // Inseriamo un nuovo record
+      await storage.pool.query(`
+        INSERT INTO ai_design_patterns (
+          business_type,
+          business_images,
+          confidence_score,
+          status,
+          created_at,
+          updated_at
+        ) VALUES (
+          $1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        )
+      `, [
+        businessType,
+        JSON.stringify(businessImages),
+        confidence,
+        'completed'
+      ]);
+    }
+    
     console.log(`✅ Saved stock images for business type: ${businessType}`);
   } catch (error) {
     console.log(`⚠️ Failed to save business images: ${error.message}`);

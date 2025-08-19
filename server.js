@@ -302,10 +302,6 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// Competitors API Route
-const competitorsRoute = require('./src/api/competitors');
-app.use('/api/ai/competitors', competitorsRoute);
-
 // Start server
 app.listen(PORT, () => {
   console.log(`🤖 AI-Trainer server running on port ${PORT}`);
