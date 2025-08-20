@@ -872,8 +872,10 @@ async function extractLayoutPatternsFromTraining(businessType) {
     const storage = new DatabaseStorage();
     
     console.log(`🔍 [Dynamic] Searching patterns for business_type: "${businessType}"`);
+    console.log(`🔍 [Dynamic] Business type parameter type: ${typeof businessType}`);
+    console.log(`🔍 [Dynamic] Business type length: ${businessType?.length}`);
     
-    // Query per ottenere dati strutturati dai competitor
+    // Query per ottenere dati strutturati dai competitor (RIMOSSO status filter!)
     const result = await storage.pool.query(`
       SELECT 
         layout_structure,
@@ -881,16 +883,19 @@ async function extractLayoutPatternsFromTraining(businessType) {
         design_analysis,
         confidence_score,
         updated_at,
-        source_url
+        source_url,
+        status
       FROM ai_design_patterns 
       WHERE business_type = $1 
-        AND status = 'active'
         AND layout_structure IS NOT NULL
+        AND layout_structure != '{}'
+        AND layout_structure != 'null'
       ORDER BY confidence_score DESC, updated_at DESC
       LIMIT 20
     `, [businessType]);
     
     console.log(`🔍 [Dynamic] Query executed for "${businessType}": found ${result.rows.length} records`);
+    console.log(`🔍 [Dynamic] Sample status values:`, result.rows.slice(0, 3).map(r => r.status));
     
     if (result.rows.length === 0) {
       // Prova con una query più ampia per debug
@@ -903,6 +908,18 @@ async function extractLayoutPatternsFromTraining(businessType) {
       `, [`%${businessType}%`]);
       
       console.log(`📊 [Dynamic] Debug search for "${businessType}":`, debugResult.rows);
+      
+      // Query fallback senza filtri business_type per vedere cosa c'è
+      const fallbackResult = await storage.pool.query(`
+        SELECT business_type, COUNT(*) as count
+        FROM ai_design_patterns 
+        WHERE layout_structure IS NOT NULL
+        GROUP BY business_type
+        ORDER BY count DESC
+        LIMIT 10
+      `);
+      
+      console.log(`📊 [Dynamic] Available business_types in DB:`, fallbackResult.rows);
       console.log(`📊 [Dynamic] No layout patterns found for ${businessType}, using fallback`);
       return [];
     }
