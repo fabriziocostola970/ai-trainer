@@ -1375,8 +1375,19 @@ async function analyzeCSSPatternsFromTraining(blockType, businessType, layoutPat
 function computeStatisticalStyles(cssPatterns, blockType) {
   const computedStyles = {};
   
+  // 🔒 Verifica che cssPatterns sia valido
+  if (!cssPatterns || typeof cssPatterns !== 'object') {
+    console.log(`⚠️ [Statistical Styles] Invalid cssPatterns for ${blockType}, using defaults`);
+    return {
+      padding: '16px',
+      margin: '0px',
+      fontFamily: 'Inter, sans-serif',
+      confidence: 0.3
+    };
+  }
+  
   // 📏 Calcola spacing più comune (weighted average)
-  if (cssPatterns.spacing.length > 0) {
+  if (cssPatterns.spacing && cssPatterns.spacing.length > 0) {
     const paddingValues = cssPatterns.spacing
       .filter(s => s.padding)
       .map(s => ({ value: parseInt(s.padding) || 16, confidence: s.confidence }));
@@ -1397,20 +1408,20 @@ function computeStatisticalStyles(cssPatterns, blockType) {
   }
   
   // 🎨 Calcola colori più popolari
-  if (cssPatterns.colors.length > 0) {
+  if (cssPatterns.colors && cssPatterns.colors.length > 0) {
     computedStyles.primaryColor = findMostPopularColor(cssPatterns.colors.map(c => c.primary));
     computedStyles.secondaryColor = findMostPopularColor(cssPatterns.colors.map(c => c.secondary));
     computedStyles.backgroundColor = findMostPopularColor(cssPatterns.colors.map(c => c.background));
   }
   
   // 📝 Calcola font più usato
-  if (cssPatterns.typography.length > 0) {
+  if (cssPatterns.typography && cssPatterns.typography.length > 0) {
     const fonts = cssPatterns.typography.map(t => t.fontFamily).filter(Boolean);
     computedStyles.fontFamily = findMostCommonValue(fonts) || 'Inter, sans-serif';
   }
   
   // 📐 Applica layout patterns specifici per tipo
-  const layoutStyles = generateBlockTypeSpecificStyles(blockType, cssPatterns.layout);
+  const layoutStyles = generateBlockTypeSpecificStyles(blockType, cssPatterns.layout || []);
   Object.assign(computedStyles, layoutStyles);
   
   // 📈 Calcola confidence generale
