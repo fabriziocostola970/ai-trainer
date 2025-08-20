@@ -1098,31 +1098,65 @@ function calculatePatternWeight(confidence, updatedAt) {
 
 // Analizza pattern di layout comuni
 function analyzeCommonLayoutPatterns(patterns) {
+  console.log(`🔍 [Pattern Analysis] Analyzing ${patterns.length} patterns`);
   const patternFrequency = {};
+  const layoutStructureStats = {};
   
-  patterns.forEach(pattern => {
-    if (pattern.layout && pattern.layout.sections) {
-      pattern.layout.sections.forEach(section => {
-        const key = section.type || section.tag || 'unknown';
-        if (!patternFrequency[key]) {
-          patternFrequency[key] = { count: 0, totalWeight: 0, examples: [] };
+  patterns.forEach((pattern, index) => {
+    console.log(`🔍 [Pattern ${index + 1}] Structure:`, {
+      hasLayout: !!pattern.layout,
+      layoutKeys: pattern.layout ? Object.keys(pattern.layout) : null,
+      weight: pattern.weight
+    });
+    
+    // Analizza la struttura layout_structure dal database
+    if (pattern.layout) {
+      // Conta elementi layout attivi (true)
+      Object.entries(pattern.layout).forEach(([key, value]) => {
+        if (value === true) {
+          if (!layoutStructureStats[key]) {
+            layoutStructureStats[key] = { count: 0, totalWeight: 0 };
+          }
+          layoutStructureStats[key].count++;
+          layoutStructureStats[key].totalWeight += pattern.weight;
         }
-        patternFrequency[key].count++;
-        patternFrequency[key].totalWeight += pattern.weight;
-        patternFrequency[key].examples.push(section);
       });
+      
+      // Crea pattern combinati per analisi
+      const activeElements = Object.entries(pattern.layout)
+        .filter(([key, value]) => value === true)
+        .map(([key]) => key);
+      
+      if (activeElements.length > 0) {
+        const patternKey = activeElements.sort().join('+');
+        if (!patternFrequency[patternKey]) {
+          patternFrequency[patternKey] = { count: 0, totalWeight: 0, elements: activeElements };
+        }
+        patternFrequency[patternKey].count++;
+        patternFrequency[patternKey].totalWeight += pattern.weight;
+      }
     }
   });
   
+  console.log(`📊 [Pattern Analysis] Layout structure stats:`, layoutStructureStats);
+  console.log(`📊 [Pattern Analysis] Pattern combinations:`, Object.keys(patternFrequency));
+  
   // Ordina per frequenza e peso
-  return Object.entries(patternFrequency)
+  const commonPatterns = Object.entries(patternFrequency)
     .sort(([,a], [,b]) => b.totalWeight - a.totalWeight)
     .map(([type, data]) => ({
       type,
+      elements: data.elements,
       frequency: data.count,
       confidence: Math.min(95, (data.totalWeight / patterns.length) * 100),
-      examples: data.examples.slice(0, 3)
-    }));
+      description: `Layout with: ${data.elements.join(', ')}`
+    }))
+    .slice(0, 10); // Top 10 pattern
+  
+  console.log(`✅ [Pattern Analysis] Found ${commonPatterns.length} common patterns:`, 
+    commonPatterns.map(p => `${p.type} (${p.frequency}x, ${p.confidence.toFixed(1)}%)`));
+  
+  return commonPatterns;
 }
 
 // Trova il pattern più comune per un tipo specifico
