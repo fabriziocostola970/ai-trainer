@@ -97,7 +97,7 @@ async function getBusinessImagesFromDB(businessType, count = 4) {
     console.log(`🤖 Business type "${businessType}" not found in database. Generating competitor sites with OpenAI...`);
     
     // 2.1 Genera competitor sites con OpenAI
-    await generateAndScrapeCompetitors(businessType);
+    await generateAndScrapeCompetitors(businessType, businessName);
     
     // 2.2 Dopo lo scraping, genera immagini stock specifiche per il business
     console.log(`🔍 Generating new stock images for business type: ${businessType}`);
@@ -115,12 +115,13 @@ async function getBusinessImagesFromDB(businessType, count = 4) {
 }
 
 // 🤖 AUTOMATIC COMPETITOR GENERATION & SCRAPING per nuovi business types
-async function generateAndScrapeCompetitors(businessType) {
+async function generateAndScrapeCompetitors(businessType, businessName = null) {
   try {
     console.log("Starting OpenAI competitor generation for:", businessType);
 
-    // 1. Richiedi 15 competitor sites da OpenAI
-    const result = await generateCompetitorSitesWithOpenAI(businessType, `Business of type ${businessType}`);
+    // 1. Richiedi 15 competitor sites da OpenAI con business name corretto
+    const businessDescription = businessName ? `Business called ${businessName}` : `Business of type ${businessType}`;
+    const result = await generateCompetitorSitesWithOpenAI(businessName || businessType, businessDescription);
     
     if (result && result.competitors && result.competitors.length > 0) {
       const competitorSites = result.competitors;
