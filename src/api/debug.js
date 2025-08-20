@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { analyzeDatabase } = require('../analyze-database');
+const { analyzeDatabase } = require('../../analyze-database');
 
 // 🔍 GET /api/debug/database - Analyze database content remotely
 router.get('/database', async (req, res) => {
