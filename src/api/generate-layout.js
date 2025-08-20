@@ -1153,7 +1153,11 @@ async function scrapeCompetitorSite(url, businessType) {
     const problematicSites = [
       'accenture.com', 'deloitte.com', 'ey.com', 'pwc.com', 'bcg.com', 'mckinsey.com', 
       'capgemini.com', 'bain.com', 'oliverwyman.com',
-      'interflora.com', 'venus.com', 'farmgirlflowers.com', 'bloomsybox.com'
+      'interflora.com', 'venus.com', 'farmgirlflowers.com', 'bloomsybox.com',
+      // 🌸 FLORIST sites che spesso falliscono
+      'venus-et-fleur.com', 'fromyouflowers.com', 'bouqs.com', 'blooms', 'flowers.com',
+      'ftd.com', 'proflowers.com', 'teleflora.com', 'bloomnation.com', 'oliveclove.com',
+      'bloom-wild.com', 'bloomex.ca', 'florists.com', 'serenataflowers.com', '1-800-flowers.com'
     ];
     const isProblematic = problematicSites.some(site => url.includes(site));
     
@@ -1183,21 +1187,22 @@ async function scrapeCompetitorSite(url, businessType) {
     const design_analysis = {
       title: await page.title(),
       description: await page.$eval('meta[name="description"]', el => el.content).catch(() => ''),
+      keywords: await page.$eval('meta[name="keywords"]', el => el.content).catch(() => ''),
       businessType,
       scraped_at: new Date().toISOString()
     };
 
-    // Screenshot (opzionale, salva come base64)
-    const screenshot = await page.screenshot({ encoding: 'base64', fullPage: true });
-
-    // Puoi aggiungere qui estrazione di palette colori, font, immagini, ecc.
-
-    await browser.close();
-
-    // Analisi avanzata del design
+    // 🔧 FIX: Analisi avanzata del design PRIMA di chiudere il browser
     const colorPalette = await extractColorPalette(page);
     const fontFamilies = await extractFontFamilies(page);
     const layoutStructure = await extractLayoutStructure(page);
+    const mobileResponsive = await checkMobileResponsive(page);
+    
+    // Screenshot (opzionale, salva come base64)
+    const screenshot = await page.screenshot({ encoding: 'base64', fullPage: true });
+
+    // 🔧 FIX: Chiudere browser DOPO aver estratto tutti i dati
+    await browser.close();
 
     return {
       businessType,
@@ -1209,9 +1214,9 @@ async function scrapeCompetitorSite(url, businessType) {
       font_families: fontFamilies,
       layout_structure: layoutStructure,
       semantic_analysis: { 
-        title: await page.title(), 
-        description: await page.$eval('meta[name="description"]', el => el.content).catch(() => ''),
-        keywords: await page.$eval('meta[name="keywords"]', el => el.content).catch(() => '')
+        title: design_analysis.title, // 🔧 FIX: Usa title già estratto
+        description: design_analysis.description, // 🔧 FIX: Usa description già estratto
+        keywords: design_analysis.keywords || '' // 🔧 FIX: Fallback per keywords
       },
       performance_metrics: { 
         load_time: Date.now() - startTime,
@@ -1219,7 +1224,7 @@ async function scrapeCompetitorSite(url, businessType) {
       },
       accessibility_score: 75, // Placeholder
       design_score: 80, // Placeholder
-      mobile_responsive: await checkMobileResponsive(page),
+      mobile_responsive: mobileResponsive, // 🔧 FIX: Usa valore già estratto
       status: "active",
       tags: ["competitor", businessType],
       confidence_score: 70,
