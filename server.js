@@ -133,7 +133,7 @@ app.use('/api/admin', require('./src/api/admin')); */
 // 🔧 DEBUG: Training endpoint WITHOUT authentication for testing
 app.use('/debug/training', require('./src/api/training'));
 
-// 🔧 DEBUG: Database analysis endpoints (public for testing)
+// 🔧 DEBUG: Database analysis endpoints (NO AUTH for testing)
 app.use('/api/debug', require('./src/api/debug'));
 
 // API Status endpoint (with authentication)
