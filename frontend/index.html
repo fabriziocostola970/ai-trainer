@@ -197,6 +197,17 @@
             </div>
             
             <div class="action-card">
+                <h3>🗑️ Database Management</h3>
+                <p>Gestione e pulizia database training</p>
+                <button class="btn btn-danger" id="btn-clear-patterns" style="background: #e53e3e; margin-bottom: 0.5rem;">
+                    🗑️ Clear ai_design_patterns
+                </button>
+                <div style="font-size: 0.8rem; color: #e53e3e; margin-top: 0.5rem;">
+                    ⚠️ ATTENZIONE: Cancella tutti i dati di training!
+                </div>
+            </div>
+            
+            <div class="action-card">
                 <h3>🗄️ Storage Analytics</h3>
                 <p>Visualizza informazioni su dati e storage</p>
                 <button class="btn" id="btn-storage-info">Storage Stats</button>
@@ -639,6 +650,40 @@
             document.getElementById('logs').innerHTML = '<div class="info">🧹 Logs cleared</div>';
         }
         
+        // 🗑️ DATABASE MANAGEMENT FUNCTIONS
+        async function clearDesignPatterns() {
+            // Conferma utente prima di cancellare
+            if (!confirm('⚠️ ATTENZIONE!\n\nQuesto cancellerà TUTTI i dati dalla tabella ai_design_patterns.\nVuoi davvero continuare?')) {
+                return;
+            }
+            
+            try {
+                logMessage('🗑️ Cancellazione tabella ai_design_patterns...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/db-admin/clear-patterns`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    logMessage(`✅ Tabella cancellata! Eliminati ${result.deletedCount} record`, 'success');
+                    
+                    // Aggiorna le statistiche
+                    await getStorageInfo();
+                    
+                } else {
+                    const error = await response.text();
+                    logMessage(`❌ Errore cancellazione: ${error}`, 'error');
+                }
+                
+            } catch (error) {
+                logMessage(`❌ Errore di rete: ${error.message}`, 'error');
+            }
+        }
+        
         // 🤖 AI TRAINING FUNCTIONS
         async function startTraining() {
             try {
@@ -907,7 +952,10 @@
             document.getElementById('btn-test-api').addEventListener('click', testAPI);
             document.getElementById('btn-clear-logs').addEventListener('click', clearLogs);
             
-            // 🗄️ Storage Analytics event listeners
+            // �️ Database Management event listeners  
+            document.getElementById('btn-clear-patterns').addEventListener('click', clearDesignPatterns);
+            
+            // �🗄️ Storage Analytics event listeners
             document.getElementById('btn-storage-info').addEventListener('click', getStorageInfo);
             document.getElementById('btn-training-history').addEventListener('click', getTrainingHistory);
             

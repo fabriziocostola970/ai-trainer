@@ -54,4 +54,38 @@ router.post('/add-unique', async (req, res) => {
   res.json({ success: true, message: `UNIQUE constraint aggiunta su ${columnName}` });
 });
 
+// Endpoint per cancellare tutti i dati dalla tabella ai_design_patterns
+router.delete('/clear-patterns', async (req, res) => {
+  try {
+    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    await client.connect();
+    
+    // Prima conta i record esistenti
+    const countResult = await client.query('SELECT COUNT(*) FROM ai_design_patterns');
+    const recordCount = parseInt(countResult.rows[0].count);
+    
+    // Cancella tutti i record
+    await client.query('DELETE FROM ai_design_patterns');
+    
+    // Reset della sequenza auto-increment per l'ID (opzionale)
+    await client.query('ALTER SEQUENCE ai_design_patterns_id_seq RESTART WITH 1');
+    
+    await client.end();
+    
+    res.json({ 
+      success: true, 
+      message: 'Tabella ai_design_patterns svuotata completamente',
+      deletedCount: recordCount
+    });
+    
+  } catch (error) {
+    console.error('❌ Errore cancellazione tabella:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Errore durante la cancellazione della tabella',
+      details: error.message 
+    });
+  }
+});
+
 module.exports = router;
