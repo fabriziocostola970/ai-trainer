@@ -126,22 +126,53 @@ async function generateAndScrapeCompetitors(businessType) {
       const competitorSites = result.competitors;
       console.log("Generated", competitorSites.length, "competitor sites for", result.businessType);
 
-      // 2. Ottieni gli URL già presenti nel database
+      // 2. Ottieni gli URL già presenti nel database con date di aggiornamento
       const databaseStorage = new DatabaseStorage();
       const actualBusinessType = result.businessType; // Usa il business type identificato da OpenAI
       const existingResult = await databaseStorage.pool.query(
-        'SELECT source_url FROM ai_design_patterns WHERE business_type = $1',
+        'SELECT source_url, updated_at FROM ai_design_patterns WHERE business_type = $1',
         [actualBusinessType]
       );
-      const existingUrls = new Set(existingResult.rows.map(row => row.source_url));
+      
+      // 3. Crea mappa URL → data aggiornamento e identifica siti da aggiornare
+      const existingUrlsMap = new Map();
+      const urlsToUpdate = new Set();
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      
+      existingResult.rows.forEach(row => {
+        existingUrlsMap.set(row.source_url, row.updated_at);
+        
+        // Se è più vecchio di 1 mese, marcalo per aggiornamento
+        if (new Date(row.updated_at) < oneMonthAgo) {
+          urlsToUpdate.add(row.source_url);
+        }
+      });
 
-      // 3. Filtra solo i siti nuovi
-      const newSites = competitorSites.filter(site => !existingUrls.has(site.url));
-      console.log("Competitor già presenti:", existingUrls.size, "nuovi da scrappare:", newSites.length);
+      // 4. Filtra siti da processare: nuovi + vecchi da aggiornare
+      const sitesToProcess = competitorSites.filter(site => {
+        const isNew = !existingUrlsMap.has(site.url);
+        const needsUpdate = urlsToUpdate.has(site.url);
+        return isNew || needsUpdate;
+      });
+      
+      const newSitesCount = competitorSites.filter(site => !existingUrlsMap.has(site.url)).length;
+      const updateSitesCount = sitesToProcess.length - newSitesCount;
+      
+      console.log(`Competitor già presenti: ${existingUrlsMap.size}, nuovi: ${newSitesCount}, da aggiornare: ${updateSitesCount}, totale da processare: ${sitesToProcess.length}`);
 
-      // 4. Effettua scraping e salva solo i nuovi nel database
-      for (const site of newSites) {
+      // 5. Effettua scraping e salva/aggiorna nel database
+      for (const site of sitesToProcess) {
         const scrapedSite = await scrapeCompetitorSite(site.url, actualBusinessType);
+        
+        if (existingUrlsMap.has(site.url)) {
+          console.log(`🔄 Aggiornando sito esistente: ${site.url}`);
+        } else {
+          console.log(`✅ Inserendo nuovo sito: ${site.url}`);
+        }
+        
+        // Il metodo saveScrapedCompetitorToDesignPatterns gestisce automaticamente 
+        // sia INSERT che UPDATE grazie alla clausola ON CONFLICT
         await databaseStorage.saveScrapedCompetitorToDesignPatterns(scrapedSite);
       }
 
