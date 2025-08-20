@@ -1415,13 +1415,14 @@ function computeStatisticalStyles(cssPatterns, blockType) {
   
   // 📈 Calcola confidence generale
   const allPatterns = [
-    ...cssPatterns.spacing,
-    ...cssPatterns.colors, 
-    ...cssPatterns.typography,
-    ...cssPatterns.layout
+    ...(cssPatterns.spacing || []),
+    ...(cssPatterns.colors || []), 
+    ...(cssPatterns.typography || []),
+    ...(cssPatterns.layout || [])
   ];
+  
   computedStyles.confidence = allPatterns.length > 0 ? 
-    allPatterns.reduce((sum, p) => sum + (p.confidence || 50), 0) / allPatterns.length / 100 : 0.5;
+    allPatterns.reduce((sum, p) => sum + ((p.confidence || 50) / 100), 0) / allPatterns.length : 0.5;
   
   console.log(`🧮 [Statistical Styles] Generated for ${blockType} with confidence: ${(computedStyles.confidence * 100).toFixed(1)}%`);
   return computedStyles;
