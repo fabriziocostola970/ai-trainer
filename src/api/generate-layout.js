@@ -1169,7 +1169,7 @@ function findMostCommonPattern(layoutPatterns, type) {
 // Estrae elementi di menu dai pattern
 function extractMenuItemsFromPatterns(layoutPatterns) {
   const navPattern = findMostCommonPattern(layoutPatterns, 'nav');
-  if (navPattern && navPattern.examples.length > 0) {
+  if (navPattern && navPattern.examples && Array.isArray(navPattern.examples) && navPattern.examples.length > 0) {
     const menuItems = navPattern.examples[0].menuItems || navPattern.examples[0].links;
     if (Array.isArray(menuItems) && menuItems.length > 0) {
       return menuItems.slice(0, 5); // Max 5 menu items
