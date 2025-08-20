@@ -668,11 +668,12 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     const layoutSuggestions = await designAI.generateLayoutSuggestions(finalBusinessType, 'layout');
     await designAI.close();
 
-    // Genera blocchi semantici ottimizzati con contenuto AI
-    const semanticBlocks = generateEnhancedBlocks(
+    // 🧠 GENERA BLOCCHI DINAMICI basati sui dati di training
+    console.log(`🚀 [Layout] Generating dynamic blocks based on training data for ${finalBusinessType}`);
+    const semanticBlocks = await generateDynamicBlocks(
       finalBusinessType, 
       businessName, 
-      designData.design,
+      designData,
       currentBlocks,
       aiContent,
       galleryImages
@@ -829,12 +830,403 @@ function generateFallbackLayout(businessType) {
 }
 
 /**
- * Genera blocchi migliorati utilizzando i pattern di design estratti
+ * 🧠 SISTEMA DINAMICO - Genera blocchi basati sui dati di training reali
  */
-function generateEnhancedBlocks(businessType, businessName, designData, currentBlocks = [], aiContent = null, galleryImages = []) {
-  console.log(`🧠 Generating enhanced blocks for ${businessType} with AI design data${aiContent ? ' and AI content' : ''}`);
+async function generateDynamicBlocks(businessType, businessName, designData, currentBlocks = [], aiContent = null, galleryImages = []) {
+  console.log(`🧠 [Dynamic] Generating blocks for ${businessType} based on training data`);
   
-  // 🎨 ENHANCED: Working image service function
+  try {
+    // 1. Estrai pattern di layout dai competitor nel database
+    const layoutPatterns = await extractLayoutPatternsFromTraining(businessType);
+    console.log(`📊 [Dynamic] Found ${layoutPatterns.length} layout patterns for ${businessType}`);
+    
+    // 2. Genera blocchi basati sui pattern più comuni
+    const dynamicBlocks = await generateBlocksFromTrainingPatterns(layoutPatterns, businessType, businessName, aiContent, galleryImages);
+    
+    // 3. Applica stili estratti dai competitor di successo
+    const styledBlocks = applyTrainingBasedStyles(dynamicBlocks, designData, layoutPatterns);
+    
+    console.log(`✅ [Dynamic] Generated ${styledBlocks.length} blocks with confidence average: ${calculateAverageConfidence(styledBlocks)}%`);
+    
+    return styledBlocks;
+    
+  } catch (error) {
+    console.log(`⚠️ [Dynamic] Fallback to static system:`, error.message);
+    // Fallback al sistema statico se il dinamico fallisce
+    return generateEnhancedBlocksStatic(businessType, businessName, designData, currentBlocks, aiContent, galleryImages);
+  }
+}
+
+/**
+ * 📊 Estrae pattern di layout comuni dai competitor nel database
+ */
+async function extractLayoutPatternsFromTraining(businessType) {
+  try {
+    const storage = new DatabaseStorage();
+    
+    // Query per ottenere dati strutturati dai competitor
+    const result = await storage.pool.query(`
+      SELECT 
+        layout_structure,
+        semantic_analysis,
+        design_analysis,
+        confidence_score,
+        updated_at
+      FROM ai_design_patterns 
+      WHERE business_type = $1 
+        AND status = 'active'
+        AND layout_structure IS NOT NULL
+      ORDER BY confidence_score DESC, updated_at DESC
+      LIMIT 20
+    `, [businessType]);
+    
+    if (result.rows.length === 0) {
+      console.log(`📊 [Dynamic] No layout patterns found for ${businessType}, using fallback`);
+      return [];
+    }
+    
+    // Analizza e aggrega i pattern più comuni
+    const patterns = result.rows.map(row => ({
+      layout: row.layout_structure,
+      semantic: row.semantic_analysis,
+      design: row.design_analysis,
+      confidence: row.confidence_score,
+      weight: calculatePatternWeight(row.confidence_score, row.updated_at)
+    }));
+    
+    // Trova i pattern più ricorrenti
+    const commonPatterns = analyzeCommonLayoutPatterns(patterns);
+    console.log(`📊 [Dynamic] Identified ${commonPatterns.length} common patterns for ${businessType}`);
+    
+    return commonPatterns;
+    
+  } catch (error) {
+    console.log(`❌ [Dynamic] Error extracting patterns:`, error.message);
+    return [];
+  }
+}
+
+/**
+ * 🎨 Genera blocchi basati sui pattern di training
+ */
+async function generateBlocksFromTrainingPatterns(layoutPatterns, businessType, businessName, aiContent, galleryImages) {
+  const blocks = [];
+  let blockId = Date.now();
+  
+  // 1. Navigation - Sempre presente come primo blocco
+  blocks.push({
+    id: `nav-${blockId++}`,
+    type: 'navigation-modern',
+    content: {
+      title: businessName,
+      logo: getTrainingBasedImage('logo', businessType),
+      menuItems: extractMenuItemsFromPatterns(layoutPatterns) || ['Home', 'Servizi', 'Chi Siamo', 'Contatti']
+    },
+    confidence: 95,
+    source: 'training-navigation',
+    aiEnhanced: true
+  });
+  
+  // 2. Hero Section - Basata sui pattern più comuni
+  const heroPattern = findMostCommonPattern(layoutPatterns, 'hero');
+  blocks.push({
+    id: `hero-${blockId++}`,
+    type: heroPattern?.type || getOptimalHeroType(businessType),
+    content: generateHeroContentFromTraining(heroPattern, businessType, businessName, aiContent),
+    confidence: heroPattern?.confidence || 85,
+    source: 'training-hero',
+    aiEnhanced: true
+  });
+  
+  // 3. Content Blocks - Basati sui pattern di successo
+  const contentPatterns = extractContentPatterns(layoutPatterns, businessType);
+  
+  for (const pattern of contentPatterns.slice(0, 4)) { // Max 4 content blocks
+    const block = await generateBlockFromPattern(pattern, businessType, businessName, aiContent, galleryImages, blockId++);
+    if (block) {
+      blocks.push(block);
+    }
+  }
+  
+  // 4. Footer - Se presente nei pattern
+  const footerPattern = findMostCommonPattern(layoutPatterns, 'footer');
+  if (footerPattern && footerPattern.confidence > 60) {
+    blocks.push({
+      id: `footer-${blockId++}`,
+      type: 'footer-modern',
+      content: generateFooterContentFromTraining(footerPattern, businessName),
+      confidence: footerPattern.confidence,
+      source: 'training-footer',
+      aiEnhanced: true
+    });
+  }
+  
+  return blocks;
+}
+
+/**
+ * 🎨 Applica stili basati sui dati di training
+ */
+function applyTrainingBasedStyles(blocks, designData, layoutPatterns) {
+  return blocks.map(block => {
+    // Trova pattern di stile specifici per questo tipo di blocco
+    const stylePattern = findStylePatternForBlockType(layoutPatterns, block.type);
+    
+    // Combina design AI con pattern di training
+    const trainingStyles = extractStylesFromPattern(stylePattern);
+    const aiStyles = generateBlockStyles(block.type, designData);
+    
+    // Merge intelligente degli stili
+    const combinedStyles = {
+      ...aiStyles,
+      ...trainingStyles,
+      // Mantieni variabili CSS per coerenza
+      '--training-confidence': `${block.confidence}%`,
+      '--pattern-source': block.source
+    };
+    
+    return {
+      ...block,
+      style: combinedStyles,
+      cssClass: `ai-${block.type.replace('-', '_')} training-enhanced`,
+      trainingBased: true,
+      styleConfidence: stylePattern?.confidence || block.confidence
+    };
+  });
+}
+
+/**
+ * 🔍 Funzioni helper per il sistema dinamico
+ */
+
+// Calcola il peso di un pattern basato su confidence e data
+function calculatePatternWeight(confidence, updatedAt) {
+  const daysSinceUpdate = (Date.now() - new Date(updatedAt)) / (1000 * 60 * 60 * 24);
+  const recencyFactor = Math.max(0.1, 1 - (daysSinceUpdate / 30)); // Decade dopo 30 giorni
+  return confidence * recencyFactor;
+}
+
+// Analizza pattern di layout comuni
+function analyzeCommonLayoutPatterns(patterns) {
+  const patternFrequency = {};
+  
+  patterns.forEach(pattern => {
+    if (pattern.layout && pattern.layout.sections) {
+      pattern.layout.sections.forEach(section => {
+        const key = section.type || section.tag || 'unknown';
+        if (!patternFrequency[key]) {
+          patternFrequency[key] = { count: 0, totalWeight: 0, examples: [] };
+        }
+        patternFrequency[key].count++;
+        patternFrequency[key].totalWeight += pattern.weight;
+        patternFrequency[key].examples.push(section);
+      });
+    }
+  });
+  
+  // Ordina per frequenza e peso
+  return Object.entries(patternFrequency)
+    .sort(([,a], [,b]) => b.totalWeight - a.totalWeight)
+    .map(([type, data]) => ({
+      type,
+      frequency: data.count,
+      confidence: Math.min(95, (data.totalWeight / patterns.length) * 100),
+      examples: data.examples.slice(0, 3)
+    }));
+}
+
+// Trova il pattern più comune per un tipo specifico
+function findMostCommonPattern(layoutPatterns, type) {
+  return layoutPatterns.find(pattern => 
+    pattern.type.includes(type) || pattern.examples.some(ex => ex.type?.includes(type))
+  );
+}
+
+// Estrae elementi di menu dai pattern
+function extractMenuItemsFromPatterns(layoutPatterns) {
+  const navPattern = findMostCommonPattern(layoutPatterns, 'nav');
+  if (navPattern && navPattern.examples.length > 0) {
+    const menuItems = navPattern.examples[0].menuItems || navPattern.examples[0].links;
+    if (Array.isArray(menuItems) && menuItems.length > 0) {
+      return menuItems.slice(0, 5); // Max 5 menu items
+    }
+  }
+  return null;
+}
+
+// Genera contenuto hero dai pattern di training
+function generateHeroContentFromTraining(heroPattern, businessType, businessName, aiContent) {
+  const trainingContent = heroPattern?.examples?.[0] || {};
+  
+  return {
+    title: aiContent?.hero?.title || trainingContent.title || `Benvenuto in ${businessName}`,
+    subtitle: aiContent?.hero?.subtitle || trainingContent.subtitle || getBusinessSubtitle(businessType, businessName),
+    description: aiContent?.hero?.description || trainingContent.description || getBusinessDescription(businessType),
+    image: getTrainingBasedImage('hero', businessType),
+    cta: aiContent?.hero?.cta || trainingContent.cta || getBusinessCTA(businessType)
+  };
+}
+
+// Estrae pattern di contenuto per business type
+function extractContentPatterns(layoutPatterns, businessType) {
+  const contentTypes = {
+    'florist': ['gallery', 'products', 'services', 'testimonials'],
+    'restaurant': ['menu', 'gallery', 'reviews', 'reservation'],
+    'technology': ['features', 'portfolio', 'case-studies', 'pricing'],
+    'beauty': ['services', 'gallery', 'booking', 'testimonials'],
+    'default': ['features', 'gallery', 'testimonials', 'contact']
+  };
+  
+  const relevantTypes = contentTypes[businessType] || contentTypes.default;
+  
+  return layoutPatterns
+    .filter(pattern => relevantTypes.some(type => pattern.type.includes(type)))
+    .slice(0, 4)
+    .map((pattern, index) => ({
+      ...pattern,
+      priority: index + 1,
+      relevanceScore: calculateRelevanceScore(pattern, relevantTypes)
+    }))
+    .sort((a, b) => b.relevanceScore - a.relevanceScore);
+}
+
+// Genera blocco da pattern specifico
+async function generateBlockFromPattern(pattern, businessType, businessName, aiContent, galleryImages, blockId) {
+  const blockType = inferBlockTypeFromPattern(pattern);
+  if (!blockType) return null;
+  
+  return {
+    id: `${blockType}-${blockId}`,
+    type: blockType,
+    content: await generateContentFromPattern(pattern, blockType, businessType, businessName, aiContent, galleryImages),
+    confidence: pattern.confidence,
+    priority: pattern.priority,
+    source: 'training-pattern',
+    aiEnhanced: true,
+    patternBased: true
+  };
+}
+
+// Genera contenuto footer dai pattern
+function generateFooterContentFromTraining(footerPattern, businessName) {
+  const trainingContent = footerPattern?.examples?.[0] || {};
+  
+  return {
+    businessName,
+    links: trainingContent.links || ['Privacy', 'Termini', 'Contatti'],
+    social: trainingContent.social || ['facebook', 'instagram', 'twitter'],
+    copyright: `© 2025 ${businessName}. Tutti i diritti riservati.`
+  };
+}
+
+// Immagini basate sui dati di training
+function getTrainingBasedImage(type, businessType) {
+  const trainingImages = {
+    florist: {
+      logo: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=200&h=100&fit=crop&crop=center',
+      hero: 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=1200&h=600&fit=crop&crop=center'
+    },
+    restaurant: {
+      logo: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=200&h=100&fit=crop&crop=center',
+      hero: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&h=600&fit=crop&crop=center'
+    },
+    technology: {
+      logo: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=200&h=100&fit=crop&crop=center',
+      hero: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=600&fit=crop&crop=center'
+    },
+    default: {
+      logo: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=100&fit=crop&crop=center',
+      hero: 'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=1200&h=600&fit=crop&crop=center'
+    }
+  };
+  
+  const images = trainingImages[businessType] || trainingImages.default;
+  return images[type] || images.hero;
+}
+
+// Calcola confidence media
+function calculateAverageConfidence(blocks) {
+  if (blocks.length === 0) return 0;
+  const total = blocks.reduce((sum, block) => sum + (block.confidence || 70), 0);
+  return Math.round(total / blocks.length);
+}
+
+// Trova pattern di stile per tipo blocco
+function findStylePatternForBlockType(layoutPatterns, blockType) {
+  return layoutPatterns.find(pattern => 
+    pattern.type === blockType || 
+    pattern.examples.some(ex => ex.type === blockType)
+  );
+}
+
+// Estrae stili da pattern
+function extractStylesFromPattern(stylePattern) {
+  if (!stylePattern || !stylePattern.examples || stylePattern.examples.length === 0) {
+    return {};
+  }
+  
+  const example = stylePattern.examples[0];
+  return {
+    backgroundColor: example.backgroundColor || undefined,
+    color: example.color || undefined,
+    fontSize: example.fontSize || undefined,
+    padding: example.padding || undefined,
+    margin: example.margin || undefined,
+    borderRadius: example.borderRadius || undefined
+  };
+}
+
+// Helper functions per retrocompatibilità
+function calculateRelevanceScore(pattern, relevantTypes) {
+  const typeMatch = relevantTypes.filter(type => pattern.type.includes(type)).length;
+  return (typeMatch / relevantTypes.length) * pattern.confidence;
+}
+
+function inferBlockTypeFromPattern(pattern) {
+  if (pattern.type.includes('gallery')) return 'gallery-dynamic';
+  if (pattern.type.includes('menu')) return 'menu-showcase';
+  if (pattern.type.includes('features')) return 'features-grid';
+  if (pattern.type.includes('testimonials') || pattern.type.includes('reviews')) return 'testimonials-dynamic';
+  if (pattern.type.includes('contact')) return 'contact-form';
+  return pattern.type.includes('product') ? 'products-showcase' : 'content-block';
+}
+
+async function generateContentFromPattern(pattern, blockType, businessType, businessName, aiContent, galleryImages) {
+  const baseContent = {
+    title: `${blockType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} - ${businessName}`,
+    subtitle: 'Contenuto generato dai pattern di training',
+    description: 'Questo contenuto è stato generato analizzando i competitor di successo nel tuo settore.',
+    image: getTrainingBasedImage('content', businessType)
+  };
+
+  // Usa contenuto AI se disponibile
+  if (aiContent && blockType.includes('gallery')) {
+    return {
+      ...baseContent,
+      title: aiContent.gallery?.title || baseContent.title,
+      images: galleryImages.slice(0, 4),
+      items: aiContent.gallery?.items || []
+    };
+  }
+
+  if (aiContent && blockType.includes('menu')) {
+    return {
+      ...baseContent,
+      title: aiContent.menu?.title || baseContent.title,
+      items: aiContent.menu?.items || []
+    };
+  }
+
+  return baseContent;
+}
+
+/**
+ * 🔄 SISTEMA STATICO - Fallback quando il sistema dinamico non è disponibile
+ */
+function generateEnhancedBlocksStatic(businessType, businessName, designData, currentBlocks = [], aiContent = null, galleryImages = []) {
+  console.log(`🔄 [Static] Generating fallback blocks for ${businessType}`);
+  
+  // 🎨 Working image service function (statico)
   const getWorkingImage = (type, businessType) => {
     const businessImages = {
       restaurant: {
