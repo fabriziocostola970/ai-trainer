@@ -1415,8 +1415,9 @@ async function checkMobileResponsive(page) {
 
 // 🚀 Crea dati mock per siti problematici
 function createMockCompetitorData(url, businessType, startTime) {
-  // 🎯 DIVERSIFICA MOCK DATA per ogni URL
-  const urlHash = url.split('//')[1]?.split('.')[0] || 'default';
+  // 🎯 DIVERSIFICA MOCK DATA per ogni URL (FIX: usa dominio principale non www)
+  const urlParts = url.split('//')[1]?.split('.') || ['default'];
+  const urlHash = urlParts.length >= 2 ? urlParts[urlParts.length - 2] : urlParts[0]; // "1800flowers", "ftd", etc.
   const siteIndex = Math.abs(urlHash.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % 10;
   
   // 🎨 PALETTE COLORI DIVERSE per ogni sito
