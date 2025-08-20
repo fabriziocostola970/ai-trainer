@@ -834,6 +834,13 @@ function generateFallbackLayout(businessType) {
  */
 async function generateDynamicBlocks(businessType, businessName, designData, currentBlocks = [], aiContent = null, galleryImages = []) {
   console.log(`🧠 [Dynamic] Generating blocks for ${businessType} based on training data`);
+  console.log(`🧠 [Dynamic] BusinessType parameter details:`, {
+    value: businessType,
+    type: typeof businessType,
+    length: businessType?.length,
+    trimmed: businessType?.trim(),
+    charCodes: businessType ? Array.from(businessType).map(c => c.charCodeAt(0)) : null
+  });
   
   try {
     // 1. Estrai pattern di layout dai competitor nel database
