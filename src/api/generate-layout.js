@@ -76,8 +76,8 @@ async function generateBusinessContentWithAI(businessType, businessName) {
   }
 }
 
-// �️ DATABASE-DRIVEN Gallery Images (Sicuro - Solo Stock Images)
-async function getBusinessImagesFromDB(businessType, count = 4) {
+// 🖼️ DATABASE-DRIVEN Gallery Images (Sicuro - Solo Stock Images)
+async function getBusinessImagesFromDB(businessType, businessName, count = 4) {
   try {
     const storage = new DatabaseStorage();
     
@@ -90,27 +90,34 @@ async function getBusinessImagesFromDB(businessType, count = 4) {
     if (result.rows.length > 0 && result.rows[0].business_images) {
       console.log(`✅ Found existing images for business type: ${businessType}`);
       const images = result.rows[0].business_images;
-      return images.gallery ? images.gallery.slice(0, count) : [];
+      const galleryImages = images.gallery ? images.gallery.slice(0, count) : [];
+      return { images: galleryImages, identifiedBusinessType: businessType };
     }
     
     // 2. Se non esiste, prima genera competitor con OpenAI e scraping
     console.log(`🤖 Business type "${businessType}" not found in database. Generating competitor sites with OpenAI...`);
     
-    // 2.1 Genera competitor sites con OpenAI
-    await generateAndScrapeCompetitors(businessType, businessName);
+    // 2.1 Genera competitor sites con OpenAI - PASSA businessName per traduzione corretta
+    const competitorResult = await generateAndScrapeCompetitors(businessType, businessName);
     
-    // 2.2 Dopo lo scraping, genera immagini stock specifiche per il business
-    console.log(`🔍 Generating new stock images for business type: ${businessType}`);
-    const newImages = await generateStockImagesForBusiness(businessType);
+    // 2.2 Usa il businessType identificato da OpenAI (potrebbe essere diverso da quello in input)
+    const actualBusinessType = competitorResult?.identifiedBusinessType || businessType;
+    console.log(`🎯 OpenAI identified business type: ${actualBusinessType}`);
+    
+    // 2.3 Genera immagini stock specifiche per il business type corretto
+    console.log(`🔍 Generating new stock images for business type: ${actualBusinessType}`);
+    const newImages = await generateStockImagesForBusiness(actualBusinessType);
     
     // 3. Salva nel database per il futuro
-    await saveBusinessImages(businessType, newImages);
+    await saveBusinessImages(actualBusinessType, newImages);
     
-    return newImages.gallery ? newImages.gallery.slice(0, count) : [];
+    const galleryImages = newImages.gallery ? newImages.gallery.slice(0, count) : [];
+    return { images: galleryImages, identifiedBusinessType: actualBusinessType };
     
   } catch (error) {
     console.log('⚠️ Database error, using fallback stock images:', error.message);
-    return generateFallbackStockImages(businessType, count);
+    const fallbackImages = generateFallbackStockImages(businessType, count);
+    return { images: fallbackImages, identifiedBusinessType: businessType };
   }
 }
 
@@ -125,11 +132,11 @@ async function generateAndScrapeCompetitors(businessType, businessName = null) {
     
     if (result && result.competitors && result.competitors.length > 0) {
       const competitorSites = result.competitors;
-      console.log("Generated", competitorSites.length, "competitor sites for", result.businessType);
+      const actualBusinessType = result.businessType; // Usa il business type identificato da OpenAI
+      console.log("Generated", competitorSites.length, "competitor sites for", actualBusinessType);
 
       // 2. Ottieni gli URL già presenti nel database con date di aggiornamento
       const databaseStorage = new DatabaseStorage();
-      const actualBusinessType = result.businessType; // Usa il business type identificato da OpenAI
       const existingResult = await databaseStorage.pool.query(
         'SELECT source_url, updated_at FROM ai_design_patterns WHERE business_type = $1',
         [actualBusinessType]
@@ -177,15 +184,21 @@ async function generateAndScrapeCompetitors(businessType, businessName = null) {
         await databaseStorage.saveScrapedCompetitorToDesignPatterns(scrapedSite);
       }
 
-      // 5. Avvia training automatico con tutti i competitor (se serve)
+      // 6. Avvia training automatico con tutti i competitor (se serve)
       await startAutomaticTraining(actualBusinessType, competitorSites);
+      
+      // 7. RETURN: Restituisci il businessType identificato da OpenAI
+      return { identifiedBusinessType: actualBusinessType, competitorCount: competitorSites.length };
+      
     } else {
       console.log("No competitor sites generated for", businessType, "using default stock images");
+      return { identifiedBusinessType: businessType, competitorCount: 0 };
     }
 
   } catch (error) {
     console.log("Error in automatic competitor generation:", error.message);
     console.log("Continuing with stock images fallback");
+    return { identifiedBusinessType: businessType, competitorCount: 0 };
   }
 }
 
@@ -528,8 +541,15 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     console.log('🤖 Attempting AI content generation...');
     const aiContent = await generateBusinessContentWithAI(englishBusinessType, businessName);
     
-    // 🖼️ Generate gallery images from database (stock images only)
-    const galleryImages = await getBusinessImagesFromDB(englishBusinessType, 6);
+    // 🖼️ Generate gallery images from database (stock images only) - PASS businessName per traduzione
+    const imageResult = await getBusinessImagesFromDB(englishBusinessType, businessName, 6);
+    const galleryImages = imageResult.images || imageResult; // Backward compatibility
+    
+    // 🎯 FIX CRITICAL: Usa il businessType CORRETTO identificato da OpenAI
+    const finalBusinessType = imageResult.identifiedBusinessType || englishBusinessType;
+    if (finalBusinessType !== englishBusinessType) {
+      console.log(`🎯 OpenAI corrected business type: ${englishBusinessType} → ${finalBusinessType}`);
+    }
     
     // 🎨 Initialize Design Intelligence
     const designIntelligence = new DesignIntelligence();
@@ -537,8 +557,8 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     const designStartTime = Date.now();
     
     try {
-      console.log(`🎨 [Design] Generating intelligent design for "${businessName}" (${englishBusinessType})`);
-      designData = await designIntelligence.generateCompleteDesignRecommendation(englishBusinessType, { style });
+      console.log(`🎨 [Design] Generating intelligent design for "${businessName}" (${finalBusinessType})`);
+      designData = await designIntelligence.generateCompleteDesignRecommendation(finalBusinessType, { style });
       
       const designTime = Date.now() - designStartTime;
       console.log(`✅ [Design] Generated in ${designTime}ms - Confidence: ${designData.confidence}%`);
@@ -592,12 +612,12 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     // Utilizza Design Intelligence già calcolato sopra (rimuove duplicazione)
     // designData è già stato generato dalla chiamata precedente
     
-    const layoutSuggestions = await designAI.generateLayoutSuggestions(englishBusinessType, 'layout');
+    const layoutSuggestions = await designAI.generateLayoutSuggestions(finalBusinessType, 'layout');
     await designAI.close();
 
     // Genera blocchi semantici ottimizzati con contenuto AI
     const semanticBlocks = generateEnhancedBlocks(
-      englishBusinessType, 
+      finalBusinessType, 
       businessName, 
       designData.design,
       currentBlocks,
@@ -627,16 +647,17 @@ router.post('/layout', authenticateAPI, async (req, res) => {
           ].join('\n\n')
         } : null,
         metadata: {
-          businessType: englishBusinessType,
+          businessType: finalBusinessType,
           originalBusinessType: businessType,
+          translatedBusinessType: englishBusinessType,
           style,
           confidence: confidenceValue,
           generatedAt: new Date().toISOString(),
           aiEnhanced: true
         }
       },
-      businessType: englishBusinessType,
-      semanticScore: calculateSemanticScore(semanticBlocks, englishBusinessType),
+      businessType: finalBusinessType,
+      semanticScore: calculateSemanticScore(semanticBlocks, finalBusinessType),
       suggestedBlocks: semanticBlocks.map(block => block.type),
       designConfidence: confidenceValue
     };
