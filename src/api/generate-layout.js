@@ -8,6 +8,8 @@ const puppeteer = require('puppeteer');
 // 🤖 OpenAI content generation with fallback
 async function generateBusinessContentWithAI(businessType, businessName) {
   try {
+    console.log(`🔄 [OpenAI Content] Starting generation for: businessType="${businessType}", businessName="${businessName}"`);
+    
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     });
@@ -59,6 +61,11 @@ async function generateBusinessContentWithAI(businessType, businessName) {
       }
     }`;
 
+    console.log(`📤 [OpenAI Content] Request details:`);
+    console.log(`   Prompt length: ${prompt.length} chars`);
+    console.log(`   Model: gpt-3.5-turbo`);
+    console.log(`   Max tokens: 1500`);
+
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
@@ -66,11 +73,23 @@ async function generateBusinessContentWithAI(businessType, businessName) {
       temperature: 0.7
     });
 
+    console.log(`📥 [OpenAI Content] Response received:`);
+    console.log(`   Response length: ${completion.choices[0].message.content.length} chars`);
+    console.log(`   Response preview: ${completion.choices[0].message.content.substring(0, 150)}...`);
+
     const content = JSON.parse(completion.choices[0].message.content);
-    console.log('✅ Generated AI content for:', businessName);
+    console.log(`✅ [OpenAI Content] JSON parsing successful`);
+    console.log(`✅ Generated AI content for: ${businessName}`);
+    console.log(`   Sections generated: ${Object.keys(content).join(', ')}`);
     return content;
     
   } catch (error) {
+    console.log(`❌ [OpenAI Content] Generation failed:`, {
+      error: error.message,
+      stack: error.stack?.split('\n')[0],
+      businessType,
+      businessName
+    });
     console.log('⚠️ AI content generation failed, using fallback:', error.message);
     return null;
   }
@@ -205,12 +224,15 @@ async function generateAndScrapeCompetitors(businessType, businessName = null) {
 // 🤖 Genera competitor sites usando OpenAI (chiamata diretta)
 async function generateCompetitorSitesWithOpenAI(businessName, businessDescription) {
   try {
+    console.log(`🔄 [OpenAI] Starting generation for: businessName="${businessName}", description="${businessDescription}"`);
+    
     if (!process.env.OPENAI_API_KEY) {
       console.log('❌ OpenAI API key not configured');
       return null;
     }
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    console.log('✅ [OpenAI] Client initialized successfully');
     
     // 🌐 STEP 1: Traduci business name in inglese (qualsiasi lingua → inglese)
     const translationPrompt = `Translate this business name to English, keeping the business context clear:
@@ -224,6 +246,10 @@ Rules:
 
 Provide ONLY the English translation, no explanation.`;
 
+    console.log(`📤 [OpenAI] STEP 1 - Translation Request:`);
+    console.log(`   Input: "${businessName}"`);
+    console.log(`   Prompt length: ${translationPrompt.length} chars`);
+
     const translationResponse = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: translationPrompt }],
@@ -232,6 +258,9 @@ Provide ONLY the English translation, no explanation.`;
     });
 
     const englishBusinessName = translationResponse.choices[0].message.content.trim().replace(/"/g, '');
+    console.log(`📥 [OpenAI] STEP 1 - Translation Response:`);
+    console.log(`   Raw response: "${translationResponse.choices[0].message.content}"`);
+    console.log(`   Cleaned result: "${englishBusinessName}"`);
     console.log(`🌐 Universal Translation: "${businessName}" → "${englishBusinessName}"`);
 
     // 🎯 STEP 2: Usa business name in inglese per classificazione accurata
@@ -280,6 +309,12 @@ Respond ONLY with JSON format:
   ]
 }`;
 
+    console.log(`📤 [OpenAI] STEP 2 - Classification Request:`);
+    console.log(`   English business name: "${englishBusinessName}"`);
+    console.log(`   Business description: "${businessDescription}"`);
+    console.log(`   Prompt length: ${prompt.length} chars`);
+    console.log(`   Expected categories: florist, bakery, restaurant, gym, hotel, retail, beauty, automotive, tech-startup, real-estate, travel, services`);
+
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
@@ -287,23 +322,41 @@ Respond ONLY with JSON format:
       temperature: 0.3
     });
 
+    console.log(`📥 [OpenAI] STEP 2 - Classification Response:`);
+    console.log(`   Raw response length: ${completion.choices[0].message.content.length} chars`);
+    console.log(`   Raw response preview: ${completion.choices[0].message.content.substring(0, 200)}...`);
+
     let result;
     try {
       result = JSON.parse(completion.choices[0].message.content);
+      console.log(`✅ [OpenAI] JSON parsing successful`);
+      console.log(`   Identified businessType: "${result.businessType}"`);
+      console.log(`   Number of competitors: ${result.competitors?.length || 0}`);
     } catch (err) {
-      console.log('❌ OpenAI response parsing failed:', completion.choices[0].message.content);
+      console.log('❌ [OpenAI] JSON parsing failed:');
+      console.log(`   Error: ${err.message}`);
+      console.log(`   Full response: ${completion.choices[0].message.content}`);
       return null;
     }
 
     if (!result.businessType || !Array.isArray(result.competitors)) {
-      console.log('❌ OpenAI response missing businessType or competitors:', result);
+      console.log('❌ [OpenAI] Response validation failed:');
+      console.log(`   businessType present: ${!!result.businessType}`);
+      console.log(`   competitors is array: ${Array.isArray(result.competitors)}`);
+      console.log(`   Full result:`, result);
       return null;
     }
 
-    console.log(`🎯 OpenAI generated: ${result.businessType}, competitors: ${result.competitors.length}`);
+    console.log(`🎯 [OpenAI] Final result: businessType="${result.businessType}", competitors=${result.competitors.length}`);
+    console.log(`🎯 [OpenAI] Competitor list:`, result.competitors.map(c => c.name).join(', '));
     return result;
   } catch (error) {
-    console.log(`❌ OpenAI competitors generation failed: ${error.message}`);
+    console.log(`❌ [OpenAI] Generation failed:`, {
+      error: error.message,
+      stack: error.stack?.split('\n')[0],
+      businessName,
+      businessDescription
+    });
     return null;
   }
 }
