@@ -663,7 +663,8 @@
                 const response = await fetch(`${API_BASE}/api/db-admin/clear-patterns`, {
                     method: 'DELETE',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
                     }
                 });
                 
