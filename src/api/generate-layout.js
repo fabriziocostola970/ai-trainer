@@ -197,8 +197,32 @@ async function generateCompetitorSitesWithOpenAI(businessName, businessDescripti
     }
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const prompt = `Given the following business details:
+    
+    // 🌐 STEP 1: Traduci business name in inglese (qualsiasi lingua → inglese)
+    const translationPrompt = `Translate this business name to English, keeping the business context clear:
 Business name: "${businessName}"
+
+Rules:
+- If already in English, return as-is
+- If in any other language (Italian, German, French, Spanish, Polish, Danish, etc.), translate to English
+- Keep business type clear (e.g., "Fioraio" = "Flower Shop", "Bäckerei" = "Bakery", "Fleuriste" = "Florist")
+- Preserve location if present (e.g., "Roma" = "Rome", "Berlin" = "Berlin")
+
+Provide ONLY the English translation, no explanation.`;
+
+    const translationResponse = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: translationPrompt }],
+      max_tokens: 100,
+      temperature: 0.1
+    });
+
+    const englishBusinessName = translationResponse.choices[0].message.content.trim().replace(/"/g, '');
+    console.log(`🌐 Universal Translation: "${businessName}" → "${englishBusinessName}"`);
+
+    // 🎯 STEP 2: Usa business name in inglese per classificazione accurata
+    const prompt = `Given the following business details:
+Business name: "${englishBusinessName}"
 Business description: "${businessDescription}"
 
 1. Infer the most appropriate businessType for this business. Use specific categories:
@@ -493,23 +517,11 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       });
     }
 
-    // 🤖 SMART CLASSIFICATION: Se abbiamo businessName, riclassifica con OpenAI
-    let correctedBusinessType = businessType;
-    if (businessName && businessType === 'services') {
-      console.log(`🔄 [Smart Classification] Attempting to reclassify "${businessName}" from "services"`);
-      try {
-        const reclassificationResult = await generateCompetitorSitesWithOpenAI(businessName, `Business called ${businessName}`);
-        if (reclassificationResult && reclassificationResult.businessType && reclassificationResult.businessType !== 'services') {
-          correctedBusinessType = reclassificationResult.businessType;
-          console.log(`✅ [Smart Classification] Corrected: "${businessName}" → ${correctedBusinessType}`);
-        }
-      } catch (error) {
-        console.log(`⚠️ [Smart Classification] Failed, using original: ${error.message}`);
-      }
-    }
-
+    // 🔧 FIX: Rispetta sempre la scelta dell'utente - NO Smart Classification
     // Traduzione business type per compatibilità con training data
-    const englishBusinessType = BUSINESS_TYPE_MAPPING[correctedBusinessType.toLowerCase()]?.[0] || correctedBusinessType;
+    const englishBusinessType = BUSINESS_TYPE_MAPPING[businessType.toLowerCase()]?.[0] || businessType;
+    
+    console.log(`🔄 Business type mapping: ${businessType} → ${englishBusinessType}`);
     
     // 🤖 Try to generate content with OpenAI first
     console.log('🤖 Attempting AI content generation...');
