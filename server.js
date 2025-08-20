@@ -106,6 +106,44 @@ app.get('/debug/db', async (req, res) => {
   }
 });
 
+// 🔧 DEBUG: Check business types in database
+app.get('/debug/business-types', async (req, res) => {
+  try {
+    const DatabaseStorage = require('./src/storage/database-storage');
+    const storage = new DatabaseStorage();
+    
+    const result = await storage.pool.query(`
+      SELECT business_type, COUNT(*) as count 
+      FROM ai_design_patterns 
+      GROUP BY business_type 
+      ORDER BY count DESC
+    `);
+    
+    const floristCheck = await storage.pool.query(`
+      SELECT id, business_type, layout_structure, semantic_analysis 
+      FROM ai_design_patterns 
+      WHERE business_type ILIKE '%florist%' 
+      OR business_type ILIKE '%flower%' 
+      OR business_type ILIKE '%flor%'
+      LIMIT 5
+    `);
+    
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      business_types: result.rows,
+      florist_records: floristCheck.rows,
+      total_records: result.rows.reduce((sum, row) => sum + parseInt(row.count), 0)
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'Database query failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Training Interface Routes (with authentication)
 app.use('/training', authenticateAPI, require('./src/training/training-interface'));
 
