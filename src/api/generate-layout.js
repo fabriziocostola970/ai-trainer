@@ -1031,7 +1031,8 @@ async function applyTrainingBasedStyles(blocks, designData, layoutPatterns) {
     }
   }
   
-  const avgConfidence = styledBlocks.reduce((sum, b) => sum + (b.styleConfidence || 0), 0) / styledBlocks.length;
+  const avgConfidence = styledBlocks && styledBlocks.length > 0 ? 
+    styledBlocks.reduce((sum, b) => sum + (b.styleConfidence || 0), 0) / styledBlocks.length : 0;
   console.log(`✅ [Training Styles] Applied dynamic styles with average confidence: ${(avgConfidence * 100).toFixed(1)}%`);
   
   return styledBlocks;
@@ -1188,7 +1189,7 @@ function getTrainingBasedImage(type, businessType) {
 
 // Calcola confidence media
 function calculateAverageConfidence(blocks) {
-  if (blocks.length === 0) return 0;
+  if (!blocks || blocks.length === 0) return 0;
   const total = blocks.reduce((sum, block) => sum + (block.confidence || 70), 0);
   return Math.round(total / blocks.length);
 }
