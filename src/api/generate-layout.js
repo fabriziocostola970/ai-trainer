@@ -965,34 +965,76 @@ async function generateBlocksFromTrainingPatterns(layoutPatterns, businessType, 
 }
 
 /**
- * 🎨 Applica stili basati sui dati di training
+ * 🎨 Applica stili basati sui dati di training REALI
  */
-function applyTrainingBasedStyles(blocks, designData, layoutPatterns) {
-  return blocks.map(block => {
-    // Trova pattern di stile specifici per questo tipo di blocco
-    const stylePattern = findStylePatternForBlockType(layoutPatterns, block.type);
-    
-    // Combina design AI con pattern di training
-    const trainingStyles = extractStylesFromPattern(stylePattern);
-    const aiStyles = generateBlockStyles(block.type, designData);
-    
-    // Merge intelligente degli stili
-    const combinedStyles = {
-      ...aiStyles,
-      ...trainingStyles,
-      // Mantieni variabili CSS per coerenza
-      '--training-confidence': `${block.confidence}%`,
-      '--pattern-source': block.source
-    };
-    
-    return {
-      ...block,
-      style: combinedStyles,
-      cssClass: `ai-${block.type.replace('-', '_')} training-enhanced`,
-      trainingBased: true,
-      styleConfidence: stylePattern?.confidence || block.confidence
-    };
-  });
+async function applyTrainingBasedStyles(blocks, designData, layoutPatterns) {
+  console.log(`🎨 [Training Styles] Applying dynamic styles to ${blocks.length} blocks`);
+  
+  const styledBlocks = [];
+  
+  for (const block of blocks) {
+    try {
+      // 🧠 Genera CSS completamente dinamico dai pattern dei competitor
+      const dynamicStyles = await generateDynamicCSS(
+        block.type, 
+        block.businessType || 'general', 
+        layoutPatterns, 
+        designData
+      );
+      
+      // 📊 Log del confidence score
+      const confidence = dynamicStyles['--pattern-confidence'] || 0;
+      console.log(`🎯 [Block Styles] ${block.type}: ${(confidence * 100).toFixed(1)}% confidence from training data`);
+      
+      // 🎨 Applica stili dinamici al blocco
+      const styledBlock = {
+        ...block,
+        style: {
+          ...(block.style || {}),
+          ...dynamicStyles
+        },
+        cssClass: `ai-${block.type.replace(/-/g, '_')} dynamic-generated`,
+        trainingBased: true,
+        styleConfidence: confidence,
+        metadata: {
+          ...(block.metadata || {}),
+          trainingBased: true,
+          confidence: confidence,
+          patternsUsed: layoutPatterns.length,
+          generatedAt: new Date().toISOString()
+        }
+      };
+      
+      styledBlocks.push(styledBlock);
+      
+    } catch (error) {
+      console.log(`⚠️ [Training Styles] Error styling block ${block.type}: ${error.message}`);
+      
+      // 🔄 Fallback a stili di base se il sistema dinamico fallisce
+      const fallbackStyles = generateFallbackCSS(block.type, designData);
+      styledBlocks.push({
+        ...block,
+        style: {
+          ...(block.style || {}),
+          ...fallbackStyles
+        },
+        cssClass: `ai-${block.type.replace(/-/g, '_')} fallback-styles`,
+        trainingBased: false,
+        styleConfidence: 0.3,
+        metadata: {
+          ...(block.metadata || {}),
+          trainingBased: false,
+          confidence: 0.3,
+          fallback: true
+        }
+      });
+    }
+  }
+  
+  const avgConfidence = styledBlocks.reduce((sum, b) => sum + (b.styleConfidence || 0), 0) / styledBlocks.length;
+  console.log(`✅ [Training Styles] Applied dynamic styles with average confidence: ${(avgConfidence * 100).toFixed(1)}%`);
+  
+  return styledBlocks;
 }
 
 /**
@@ -1218,6 +1260,277 @@ async function generateContentFromPattern(pattern, blockType, businessType, busi
   }
 
   return baseContent;
+}
+
+/**
+ * 🎨 SISTEMA DINAMICO - Genera CSS dai pattern reali dei competitor
+ */
+async function generateDynamicCSS(blockType, businessType, layoutPatterns, designData) {
+  console.log(`🎨 [Dynamic CSS] Generating styles for ${blockType} based on ${businessType} patterns`);
+  
+  try {
+    // 📊 Analizza pattern CSS dai competitor reali
+    const cssPatterns = await analyzeCSSPatternsFromTraining(blockType, businessType, layoutPatterns);
+    
+    // 🧮 Calcola stili statistici basati sui dati
+    const computedStyles = computeStatisticalStyles(cssPatterns, blockType);
+    
+    // 🎯 Integra con colori AI-generated
+    const colors = designData?.design?.colors || {};
+    const typography = designData?.design?.typography || {};
+    
+    // 🔄 Combina pattern estratti con design AI
+    return {
+      ...computedStyles,
+      '--primary-color': colors.primary || computedStyles.primaryColor,
+      '--secondary-color': colors.secondary || computedStyles.secondaryColor,
+      '--accent-color': colors.accent || computedStyles.accentColor,
+      '--font-primary': typography.primary || computedStyles.fontFamily,
+      '--font-secondary': typography.secondary || computedStyles.secondaryFont,
+      // 📈 Confidence score basato su quanti competitor usano questo pattern
+      '--pattern-confidence': computedStyles.confidence || 0.5
+    };
+  } catch (error) {
+    console.log(`⚠️ [Dynamic CSS] Error generating styles for ${blockType}: ${error.message}`);
+    return generateFallbackCSS(blockType, designData);
+  }
+}
+
+/**
+ * 📊 Analizza pattern CSS dai dati di training reali
+ */
+async function analyzeCSSPatternsFromTraining(blockType, businessType, layoutPatterns) {
+  const patterns = {
+    spacing: [],
+    colors: [],
+    typography: [],
+    layout: [],
+    effects: []
+  };
+  
+  // 🔍 Estrae CSS patterns dai competitor nel database
+  for (const pattern of layoutPatterns) {
+    try {
+      const designAnalysis = pattern.design_analysis ? JSON.parse(pattern.design_analysis) : {};
+      const layoutStructure = pattern.layout_structure ? JSON.parse(pattern.layout_structure) : {};
+      
+      // 📏 Analizza spacing patterns
+      if (designAnalysis.spacing) {
+        patterns.spacing.push({
+          padding: designAnalysis.spacing.padding,
+          margin: designAnalysis.spacing.margin,
+          gap: designAnalysis.spacing.gap,
+          confidence: pattern.confidence || 50
+        });
+      }
+      
+      // 🎨 Analizza color patterns  
+      if (designAnalysis.colors) {
+        patterns.colors.push({
+          primary: designAnalysis.colors.primary,
+          secondary: designAnalysis.colors.secondary,
+          background: designAnalysis.colors.background,
+          confidence: pattern.confidence || 50
+        });
+      }
+      
+      // 📝 Analizza typography patterns
+      if (designAnalysis.typography) {
+        patterns.typography.push({
+          fontFamily: designAnalysis.typography.primary,
+          fontSize: designAnalysis.typography.sizes,
+          fontWeight: designAnalysis.typography.weights,
+          confidence: pattern.confidence || 50
+        });
+      }
+      
+      // 📐 Analizza layout patterns specifici per blockType
+      if (layoutStructure.blocks) {
+        const relevantBlock = layoutStructure.blocks.find(b => 
+          b.type?.includes(blockType) || 
+          blockType.includes(b.type) ||
+          b.component?.includes(blockType)
+        );
+        
+        if (relevantBlock && relevantBlock.styles) {
+          patterns.layout.push({
+            ...relevantBlock.styles,
+            confidence: pattern.confidence || 50
+          });
+        }
+      }
+      
+    } catch (parseError) {
+      console.log(`⚠️ [CSS Analysis] Error parsing pattern data: ${parseError.message}`);
+    }
+  }
+  
+  console.log(`📊 [CSS Analysis] Found patterns - spacing: ${patterns.spacing.length}, colors: ${patterns.colors.length}, typography: ${patterns.typography.length}, layout: ${patterns.layout.length}`);
+  return patterns;
+}
+
+/**
+ * 🧮 Calcola stili statistici basati sui pattern dei competitor
+ */
+function computeStatisticalStyles(cssPatterns, blockType) {
+  const computedStyles = {};
+  
+  // 📏 Calcola spacing più comune (weighted average)
+  if (cssPatterns.spacing.length > 0) {
+    const paddingValues = cssPatterns.spacing
+      .filter(s => s.padding)
+      .map(s => ({ value: parseInt(s.padding) || 16, confidence: s.confidence }));
+      
+    if (paddingValues.length > 0) {
+      const weightedPadding = calculateWeightedAverage(paddingValues);
+      computedStyles.padding = `${Math.round(weightedPadding)}px`;
+    }
+    
+    const marginValues = cssPatterns.spacing
+      .filter(s => s.margin)
+      .map(s => ({ value: parseInt(s.margin) || 0, confidence: s.confidence }));
+      
+    if (marginValues.length > 0) {
+      const weightedMargin = calculateWeightedAverage(marginValues);
+      computedStyles.margin = `${Math.round(weightedMargin)}px`;
+    }
+  }
+  
+  // 🎨 Calcola colori più popolari
+  if (cssPatterns.colors.length > 0) {
+    computedStyles.primaryColor = findMostPopularColor(cssPatterns.colors.map(c => c.primary));
+    computedStyles.secondaryColor = findMostPopularColor(cssPatterns.colors.map(c => c.secondary));
+    computedStyles.backgroundColor = findMostPopularColor(cssPatterns.colors.map(c => c.background));
+  }
+  
+  // 📝 Calcola font più usato
+  if (cssPatterns.typography.length > 0) {
+    const fonts = cssPatterns.typography.map(t => t.fontFamily).filter(Boolean);
+    computedStyles.fontFamily = findMostCommonValue(fonts) || 'Inter, sans-serif';
+  }
+  
+  // 📐 Applica layout patterns specifici per tipo
+  const layoutStyles = generateBlockTypeSpecificStyles(blockType, cssPatterns.layout);
+  Object.assign(computedStyles, layoutStyles);
+  
+  // 📈 Calcola confidence generale
+  const allPatterns = [
+    ...cssPatterns.spacing,
+    ...cssPatterns.colors, 
+    ...cssPatterns.typography,
+    ...cssPatterns.layout
+  ];
+  computedStyles.confidence = allPatterns.length > 0 ? 
+    allPatterns.reduce((sum, p) => sum + (p.confidence || 50), 0) / allPatterns.length / 100 : 0.5;
+  
+  console.log(`🧮 [Statistical Styles] Generated for ${blockType} with confidence: ${(computedStyles.confidence * 100).toFixed(1)}%`);
+  return computedStyles;
+}
+
+/**
+ * 🎯 Genera stili specifici per tipo di blocco basati sui pattern reali
+ */
+function generateBlockTypeSpecificStyles(blockType, layoutPatterns) {
+  const styles = {};
+  
+  // 🔍 Analizza pattern per tipo specifico
+  const relevantPatterns = layoutPatterns.filter(pattern => 
+    pattern.display || pattern.flexDirection || pattern.gridTemplate
+  );
+  
+  if (blockType.includes('navigation') || blockType.includes('nav')) {
+    // 🧭 Navigation patterns dai competitor
+    const hasSticky = relevantPatterns.some(p => p.position === 'sticky' || p.position === 'fixed');
+    if (hasSticky) {
+      styles.position = 'sticky';
+      styles.top = '0';
+      styles.zIndex = '1000';
+    }
+    
+    const commonBackground = findMostCommonValue(relevantPatterns.map(p => p.backgroundColor));
+    if (commonBackground) {
+      styles.backgroundColor = commonBackground;
+    }
+    
+  } else if (blockType.includes('hero')) {
+    // 🦸 Hero patterns dai competitor
+    const textAligns = relevantPatterns.map(p => p.textAlign).filter(Boolean);
+    styles.textAlign = findMostCommonValue(textAligns) || 'center';
+    
+    const borderRadius = relevantPatterns.map(p => parseInt(p.borderRadius)).filter(n => !isNaN(n));
+    if (borderRadius.length > 0) {
+      styles.borderRadius = `${Math.round(borderRadius.reduce((a, b) => a + b) / borderRadius.length)}px`;
+    }
+    
+  } else if (blockType.includes('gallery') || blockType.includes('grid')) {
+    // 🖼️ Gallery patterns dai competitor
+    const hasGrid = relevantPatterns.some(p => p.display === 'grid');
+    if (hasGrid) {
+      styles.display = 'grid';
+      const gridCols = findMostCommonValue(relevantPatterns.map(p => p.gridTemplateColumns));
+      if (gridCols) {
+        styles.gridTemplateColumns = gridCols;
+      }
+    }
+  }
+  
+  return styles;
+}
+
+/**
+ * 🔢 Helper functions per calcoli statistici
+ */
+function calculateWeightedAverage(values) {
+  const totalWeight = values.reduce((sum, v) => sum + v.confidence, 0);
+  const weightedSum = values.reduce((sum, v) => sum + (v.value * v.confidence), 0);
+  return totalWeight > 0 ? weightedSum / totalWeight : values[0]?.value || 16;
+}
+
+function findMostPopularColor(colors) {
+  const validColors = colors.filter(Boolean);
+  if (validColors.length === 0) return '#3B82F6';
+  
+  const colorCount = {};
+  validColors.forEach(color => {
+    colorCount[color] = (colorCount[color] || 0) + 1;
+  });
+  
+  return Object.entries(colorCount)
+    .sort(([,a], [,b]) => b - a)[0][0];
+}
+
+function findMostCommonValue(values) {
+  const validValues = values.filter(Boolean);
+  if (validValues.length === 0) return null;
+  
+  const valueCount = {};
+  validValues.forEach(value => {
+    valueCount[value] = (valueCount[value] || 0) + 1;
+  });
+  
+  return Object.entries(valueCount)
+    .sort(([,a], [,b]) => b - a)[0][0];
+}
+
+/**
+ * 🔄 Fallback CSS quando i pattern non sono sufficienti
+ */
+function generateFallbackCSS(blockType, designData) {
+  const colors = designData?.design?.colors || {};
+  const typography = designData?.design?.typography || {};
+  
+  return {
+    backgroundColor: colors.background || '#FFFFFF',
+    color: colors.text || '#1F2937',
+    fontFamily: typography.primary || 'Inter, sans-serif',
+    fontSize: '16px',
+    lineHeight: '1.6',
+    padding: '1rem',
+    '--primary-color': colors.primary || '#3B82F6',
+    '--secondary-color': colors.secondary || '#8B5CF6',
+    '--accent-color': colors.accent || '#F59E0B',
+    '--pattern-confidence': 0.3
+  };
 }
 
 /**
