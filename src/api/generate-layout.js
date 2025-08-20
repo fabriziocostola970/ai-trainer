@@ -871,6 +871,8 @@ async function extractLayoutPatternsFromTraining(businessType) {
   try {
     const storage = new DatabaseStorage();
     
+    console.log(`🔍 [Dynamic] Searching patterns for business_type: "${businessType}"`);
+    
     // Query per ottenere dati strutturati dai competitor
     const result = await storage.pool.query(`
       SELECT 
@@ -878,7 +880,8 @@ async function extractLayoutPatternsFromTraining(businessType) {
         semantic_analysis,
         design_analysis,
         confidence_score,
-        updated_at
+        updated_at,
+        source_url
       FROM ai_design_patterns 
       WHERE business_type = $1 
         AND status = 'active'
@@ -887,7 +890,19 @@ async function extractLayoutPatternsFromTraining(businessType) {
       LIMIT 20
     `, [businessType]);
     
+    console.log(`🔍 [Dynamic] Query executed for "${businessType}": found ${result.rows.length} records`);
+    
     if (result.rows.length === 0) {
+      // Prova con una query più ampia per debug
+      const debugResult = await storage.pool.query(`
+        SELECT business_type, COUNT(*) as count, status
+        FROM ai_design_patterns 
+        WHERE business_type ILIKE $1 
+        GROUP BY business_type, status
+        ORDER BY count DESC
+      `, [`%${businessType}%`]);
+      
+      console.log(`📊 [Dynamic] Debug search for "${businessType}":`, debugResult.rows);
       console.log(`📊 [Dynamic] No layout patterns found for ${businessType}, using fallback`);
       return [];
     }
