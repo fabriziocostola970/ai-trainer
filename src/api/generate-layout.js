@@ -846,6 +846,12 @@ async function generateDynamicBlocks(businessType, businessName, designData, cur
     // 3. Applica stili estratti dai competitor di successo
     const styledBlocks = await applyTrainingBasedStyles(dynamicBlocks, designData, layoutPatterns);
     
+    // 🔒 Verifica che styledBlocks sia un array valido
+    if (!Array.isArray(styledBlocks)) {
+      console.log(`⚠️ [Dynamic] styledBlocks is not an array, type: ${typeof styledBlocks}`);
+      throw new Error('styledBlocks is not an array');
+    }
+    
     const avgConfidence = calculateAverageConfidence(styledBlocks);
     console.log(`✅ [Dynamic] Generated ${styledBlocks.length} blocks with confidence average: ${avgConfidence}%`);
     
@@ -1036,7 +1042,8 @@ async function applyTrainingBasedStyles(blocks, designData, layoutPatterns) {
     styledBlocks.reduce((sum, b) => sum + (b.styleConfidence || 0), 0) / styledBlocks.length : 0;
   console.log(`✅ [Training Styles] Applied dynamic styles with average confidence: ${(avgConfidence * 100).toFixed(1)}%`);
   
-  return styledBlocks;
+  // 🔒 Garantisce sempre che ritorni un array
+  return Array.isArray(styledBlocks) ? styledBlocks : [];
 }
 
 /**
