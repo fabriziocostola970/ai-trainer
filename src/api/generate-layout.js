@@ -844,9 +844,10 @@ async function generateDynamicBlocks(businessType, businessName, designData, cur
     const dynamicBlocks = await generateBlocksFromTrainingPatterns(layoutPatterns, businessType, businessName, aiContent, galleryImages);
     
     // 3. Applica stili estratti dai competitor di successo
-    const styledBlocks = applyTrainingBasedStyles(dynamicBlocks, designData, layoutPatterns);
+    const styledBlocks = await applyTrainingBasedStyles(dynamicBlocks, designData, layoutPatterns);
     
-    console.log(`✅ [Dynamic] Generated ${styledBlocks.length} blocks with confidence average: ${calculateAverageConfidence(styledBlocks)}%`);
+    const avgConfidence = calculateAverageConfidence(styledBlocks);
+    console.log(`✅ [Dynamic] Generated ${styledBlocks.length} blocks with confidence average: ${avgConfidence}%`);
     
     return styledBlocks;
     
