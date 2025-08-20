@@ -405,7 +405,21 @@ async function saveBusinessImages(businessType, businessImages, confidence = 85)
       ]);
     }
     
+    // 🔧 FIX: Aggiorna ANCHE tutti i competitor records con le immagini
+    await storage.pool.query(`
+      UPDATE ai_design_patterns SET
+        business_images = $2,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE business_type = $1 
+      AND source_url IS NOT NULL 
+      AND (business_images IS NULL OR business_images = '{}')
+    `, [
+      businessType,
+      JSON.stringify(businessImages)
+    ]);
+    
     console.log(`✅ Saved stock images for business type: ${businessType}`);
+    console.log(`✅ Updated competitor records with business images`);
   } catch (error) {
     console.log(`⚠️ Failed to save business images: ${error.message}`);
   }
@@ -1396,47 +1410,120 @@ async function checkMobileResponsive(page) {
 
 // 🚀 Crea dati mock per siti problematici
 function createMockCompetitorData(url, businessType, startTime) {
-  const mockColors = ['#2563eb', '#1e40af', '#1d4ed8', '#3b82f6', '#60a5fa'];
-  const mockFonts = ['Arial', 'Helvetica', 'sans-serif'];
+  // 🎯 DIVERSIFICA MOCK DATA per ogni URL
+  const urlHash = url.split('//')[1]?.split('.')[0] || 'default';
+  const siteIndex = Math.abs(urlHash.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % 10;
+  
+  // 🎨 PALETTE COLORI DIVERSE per ogni sito
+  const colorPalettes = [
+    ['#2563eb', '#1e40af', '#1d4ed8', '#3b82f6', '#60a5fa'],
+    ['#dc2626', '#b91c1c', '#991b1b', '#ef4444', '#f87171'],
+    ['#059669', '#047857', '#065f46', '#10b981', '#34d399'],
+    ['#7c3aed', '#6d28d9', '#5b21b6', '#8b5cf6', '#a78bfa'],
+    ['#ea580c', '#c2410c', '#9a3412', '#f97316', '#fb923c'],
+    ['#0891b2', '#0e7490', '#155e75', '#06b6d4', '#22d3ee'],
+    ['#be123c', '#9f1239', '#881337', '#e11d48', '#f43f5e'],
+    ['#4338ca', '#3730a3', '#312e81', '#5b21b6', '#7c3aed'],
+    ['#166534', '#15803d', '#16a34a', '#22c55e', '#4ade80'],
+    ['#b45309', '#d97706', '#f59e0b', '#fbbf24', '#fde047']
+  ];
+  
+  // 🔤 FONT FAMILIES DIVERSE per ogni sito
+  const fontSets = [
+    ['Inter', 'system-ui', 'sans-serif'],
+    ['Roboto', 'Arial', 'sans-serif'],
+    ['Open Sans', 'Helvetica', 'sans-serif'],
+    ['Lato', 'Verdana', 'sans-serif'],
+    ['Poppins', 'Geneva', 'sans-serif'],
+    ['Montserrat', 'Tahoma', 'sans-serif'],
+    ['Source Sans Pro', 'Calibri', 'sans-serif'],
+    ['Nunito', 'Segoe UI', 'sans-serif'],
+    ['Raleway', 'Trebuchet MS', 'sans-serif'],
+    ['Playfair Display', 'Georgia', 'serif']
+  ];
+  
+  // 📝 CONTENUTI HTML/CSS DIVERSI per ogni sito
+  const htmlTemplates = [
+    `<html><head><title>Premium ${businessType} Services</title></head><body><header><nav>Home | Services | About</nav></header><main><h1>Excellence in ${businessType}</h1><p>Professional quality service</p></main></body></html>`,
+    `<html><head><title>Modern ${businessType} Solutions</title></head><body><div class="container"><h1>Innovative ${businessType}</h1><section>Your trusted partner</section></div></body></html>`,
+    `<html><head><title>Elite ${businessType} Company</title></head><body><header class="hero"><h1>Leading ${businessType} Provider</h1></header><main>Quality guaranteed</main></body></html>`,
+    `<html><head><title>${businessType} Experts</title></head><body><nav>Menu</nav><article><h1>Professional ${businessType}</h1><p>Experience matters</p></article></body></html>`,
+    `<html><head><title>Superior ${businessType}</title></head><body><div id="main"><h1>Top-rated ${businessType}</h1><div class="content">Exceptional service</div></div></body></html>`,
+    `<html><head><title>Advanced ${businessType}</title></head><body><section class="header"><h1>Cutting-edge ${businessType}</h1></section><main class="body">Innovation first</main></body></html>`,
+    `<html><head><title>Luxury ${businessType}</title></head><body><header><h1>Premium ${businessType} Experience</h1></header><section>Unmatched quality</section></body></html>`,
+    `<html><head><title>Professional ${businessType}</title></head><body><main><h1>Certified ${businessType} Services</h1><p>Trust and reliability</p></main></body></html>`,
+    `<html><head><title>Dynamic ${businessType}</title></head><body><div class="wrapper"><h1>Next-gen ${businessType}</h1><div>Forward thinking</div></div></body></html>`,
+    `<html><head><title>Exclusive ${businessType}</title></head><body><container><h1>Boutique ${businessType}</h1><content>Personalized approach</content></container></body></html>`
+  ];
+  
+  const cssTemplates = [
+    `body { font-family: '${fontSets[siteIndex][0]}', sans-serif; color: ${colorPalettes[siteIndex][0]}; background: #fff; }`,
+    `.container { max-width: 1200px; margin: 0 auto; color: ${colorPalettes[siteIndex][1]}; font-family: '${fontSets[siteIndex][1]}'; }`,
+    `.hero { background: ${colorPalettes[siteIndex][2]}; color: white; padding: 2rem; font-family: '${fontSets[siteIndex][2]}'; }`,
+    `nav { background: ${colorPalettes[siteIndex][3]}; } article { font-family: '${fontSets[siteIndex][0]}'; color: ${colorPalettes[siteIndex][4]}; }`,
+    `#main { padding: 1rem; background: ${colorPalettes[siteIndex][4]}; font-family: '${fontSets[siteIndex][1]}'; }`,
+    `.header { background: linear-gradient(45deg, ${colorPalettes[siteIndex][0]}, ${colorPalettes[siteIndex][1]}); font-family: '${fontSets[siteIndex][2]}'; }`,
+    `header { text-align: center; background: ${colorPalettes[siteIndex][2]}; color: white; font-family: '${fontSets[siteIndex][0]}'; }`,
+    `main { font-family: '${fontSets[siteIndex][1]}'; color: ${colorPalettes[siteIndex][3]}; line-height: 1.6; }`,
+    `.wrapper { display: flex; flex-direction: column; font-family: '${fontSets[siteIndex][2]}'; color: ${colorPalettes[siteIndex][0]}; }`,
+    `container { grid-template-columns: 1fr 2fr; gap: 2rem; font-family: '${fontSets[siteIndex][0]}'; background: ${colorPalettes[siteIndex][1]}; }`
+  ];
+  
+  const selectedPalette = colorPalettes[siteIndex];
+  const selectedFonts = fontSets[siteIndex];
+  const selectedHtml = htmlTemplates[siteIndex];
+  const selectedCss = cssTemplates[siteIndex];
+  
+  // 🖼️ GENERA BUSINESS IMAGES per ogni mock site
+  const mockBusinessImages = {
+    hero: `https://images.unsplash.com/photo-${getUnsplashPhotoId('business', siteIndex)}?w=1200&h=600&fit=crop&crop=center`,
+    logo: `https://images.unsplash.com/photo-${getUnsplashPhotoId('logo', siteIndex)}?w=200&h=100&fit=crop&crop=center`,
+    gallery: [
+      `https://images.unsplash.com/photo-${getUnsplashPhotoId(businessType, siteIndex)}?w=800&h=600&fit=crop&crop=center`,
+      `https://images.unsplash.com/photo-${getUnsplashPhotoId(businessType, (siteIndex + 1) % 10)}?w=800&h=600&fit=crop&crop=center`,
+      `https://images.unsplash.com/photo-${getUnsplashPhotoId(businessType, (siteIndex + 2) % 10)}?w=800&h=600&fit=crop&crop=center`,
+      `https://images.unsplash.com/photo-${getUnsplashPhotoId(businessType, (siteIndex + 3) % 10)}?w=800&h=600&fit=crop&crop=center`
+    ]
+  };
   
   return {
     businessType,
     url,
-    html_content: `<html><head><title>Mock Site</title></head><body><h1>Professional ${businessType} Services</h1><p>Quality service provider</p></body></html>`,
-    css_content: 'body { font-family: Arial, sans-serif; color: #333; }',
+    html_content: selectedHtml,
+    css_content: selectedCss,
     design_analysis: { 
-      layout: 'modern', 
-      style: 'professional',
-      components: ['header', 'navigation', 'content', 'footer']
+      layout: siteIndex % 2 === 0 ? 'modern' : 'classic', 
+      style: siteIndex % 3 === 0 ? 'professional' : siteIndex % 3 === 1 ? 'creative' : 'minimal',
+      components: ['header', 'navigation', 'content', 'footer'].slice(0, (siteIndex % 4) + 2)
     },
-    color_palette: mockColors,
-    font_families: mockFonts,
+    color_palette: selectedPalette,
+    font_families: selectedFonts,
     layout_structure: {
-      header: true,
-      navigation: true,
+      header: siteIndex % 2 === 0,
+      navigation: siteIndex % 3 !== 0,
       main: true,
-      sidebar: false,
-      footer: true,
-      grid_system: true,
-      flexbox: true
+      sidebar: siteIndex % 4 === 0,
+      footer: siteIndex % 2 === 1,
+      grid_system: siteIndex % 3 === 0,
+      flexbox: siteIndex % 3 !== 0
     },
     semantic_analysis: { 
-      title: `Professional ${businessType} Services`,
-      description: `Leading ${businessType} service provider`,
-      keywords: `${businessType}, professional, services`
+      title: htmlTemplates[siteIndex].match(/<title>(.*?)<\/title>/)?.[1] || `Professional ${businessType} Services`,
+      description: `${siteIndex % 2 === 0 ? 'Leading' : 'Premium'} ${businessType} service provider with ${siteIndex % 3 === 0 ? 'innovative' : siteIndex % 3 === 1 ? 'professional' : 'personalized'} approach`,
+      keywords: `${businessType}, ${siteIndex % 2 === 0 ? 'premium' : 'professional'}, ${siteIndex % 3 === 0 ? 'modern' : 'quality'}, services`
     },
     performance_metrics: { 
-      load_time: Date.now() - startTime,
-      content_length: 500
+      load_time: Date.now() - startTime + (siteIndex * 50), // Varia il load time
+      content_length: selectedHtml.length + selectedCss.length
     },
-    accessibility_score: 80,
-    design_score: 85,
-    mobile_responsive: true,
+    accessibility_score: 75 + (siteIndex % 15), // Varia 75-89
+    design_score: 80 + (siteIndex % 10), // Varia 80-89
+    mobile_responsive: siteIndex % 3 !== 2, // Varia true/false
     status: "active",
     tags: ["competitor", businessType],
-    confidence_score: 75,
-    training_priority: 1,
-    business_images: {},
+    confidence_score: 70 + (siteIndex % 20), // Varia 70-89
+    training_priority: (siteIndex % 3) + 1, // Varia 1-3
+    business_images: mockBusinessImages, // 🔧 FIX: Aggiunte business images ai mock
     screenshot: null,
     scraped_at: new Date().toISOString()
   };
