@@ -269,30 +269,23 @@ Provide ONLY the English translation, no explanation.`;
 Business name: "${englishBusinessName}"
 Business description: "${businessDescription}"
 
-1. Infer the most appropriate businessType for this business. Use specific categories:
-   - "florist" for flower shops, fioristi, flower arrangements
-   - "bakery" for panetterie, pasticcerie, bread/cake shops
-   - "restaurant" for ristoranti, pizzerie, food establishments
-   - "gym" for palestre, fitness centers
-   - "hotel" for hotels, B&B, hospitality
-   - "retail" for general retail stores, negozi
-   - "beauty" for parrucchieri, saloni di bellezza, spa
-   - "automotive" for car dealers, mechanic shops
-   - "tech-startup" for technology companies, software
-   - "real-estate" for real estate agencies
-   - "travel" for travel agencies, tour operators
-   - "services" only for professional services (consulting, legal, accounting)
+1. Analyze this business and determine the most specific and appropriate businessType.
+   - Use clear, descriptive categories (e.g., "florist", "architecture", "legal", "medical", "photography", etc.)
+   - Be as specific as possible (prefer "florist" over "services", "architecture" over "consulting")
+   - Use lowercase, single words or hyphenated phrases (e.g., "real-estate", "tech-startup")
+   - If it's a hybrid business, choose the primary focus
 
 2. Generate exactly 15 real competitor websites for this businessType.
 
 IMPORTANT: 
-- Analyze the business description carefully for industry keywords
-- "Fioraio", "fiori", "composizioni floreali" = "florist" NOT "services"
-- "Negozio" can be retail, but check the products sold
+- Create the most accurate businessType based on what the business actually does
+- Don't limit yourself to predefined categories
+- Focus on the core business activity
+- Analyze keywords in business name and description for context
 
-Requirements:
+Requirements for competitors:
 - Must be real, existing websites (not fictional)
-- Should be well-known brands in the inferred businessType industry
+- Should be well-known brands in the same industry
 - Include diverse examples (local, national, international if possible)
 - Focus on websites with good design and user experience
 - Provide complete, working URLs
@@ -314,7 +307,7 @@ Respond ONLY with JSON format:
     console.log(`   English business name: "${englishBusinessName}"`);
     console.log(`   Business description: "${businessDescription}"`);
     console.log(`   Prompt length: ${prompt.length} chars`);
-    console.log(`   Expected categories: florist, bakery, restaurant, gym, hotel, retail, beauty, automotive, tech-startup, real-estate, travel, services`);
+    console.log(`   Classification mode: Dynamic AI (no hardcoded categories)`);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
