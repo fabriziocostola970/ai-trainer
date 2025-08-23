@@ -1085,25 +1085,18 @@
                 const style = document.getElementById('generated-style').value;
                 const businessName = document.getElementById('business-name').value || `My ${businessType}`;
                 
-                logMessage(`🎨 Generating AI layout for ${businessName} (${businessType} - ${style})...`, 'info');
+                logMessage(`🚀 Generating V5.0 AI layout for ${businessName} (${businessType} - ${style})...`, 'info');
                 
-                const response = await fetch(`${API_BASE}/api/generate/layout`, {
+                const response = await fetch(`${API_BASE}/api/generate-layout`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${API_KEY}`
                     },
                     body: JSON.stringify({
-                        businessType: businessType,
-                        style: style,
-                        businessName: businessName,
-                        useTrainedModel: true, // Use the trained AI
-                        currentBlocks: ['hero', 'about', 'services', 'contact'],
-                        requirements: { 
-                            mobileFirst: true,
-                            accessibility: true,
-                            trainedStyle: true
-                        }
+                        businessType: businessName, // V5.0: Passa il nome del business per classificazione AI
+                        requirements: `Stile ${style} per ${businessType} business chiamato ${businessName}`,
+                        style: style
                     })
                 });
                 
