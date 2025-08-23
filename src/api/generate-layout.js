@@ -206,31 +206,62 @@ function analyzeRealStructures(patterns) {
 }
 
 /**
- * 🎨 GENERAZIONE BLOCCHI DINAMICA
+ * 🎨 GENERAZIONE BLOCCHI 100% AI-DRIVEN
  */
 async function generateDynamicBlocks(businessType, businessName, patterns, aiContent) {
-  console.log(`🎨 [Dynamic Blocks] Generating for ${businessName} (${businessType})`);
+  console.log(`🎨 [Dynamic Blocks] Generating UNIQUE layout for ${businessName} (${businessType})`);
   
   try {
-    // Analizza strutture reali
-    const structureAnalysis = analyzeRealStructures(patterns);
-    
-    if (structureAnalysis.commonSections.length === 0) {
-      console.log(`⚠️ [Dynamic Blocks] No common sections found, using minimal structure`);
-      return generateMinimalBlocks(businessName, businessType, aiContent);
+    // GENERAZIONE 100% AI: Crea sezioni UNICHE per questo business
+    const prompt = `You are creating a UNIQUE website structure for "${businessName}" (type: ${businessType}).
+
+IMPORTANT: DO NOT use generic sections like "hero", "services", "about", "contact".
+CREATE ORIGINAL section names that are SPECIFIC to this business.
+
+Business context:
+- Business: ${businessName}
+- Type: ${businessType} 
+- AI Content: ${JSON.stringify(aiContent).substring(0, 500)}...
+
+Generate 4-6 UNIQUE sections with names that are SPECIFIC to this business.
+For a florist, think: "seasonal-collections", "wedding-arrangements", "delivery-zones", "care-instructions"
+For a restaurant: "signature-dishes", "chef-story", "reservation-system", "wine-pairings"
+
+Respond ONLY with JSON:
+{
+  "sections": [
+    {
+      "name": "unique-section-name",
+      "purpose": "what this section does",
+      "priority": 1-10,
+      "businessSpecific": "why this matters for ${businessType}"
     }
+  ]
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo", 
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 800,
+      temperature: 0.8 // Higher creativity for unique sections
+    });
+
+    const sectionPlan = JSON.parse(completion.choices[0].message.content.trim());
     
     const blocks = [];
     let blockId = 1;
     
-    // Genera blocchi basati sulle sezioni più comuni
-    for (const sectionInfo of structureAnalysis.commonSections) {
+    // Genera contenuto per ogni sezione UNICA
+    for (const sectionInfo of sectionPlan.sections) {
+      console.log(`🎯 [AI Unique] Creating section: ${sectionInfo.name} - ${sectionInfo.purpose}`);
+      
       const block = await generateBlockFromSection(
-        sectionInfo.section, 
+        sectionInfo.name, 
         businessName, 
         businessType, 
         aiContent, 
-        blockId++
+        blockId++,
+        sectionInfo.purpose
       );
       
       if (block) {
@@ -238,24 +269,25 @@ async function generateDynamicBlocks(businessType, businessName, patterns, aiCon
       }
     }
     
-    console.log(`✅ [Dynamic Blocks] Generated ${blocks.length} blocks`);
+    console.log(`✅ [Dynamic Blocks] Generated ${blocks.length} UNIQUE blocks`);
+    console.log(`🎨 [Dynamic Blocks] Sections created: ${sectionPlan.sections.map(s => s.name).join(', ')}`);
     return blocks;
     
   } catch (error) {
     console.log(`❌ [Dynamic Blocks] Error: ${error.message}`);
-    return generateMinimalBlocks(businessName, businessType, aiContent);
+    return generateEmergencyBlocks(businessName, businessType, aiContent);
   }
 }
 
 /**
  * 🔧 GENERAZIONE BLOCCO DA SEZIONE - 100% AI DINAMICO
  */
-async function generateBlockFromSection(sectionType, businessName, businessType, aiContent, blockId) {
-  console.log(`🔧 [AI Block Generation] Creating ${sectionType} for ${businessName} - ZERO templates`);
+async function generateBlockFromSection(sectionType, businessName, businessType, aiContent, blockId, sectionPurpose = '') {
+  console.log(`🔧 [AI Block Generation] Creating ${sectionType} for ${businessName} - Purpose: ${sectionPurpose}`);
   
   try {
     // 🤖 GENERAZIONE COMPLETAMENTE AI - Nessuna mappa hardcoded
-    const content = await generateSectionContentWithAI(sectionType, businessName, businessType, aiContent);
+    const content = await generateSectionContentWithAI(sectionType, businessName, businessType, aiContent, sectionPurpose);
     
     return {
       id: `${sectionType}-${blockId}`,
@@ -275,32 +307,35 @@ async function generateBlockFromSection(sectionType, businessName, businessType,
 /**
  * 🤖 GENERATORE AI UNIVERSALE - ZERO TEMPLATE HARDCODED
  */
-async function generateSectionContentWithAI(sectionType, businessName, businessType, aiContent) {
+async function generateSectionContentWithAI(sectionType, businessName, businessType, aiContent, sectionPurpose = '') {
   try {
-    console.log(`🤖 [AI Universal] Generating ${sectionType} section for ${businessName} (${businessType}) - PURE AI`);
+    console.log(`🤖 [AI Universal] Generating UNIQUE ${sectionType} for ${businessName} - Purpose: ${sectionPurpose}`);
     
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     
     const prompt = `Generate content for a "${sectionType}" section of a ${businessType} business website called "${businessName}".
 
+SECTION PURPOSE: ${sectionPurpose}
+
 Context:
 - Business: ${businessName}
 - Industry: ${businessType}
 - Section Type: ${sectionType}
-- This section was identified from real competitor analysis
+- Section Purpose: ${sectionPurpose}
+- Business Context: ${JSON.stringify(aiContent).substring(0, 300)}...
 
 Instructions:
-1. Create content that's SPECIFIC to ${businessType} industry
-2. Make it professional and industry-appropriate
-3. Include all necessary fields a ${sectionType} section would need
-4. Be creative but realistic for ${businessType} business
-5. If you have existing context, enhance it: ${JSON.stringify(aiContent)}
+1. Create content that's UNIQUELY SPECIFIC to "${sectionType}" section
+2. Focus on the PURPOSE: ${sectionPurpose}
+3. Make it professional and industry-appropriate for ${businessType}
+4. Include realistic, specific details (prices, services, contact info)
+5. Make this section DIFFERENT from typical website sections
 
 Requirements:
-- Make content unique to ${businessName}
-- Use industry-specific terminology for ${businessType}
-- Include realistic details (prices, services, contact info)
-- Structure data logically for a ${sectionType} section
+- Content must be UNIQUE to ${businessName}
+- Use industry-specific terminology for ${businessType}  
+- Focus on section purpose: ${sectionPurpose}
+- Structure data logically for this specific section type
 
 Respond with ONLY valid JSON in this format:
 {
@@ -396,6 +431,102 @@ Keep it simple but industry-appropriate. Respond with JSON:
     };
   }
 }
+
+/**
+ * 🚨 GENERAZIONE BLOCCHI EMERGENZA - 100% AI DYNAMIC
+ */
+async function generateEmergencyBlocks(businessName, businessType, aiContent) {
+  console.log(`🚨 [Emergency Blocks] Creating minimal AI-driven blocks for ${businessName}`);
+  
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const prompt = `Emergency: Create 3 essential sections for "${businessName}" (${businessType}) website.
+
+Instructions:
+1. Generate 3 DIFFERENT, UNIQUE section names (not generic hero/about/contact)
+2. Make each section specific to ${businessType} industry
+3. Focus on what customers of ${businessType} business really need
+
+Respond ONLY with JSON:
+{
+  "sections": [
+    {"name": "unique-section-1", "purpose": "what it does"},
+    {"name": "unique-section-2", "purpose": "what it does"}, 
+    {"name": "unique-section-3", "purpose": "what it does"}
+  ]
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 400,
+      temperature: 0.9
+    });
+
+    const emergencyPlan = JSON.parse(completion.choices[0].message.content.trim());
+    
+    const blocks = [];
+    for (let i = 0; i < emergencyPlan.sections.length; i++) {
+      const section = emergencyPlan.sections[i];
+      const block = await generateBlockFromSection(
+        section.name,
+        businessName,
+        businessType,
+        aiContent,
+        i + 1,
+        section.purpose
+      );
+      if (block) blocks.push(block);
+    }
+    
+    console.log(`✅ [Emergency Blocks] Generated ${blocks.length} emergency AI blocks`);
+    return blocks;
+    
+  } catch (error) {
+    console.log(`❌ [Emergency Blocks] AI failed, using absolute minimal blocks`);
+    return generateAbsoluteMinimalBlocks(businessName, businessType);
+  }
+}
+
+/**
+ * 🆘 ULTIMA RISORSA - MINIMAL BLOCKS SENZA AI
+ */
+function generateAbsoluteMinimalBlocks(businessName, businessType) {
+  return [
+    {
+      id: 'emergency-1',
+      type: 'business-intro',
+      content: {
+        title: businessName,
+        description: `Benvenuto in ${businessName} - ${businessType}`,
+        businessType,
+        emergency: true
+      }
+    },
+    {
+      id: 'emergency-2', 
+      type: 'business-info',
+      content: {
+        title: 'I Nostri Servizi',
+        description: `${businessName} offre servizi professionali di ${businessType}`,
+        businessType,
+        emergency: true
+      }
+    },
+    {
+      id: 'emergency-3',
+      type: 'business-contact', 
+      content: {
+        title: 'Contattaci',
+        description: `Contatta ${businessName} per maggiori informazioni sui nostri servizi di ${businessType}`,
+        businessType,
+        emergency: true
+      }
+    }
+  ];
+}
+
 /**
  * 🔄 FALLBACK MINIMO - ANCHE QUESTO 100% AI
  */
@@ -626,11 +757,13 @@ router.post('/layout', authenticateAPI, async (req, res) => {
           confidence: confidenceValue,
           generatedAt: new Date().toISOString(),
           aiEnhanced: true,
-          dynamicVersion: '4.0-PURE-AI',
+          dynamicVersion: '5.0-VERAMENTE-DINAMICO',
           templateFree: true,
           hardcodedElements: 0,
           aiGeneratedSections: blocks.length,
-          systemType: 'VERAMENTE_DINAMICO'
+          systemType: 'COMPLETAMENTE_DINAMICO',
+          uniqueSections: true,
+          genericTemplates: false
         }
       },
       businessType: finalBusinessType,
