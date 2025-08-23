@@ -37,7 +37,7 @@ async function testLayoutGeneration() {
     console.log('📤 V6.0 Request payload:', JSON.stringify(testPayload, null, 2));
     
     const result = await makeHttpsRequest(
-      'https://ai-trainer-production-8fd9.up.railway.app/api/generate-layout',
+      'https://ai-trainer-production-8fd9.up.railway.app/api/generate/layout', // TEST VECCHIO ENDPOINT
       {
         method: 'POST',
         headers: {

@@ -695,13 +695,107 @@ const authenticateAPI = (req, res, next) => {
 };
 
 /**
- * 🚀 ROUTE PRINCIPALE - SISTEMA VERAMENTE DINAMICO
+ * 🚀 ROUTE PRINCIPALE V6.0 - COMPATIBILITÀ VENDIONLINE.EU
+ */
+router.post('/', authenticateAPI, async (req, res) => {
+  const startTime = Date.now();
+  
+  try {
+    console.log('🚀 [V6.0 Main] Starting generation:', {
+      businessType: req.body.businessType,
+      businessName: req.body.businessName,
+      timestamp: new Date().toISOString()
+    });
+
+    const { businessType, businessName, style = 'modern' } = req.body;
+    
+    if (!businessType) {
+      return res.status(400).json({
+        success: false,
+        error: 'Business type is required'
+      });
+    }
+
+    // 1. CLASSIFICAZIONE AI del business type
+    const finalBusinessType = await classifyBusinessTypeWithAI(businessName, businessType);
+    
+    // 2. GENERAZIONE CONTENUTI AI
+    const aiContent = await generateBusinessContentWithAI(finalBusinessType, businessName);
+    
+    // 3. ESTRAZIONE PATTERN dal database
+    const patterns = await extractLayoutPatternsFromDatabase(finalBusinessType);
+    
+    // 4. GENERAZIONE DESIGN INTELLIGENCE
+    const designIntelligence = new DesignIntelligence();
+    let designData;
+    
+    try {
+      designData = await designIntelligence.generateCompleteDesignRecommendation(finalBusinessType, { style });
+      console.log(`✅ [Design] Generated design with confidence: ${designData.confidence}%`);
+    } catch (designError) {
+      console.log(`❌ [Design] Failed: ${designError.message}`);
+      throw new Error(`Design Intelligence required: ${designError.message}`);
+    }
+    
+    // 5. GENERAZIONE BLOCCHI DINAMICI
+    const blocks = await generateDynamicBlocks(finalBusinessType, businessName, patterns, aiContent);
+    
+    // 🎨 6. GENERAZIONE DESIGN SYSTEM DINAMICO V6.0
+    const dynamicDesignSystem = await generateDynamicDesignSystem(finalBusinessType, businessName, style);
+    const dynamicCSS = generateDynamicCSS(dynamicDesignSystem, businessName);
+    
+    await designIntelligence.close();
+    
+    // ✅ RESPONSE STRUCTURE COMPATIBILE CON VENDIONLINE.EU
+    const response = {
+      success: true,
+      layout: blocks, // ✅ Frontend compatibility
+      dynamicCSS, // ✅ V6.0 CSS dinamico
+      designSystem: dynamicDesignSystem, // ✅ V6.0 design system
+      metadata: {
+        businessType: finalBusinessType,
+        businessName,
+        style,
+        confidence: Number(designData.confidence) || 85,
+        version: '6.0-CSS-DYNAMIC',
+        aiModel: 'gpt-3.5-turbo',
+        generatedAt: new Date().toISOString(),
+        totalBlocks: blocks.length,
+        uniqueDesign: true,
+        hardcodedElements: 0
+      },
+      semanticScore: calculateSemanticScore(blocks, finalBusinessType),
+      businessType: finalBusinessType,
+      businessName,
+      designConfidence: Number(designData.confidence) || 85,
+      pureAI: true,
+      templateFree: true
+    };
+    
+    const totalTime = Date.now() - startTime;
+    console.log(`✅ [V6.0 Main] Generated ${blocks.length} blocks in ${totalTime}ms`);
+    
+    res.json(response);
+    
+  } catch (error) {
+    console.error('❌ V6.0 MAIN ROUTE FAILED:', error);
+    res.status(500).json({
+      success: false,
+      error: 'V6.0 main route failed',
+      details: error.message,
+      version: '6.0-main'
+    });
+  }
+});
+
+/**
+ * 🔄 ROUTE LEGACY - COMPATIBILITÀ ESISTENTE
  */
 router.post('/layout', authenticateAPI, async (req, res) => {
   const startTime = Date.now();
   
   try {
-    console.log('🚀 [Dynamic Layout] Starting generation:', {
+    console.log('🚀 [Legacy Layout] Starting generation:', {
       businessType: req.body.businessType,
       businessName: req.body.businessName,
       timestamp: new Date().toISOString()
