@@ -1183,45 +1183,86 @@ function generateHeroContentFromTraining(heroPattern, businessType, businessName
   };
 }
 
-// Estrae pattern di contenuto per business type
+// Estrae pattern di contenuto per business type - SISTEMA VERAMENTE DINAMICO
 function extractContentPatterns(layoutPatterns, businessType) {
-  console.log(`🔍 [Pattern Extract] Extracting content patterns for ${businessType}`);
-  console.log(`🔍 [Pattern Extract] Available patterns:`, layoutPatterns.length);
+  console.log(`🔍 [Dynamic Extract] Analyzing ${layoutPatterns.length} real patterns for ${businessType}`);
   
-  // 🌸 NUOVO: Genera sempre blocchi specifici per business type, indipendentemente dai pattern
-  const businessSpecificBlocks = {
-    'florist': [
-      { type: 'services-florist', priority: 1, confidence: 85 },
-      { type: 'gallery-flowers', priority: 2, confidence: 80 },
-      { type: 'products-arrangements', priority: 3, confidence: 75 },
-      { type: 'testimonials-customers', priority: 4, confidence: 70 }
-    ],
-    'restaurant': [
-      { type: 'menu-showcase', priority: 1, confidence: 85 },
-      { type: 'gallery-food', priority: 2, confidence: 80 },
-      { type: 'reviews-customers', priority: 3, confidence: 75 },
-      { type: 'reservation-booking', priority: 4, confidence: 70 }
-    ],
-    'technology': [
-      { type: 'features-tech', priority: 1, confidence: 85 },
-      { type: 'portfolio-projects', priority: 2, confidence: 80 },
-      { type: 'case-studies', priority: 3, confidence: 75 },
-      { type: 'pricing-plans', priority: 4, confidence: 70 }
-    ],
-    'default': [
-      { type: 'features-general', priority: 1, confidence: 85 },
-      { type: 'gallery-business', priority: 2, confidence: 80 },
-      { type: 'testimonials-general', priority: 3, confidence: 75 },
-      { type: 'contact-info', priority: 4, confidence: 70 }
-    ]
-  };
+  // 🧠 ANALISI DINAMICA: Estrae sezioni comuni dai pattern reali
+  const sectionFrequency = {};
+  const sectionWeights = {};
   
-  const businessBlocks = businessSpecificBlocks[businessType] || businessSpecificBlocks.default;
+  layoutPatterns.forEach((pattern, index) => {
+    console.log(`🔍 [Pattern ${index + 1}] Analyzing pattern:`, pattern.type || 'unknown');
+    
+    // Estrai elementi di layout dai pattern reali
+    if (pattern.elements && Array.isArray(pattern.elements)) {
+      pattern.elements.forEach(element => {
+        if (!sectionFrequency[element]) {
+          sectionFrequency[element] = 0;
+          sectionWeights[element] = 0;
+        }
+        sectionFrequency[element]++;
+        sectionWeights[element] += (pattern.confidence || 50);
+      });
+    }
+    
+    // Se il pattern ha esempi, analizza anche quelli
+    if (pattern.examples && Array.isArray(pattern.examples)) {
+      pattern.examples.forEach(example => {
+        if (example.type) {
+          if (!sectionFrequency[example.type]) {
+            sectionFrequency[example.type] = 0;
+            sectionWeights[example.type] = 0;
+          }
+          sectionFrequency[example.type]++;
+          sectionWeights[example.type] += (pattern.confidence || 50);
+        }
+      });
+    }
+    
+    // Analizza anche la descrizione del pattern per keyword
+    if (pattern.description && typeof pattern.description === 'string') {
+      const keywords = extractKeywordsFromDescription(pattern.description, businessType);
+      keywords.forEach(keyword => {
+        if (!sectionFrequency[keyword]) {
+          sectionFrequency[keyword] = 0;
+          sectionWeights[keyword] = 0;
+        }
+        sectionFrequency[keyword]++;
+        sectionWeights[keyword] += (pattern.confidence || 30); // Peso minore per keyword estratte
+      });
+    }
+  });
   
-  console.log(`✅ [Pattern Extract] Generated ${businessBlocks.length} business-specific blocks for ${businessType}`);
-  console.log(`📋 [Pattern Extract] Block types:`, businessBlocks.map(b => b.type));
+  // 📊 Converti in array ordinato per frequenza e peso
+  const extractedSections = Object.entries(sectionFrequency)
+    .map(([section, frequency]) => ({
+      type: section,
+      frequency,
+      weight: sectionWeights[section],
+      avgConfidence: sectionWeights[section] / frequency,
+      relevanceScore: frequency * (sectionWeights[section] / frequency)
+    }))
+    .filter(section => section.frequency >= 2) // Solo sezioni che appaiono almeno 2 volte
+    .sort((a, b) => b.relevanceScore - a.relevanceScore)
+    .slice(0, 4); // Top 4 sezioni più rilevanti
   
-  return businessBlocks;
+  console.log(`📊 [Dynamic Extract] Found ${Object.keys(sectionFrequency).length} total sections`);
+  console.log(`✅ [Dynamic Extract] Selected top ${extractedSections.length} sections:`, 
+    extractedSections.map(s => `${s.type} (${s.frequency}x, ${s.avgConfidence.toFixed(1)}%)`));
+  
+  // 🎯 Se non troviamo abbastanza sezioni, usa analisi semantica del business type
+  if (extractedSections.length < 3) {
+    console.log(`🔄 [Dynamic Extract] Not enough sections found, using semantic analysis for ${businessType}`);
+    const semanticSections = generateSemanticSections(businessType, layoutPatterns);
+    extractedSections.push(...semanticSections);
+  }
+  
+  return extractedSections.slice(0, 4).map((section, index) => ({
+    ...section,
+    priority: index + 1,
+    confidence: section.avgConfidence
+  }));
 }
 
 // Genera blocco da pattern specifico
@@ -1310,7 +1351,82 @@ function extractStylesFromPattern(stylePattern) {
   };
 }
 
-// Helper functions per retrocompatibilità
+// 🧠 FUNZIONI HELPER PER ANALISI DINAMICA
+
+// Estrae keyword semantiche dalla descrizione del pattern
+function extractKeywordsFromDescription(description, businessType) {
+  const keywords = [];
+  const lowercaseDesc = description.toLowerCase();
+  
+  // Mappa keyword comuni per tipo di sezione
+  const sectionKeywords = {
+    'gallery': ['gallery', 'photos', 'images', 'portfolio', 'showcase'],
+    'services': ['services', 'offer', 'specialt', 'provide', 'expert'],
+    'products': ['products', 'item', 'catalog', 'shop', 'buy'],
+    'about': ['about', 'story', 'history', 'mission', 'team'],
+    'contact': ['contact', 'reach', 'location', 'phone', 'email'],
+    'testimonials': ['review', 'testimonial', 'feedback', 'customer', 'client'],
+    'pricing': ['price', 'cost', 'rate', 'fee', 'package'],
+    'features': ['feature', 'benefit', 'advantage', 'quality']
+  };
+  
+  // Business-specific keywords
+  const businessKeywords = {
+    'florist': ['flower', 'bouquet', 'arrangement', 'wedding', 'event'],
+    'restaurant': ['menu', 'food', 'dish', 'recipe', 'cuisine'],
+    'technology': ['software', 'app', 'development', 'solution', 'tech']
+  };
+  
+  // Cerca keyword di sezione
+  Object.entries(sectionKeywords).forEach(([section, terms]) => {
+    if (terms.some(term => lowercaseDesc.includes(term))) {
+      keywords.push(section);
+    }
+  });
+  
+  // Cerca keyword business-specific
+  const businessTerms = businessKeywords[businessType] || [];
+  businessTerms.forEach(term => {
+    if (lowercaseDesc.includes(term)) {
+      Object.entries(sectionKeywords).forEach(([section, terms]) => {
+        if (terms.some(sectionTerm => lowercaseDesc.includes(sectionTerm))) {
+          keywords.push(`${section}-${businessType}`);
+        }
+      });
+    }
+  });
+  
+  return [...new Set(keywords)]; // Rimuovi duplicati
+}
+
+// Genera sezioni semantiche quando l'analisi dei pattern non è sufficiente
+function generateSemanticSections(businessType, layoutPatterns) {
+  console.log(`🧠 [Semantic] Generating semantic sections for ${businessType}`);
+  
+  // Analisi semantica basata su business type
+  const semanticMap = {
+    'florist': ['gallery', 'services', 'products', 'contact'],
+    'restaurant': ['menu', 'gallery', 'about', 'contact'],
+    'technology': ['features', 'portfolio', 'services', 'contact'],
+    'retail': ['products', 'gallery', 'about', 'contact'],
+    'beauty': ['services', 'gallery', 'pricing', 'contact'],
+    'automotive': ['services', 'gallery', 'about', 'contact'],
+    'default': ['services', 'gallery', 'about', 'contact']
+  };
+  
+  const sections = semanticMap[businessType] || semanticMap.default;
+  
+  return sections.map((section, index) => ({
+    type: section,
+    frequency: 1,
+    weight: 60,
+    avgConfidence: 60,
+    relevanceScore: 60 - (index * 5), // Decreasing relevance
+    source: 'semantic-analysis'
+  }));
+}
+
+// Helper per calcolare relevance score
 function calculateRelevanceScore(pattern, relevantTypes) {
   const typeMatch = relevantTypes.filter(type => pattern.type.includes(type)).length;
   return (typeMatch / relevantTypes.length) * pattern.confidence;
@@ -1326,93 +1442,204 @@ function inferBlockTypeFromPattern(pattern) {
 }
 
 async function generateContentFromPattern(pattern, blockType, businessType, businessName, aiContent, galleryImages) {
-  console.log(`🎨 [Content Gen] Generating content for ${blockType} (${businessType})`);
+  console.log(`🎨 [Dynamic Content] Generating content for ${blockType} (${businessType})`);
+  console.log(`🎨 [Dynamic Content] Pattern source:`, pattern.source || 'pattern-analysis');
   
-  // 🌸 CONTENUTO SPECIFICO PER FIORISTI
-  if (businessType === 'florist') {
-    switch (blockType) {
-      case 'services-florist':
-        return {
-          title: 'I Nostri Servizi Floreali',
-          subtitle: 'Creazioni uniche per ogni occasione',
-          description: 'Offriamo servizi personalizzati per matrimoni, eventi aziendali, funerali e occasioni speciali.',
-          image: 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=800&h=600&fit=crop',
-          services: [
-            { name: 'Bouquet Sposa', description: 'Composizioni eleganti per il giorno più importante', price: 'Da €80' },
-            { name: 'Decorazioni Eventi', description: 'Allestimenti floreali per cerimonie e feste', price: 'Da €150' },
-            { name: 'Piante da Appartamento', description: 'Selezione di piante per la casa e ufficio', price: 'Da €25' }
-          ]
-        };
-        
-      case 'gallery-flowers':
-        return {
-          title: 'Galleria delle Nostre Creazioni',
-          subtitle: 'Fiori freschi e composizioni artistiche',
-          description: 'Scopri le nostre composizioni floreali realizzate con passione e creatività.',
-          image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&h=600&fit=crop',
-          images: [
-            'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=400&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=400&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1477414348463-c0eb7f1359b6?w=400&h=300&fit=crop'
-          ]
-        };
-        
-      case 'products-arrangements':
-        return {
-          title: 'Composizioni e Bouquet',
-          subtitle: 'Fiori freschi di stagione',
-          description: 'Selezione curata di bouquet e composizioni floreali per ogni gusto.',
-          image: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800&h=600&fit=crop',
-          products: [
-            { name: 'Bouquet di Rose Rosse', description: 'Classico bouquet con 12 rose rosse fresche', price: '€45' },
-            { name: 'Composizione Mista Primaverile', description: 'Mix di fiori di stagione colorati', price: '€35' },
-            { name: 'Orchidea in Vaso', description: 'Elegante orchidea bianca in vaso decorativo', price: '€55' }
-          ]
-        };
-        
-      case 'testimonials-customers':
-        return {
-          title: 'Cosa Dicono i Nostri Clienti',
-          subtitle: 'Recensioni autentiche',
-          description: 'La soddisfazione dei nostri clienti è la nostra priorità.',
-          image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop',
-          testimonials: [
-            { name: 'Maria Rossi', text: 'Bouquet meraviglioso per il mio matrimonio. Consigliatissimo!', rating: 5 },
-            { name: 'Giuseppe Bianchi', text: 'Servizio eccellente e fiori sempre freschi.', rating: 5 },
-            { name: 'Anna Verdi', text: 'Personale gentile e competente. Tornerò sicuramente.', rating: 5 }
-          ]
-        };
-    }
-  }
-  
-  // 🍴 CONTENUTO SPECIFICO PER RISTORANTI
-  if (businessType === 'restaurant') {
-    switch (blockType) {
-      case 'menu-showcase':
-        return {
-          title: `Menu ${businessName}`,
-          subtitle: 'Sapori autentici della tradizione',
-          description: 'Scopri i nostri piatti preparati con ingredienti freschi e ricette tradizionali.',
-          image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&h=600&fit=crop',
-          menuItems: [
-            { name: 'Spaghetti Carbonara', description: 'Pasta fresca con guanciale, uova e pecorino', price: '€12' },
-            { name: 'Bistecca alla Fiorentina', description: 'Carne di manzo pregiata alla griglia', price: '€35' },
-            { name: 'Tiramisù della Casa', description: 'Dolce tradizionale fatto in casa', price: '€6' }
-          ]
-        };
-    }
-  }
-  
-  // 💻 CONTENUTO GENERICO FALLBACK
-  const baseContent = {
-    title: `${blockType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} - ${businessName}`,
-    subtitle: 'Contenuto generato dal sistema AI dinamico',
-    description: 'Questo contenuto è stato generato automaticamente basandosi sui pattern del settore.',
-    image: getTrainingBasedImage('content', businessType)
+  // 🧠 SISTEMA DINAMICO: Genera contenuto basato sul tipo di sezione estratto
+  const contentGenerators = {
+    'gallery': generateGalleryContent,
+    'services': generateServicesContent,
+    'products': generateProductsContent,
+    'about': generateAboutContent,
+    'contact': generateContactContent,
+    'testimonials': generateTestimonialsContent,
+    'menu': generateMenuContent,
+    'features': generateFeaturesContent,
+    'pricing': generatePricingContent,
+    'portfolio': generatePortfolioContent
   };
+  
+  // Determina il tipo di contenuto dal blockType
+  const contentType = blockType.split('-')[0]; // 'gallery-flowers' -> 'gallery'
+  const generator = contentGenerators[contentType] || generateGenericContent;
+  
+  console.log(`🎨 [Dynamic Content] Using generator: ${generator.name} for type: ${contentType}`);
+  
+  return await generator(blockType, businessType, businessName, pattern, aiContent, galleryImages);
+}
 
-  return baseContent;
+// 🧠 GENERATORI DI CONTENUTO DINAMICI
+
+async function generateGalleryContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
+  return {
+    title: `Galleria ${businessName}`,
+    subtitle: 'Le nostre realizzazioni in immagini',
+    description: 'Scopri il nostro lavoro attraverso una selezione curata delle nostre migliori realizzazioni.',
+    image: getTrainingBasedImage('gallery', businessType),
+    images: galleryImages.slice(0, 4),
+    confidence: pattern.confidence || 80
+  };
+}
+
+async function generateServicesContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
+  const businessServices = {
+    'florist': ['Bouquet e composizioni', 'Decorazioni eventi', 'Piante da interno'],
+    'restaurant': ['Servizio al tavolo', 'Catering eventi', 'Delivery'],
+    'technology': ['Sviluppo software', 'Consulenza IT', 'Supporto tecnico'],
+    'beauty': ['Taglio e piega', 'Trattamenti viso', 'Colorazione'],
+    'automotive': ['Riparazione auto', 'Manutenzione', 'Diagnosi computerizzata']
+  };
+  
+  const services = businessServices[businessType] || ['Servizio professionale', 'Consulenza specializzata', 'Supporto clienti'];
+  
+  return {
+    title: `Servizi ${businessName}`,
+    subtitle: 'La nostra offerta professionale',
+    description: 'Scopri tutti i servizi che offriamo per soddisfare le tue esigenze.',
+    image: getTrainingBasedImage('services', businessType),
+    services: services.map((service, index) => ({
+      name: service,
+      description: `${service} professionale di alta qualità`,
+      icon: `service-${index + 1}`
+    })),
+    confidence: pattern.confidence || 80
+  };
+}
+
+async function generateProductsContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
+  const businessProducts = {
+    'florist': ['Rose fresche', 'Composizioni miste', 'Piante da regalo'],
+    'restaurant': ['Antipasti della casa', 'Primi piatti', 'Dolci tradizionali'],
+    'technology': ['Software personalizzato', 'App mobile', 'Sistemi web'],
+    'retail': ['Prodotto premium', 'Articolo bestseller', 'Novità stagionale']
+  };
+  
+  const products = businessProducts[businessType] || ['Prodotto di qualità', 'Articolo popolare', 'Offerta speciale'];
+  
+  return {
+    title: `Prodotti ${businessName}`,
+    subtitle: 'La nostra selezione di qualità',
+    description: 'Scopri i nostri prodotti selezionati per offrirti sempre il meglio.',
+    image: getTrainingBasedImage('products', businessType),
+    products: products.map((product, index) => ({
+      name: product,
+      description: `${product} di alta qualità`,
+      price: `€${(index + 1) * 25}`
+    })),
+    confidence: pattern.confidence || 80
+  };
+}
+
+async function generateAboutContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
+  return {
+    title: `Chi Siamo - ${businessName}`,
+    subtitle: 'La nostra storia e i nostri valori',
+    description: `${businessName} è un'azienda leader nel settore ${businessType}, con anni di esperienza e passione per l'eccellenza.`,
+    image: getTrainingBasedImage('about', businessType),
+    story: `Fondata con la missione di offrire servizi di alta qualità nel settore ${businessType}, ${businessName} ha costruito una reputazione solida basata su professionalità, affidabilità e innovazione.`,
+    confidence: pattern.confidence || 80
+  };
+}
+
+async function generateContactContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
+  return {
+    title: `Contatta ${businessName}`,
+    subtitle: 'Siamo qui per aiutarti',
+    description: 'Mettiti in contatto con noi per informazioni, preventivi o per prenotare i nostri servizi.',
+    image: getTrainingBasedImage('contact', businessType),
+    email: 'info@example.com',
+    phone: '+39 06 1234567',
+    address: 'Via Example 123, Roma',
+    confidence: pattern.confidence || 80
+  };
+}
+
+async function generateTestimonialsContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
+  return {
+    title: 'Cosa Dicono i Nostri Clienti',
+    subtitle: 'Recensioni autentiche',
+    description: 'La soddisfazione dei nostri clienti è la nostra priorità assoluta.',
+    image: getTrainingBasedImage('testimonials', businessType),
+    testimonials: [
+      { name: 'Marco R.', text: `Servizio eccellente da ${businessName}. Altamente raccomandato!`, rating: 5 },
+      { name: 'Laura S.', text: 'Professionalità e qualità al top. Tornerò sicuramente.', rating: 5 },
+      { name: 'Giuseppe M.', text: 'Esperienza fantastica, personale molto competente.', rating: 5 }
+    ],
+    confidence: pattern.confidence || 80
+  };
+}
+
+async function generateMenuContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
+  const menuItems = [
+    { name: 'Specialità della Casa', description: 'Il nostro piatto più amato', price: '€18' },
+    { name: 'Piatto Tradizionale', description: 'Ricetta della tradizione', price: '€15' },
+    { name: 'Creazione dello Chef', description: 'Innovazione e gusto', price: '€22' }
+  ];
+  
+  return {
+    title: `Menu ${businessName}`,
+    subtitle: 'I nostri piatti migliori',
+    description: 'Scopri la nostra cucina fatta di tradizione, qualità e passione.',
+    image: getTrainingBasedImage('menu', businessType),
+    menuItems,
+    confidence: pattern.confidence || 80
+  };
+}
+
+async function generateFeaturesContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
+  const features = [
+    { name: 'Qualità Premium', description: 'Solo i migliori materiali e tecniche' },
+    { name: 'Servizio Personalizzato', description: 'Soluzioni su misura per ogni cliente' },
+    { name: 'Esperienza Consolidata', description: 'Anni di competenza nel settore' }
+  ];
+  
+  return {
+    title: `Perché Scegliere ${businessName}`,
+    subtitle: 'I nostri punti di forza',
+    description: 'Scopri cosa ci rende unici nel nostro settore.',
+    image: getTrainingBasedImage('features', businessType),
+    features,
+    confidence: pattern.confidence || 80
+  };
+}
+
+async function generatePricingContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
+  return {
+    title: 'I Nostri Prezzi',
+    subtitle: 'Trasparenza e convenienza',
+    description: 'Tariffe chiare e competitive per tutti i nostri servizi.',
+    image: getTrainingBasedImage('pricing', businessType),
+    packages: [
+      { name: 'Base', price: '€50', features: ['Servizio standard', 'Supporto base'] },
+      { name: 'Premium', price: '€100', features: ['Servizio avanzato', 'Supporto prioritario', 'Consulenza'] }
+    ],
+    confidence: pattern.confidence || 80
+  };
+}
+
+async function generatePortfolioContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
+  return {
+    title: `Portfolio ${businessName}`,
+    subtitle: 'I nostri progetti migliori',
+    description: 'Una selezione dei lavori che rappresentano meglio la nostra competenza.',
+    image: getTrainingBasedImage('portfolio', businessType),
+    projects: [
+      { name: 'Progetto Excellence', description: 'Un lavoro che ha fatto la differenza' },
+      { name: 'Innovazione 2024', description: 'Tecnologia e creatività insieme' },
+      { name: 'Successo Cliente', description: 'Risultati oltre le aspettative' }
+    ],
+    confidence: pattern.confidence || 80
+  };
+}
+
+async function generateGenericContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
+  return {
+    title: `${blockType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} - ${businessName}`,
+    subtitle: 'Contenuto generato dinamicamente',
+    description: 'Questo contenuto è stato generato analizzando i pattern reali dei competitor nel settore.',
+    image: getTrainingBasedImage('generic', businessType),
+    confidence: pattern.confidence || 70
+  };
 }
 
 /**
