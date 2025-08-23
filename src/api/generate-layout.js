@@ -25,7 +25,14 @@ async function generateBusinessContentWithAI(businessType, businessName) {
 
     const prompt = `Genera contenuti specifici per un business di tipo "${businessType}" chiamato "${businessName}".
     
-    IMPORTANTE: Rispondi SEMPRE e SOLO in ITALIANO. Tutti i testi, titoli, descrizioni devono essere in italiano.
+    IMPORTANTE: Rileva automaticamente la lingua del nome business "${businessName}" e rispondi SEMPRE in quella lingua.
+    - Se "${businessName}" è in italiano → rispondi in ITALIANO
+    - Se "${businessName}" è in francese → rispondi in FRANCESE  
+    - Se "${businessName}" è in spagnolo → rispondi in SPAGNOLO
+    - Se "${businessName}" è in inglese → rispondi in INGLESE
+    - Etc.
+    
+    Il business "${businessName}" opera nel suo paese di origine, quindi tutti i contenuti devono essere nella lingua locale.
     
     Fornisci contenuti in formato JSON per:
     1. Hero section (titolo, sottotitolo, descrizione, CTA)
@@ -33,7 +40,7 @@ async function generateBusinessContentWithAI(businessType, businessName) {
     3. About section (storia del business)
     4. Contact (metodi di contatto)
     
-    Rispondi SOLO con JSON valido, senza markdown, TUTTO IN ITALIANO:
+    Rispondi SOLO con JSON valido, senza markdown, nella LINGUA RILEVATA dal nome "${businessName}":
     {
       "hero": {
         "title": "...",
@@ -315,52 +322,60 @@ async function generateSectionContentWithAI(sectionType, businessName, businessT
     
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     
-    const prompt = `Generate content for a "${sectionType}" section of a ${businessType} business website called "${businessName}".
+    const prompt = `Genera contenuti per una sezione "${sectionType}" di un sito web di ${businessType} chiamato "${businessName}".
 
-SECTION PURPOSE: ${sectionPurpose}
+IMPORTANTE: Rileva automaticamente la lingua del nome business "${businessName}" e rispondi in quella lingua.
+- Se "${businessName}" è in italiano → rispondi in ITALIANO
+- Se "${businessName}" è in francese → rispondi in FRANCESE
+- Se "${businessName}" è in spagnolo → rispondi in SPAGNOLO  
+- Se "${businessName}" è in inglese → rispondi in INGLESE
+- Etc.
 
-Context:
+SCOPO SEZIONE: ${sectionPurpose}
+
+Contesto:
 - Business: ${businessName}
-- Industry: ${businessType}
-- Section Type: ${sectionType}
-- Section Purpose: ${sectionPurpose}
-- Business Context: ${JSON.stringify(aiContent).substring(0, 300)}...
+- Settore: ${businessType}
+- Tipo Sezione: ${sectionType}
+- Scopo Sezione: ${sectionPurpose}
+- Contesto Business: ${JSON.stringify(aiContent).substring(0, 300)}...
 
-Instructions:
-1. Create content that's UNIQUELY SPECIFIC to "${sectionType}" section
-2. Focus on the PURPOSE: ${sectionPurpose}
-3. Make it professional and industry-appropriate for ${businessType}
-4. Include realistic, specific details (prices, services, contact info)
-5. Make this section DIFFERENT from typical website sections
+Istruzioni:
+1. Crea contenuti SPECIFICI per la sezione "${sectionType}"
+2. Concentrati sullo SCOPO: ${sectionPurpose}
+3. Rendi tutto professionale e appropriato per ${businessType}
+4. Includi dettagli realistici e specifici (prezzi, servizi, contatti)
+5. Rendi questa sezione DIVERSA dalle tipiche sezioni web
 
-Requirements:
-- Content must be UNIQUE to ${businessName}
-- Use industry-specific terminology for ${businessType}  
-- Focus on section purpose: ${sectionPurpose}
-- Structure data logically for this specific section type
+Requisiti:
+- Contenuto deve essere UNICO per ${businessName}
+- Usa terminologia specifica del settore ${businessType}
+- Concentrati sullo scopo della sezione: ${sectionPurpose}
+- Struttura i dati logicamente per questo tipo di sezione
+- Usa la LINGUA RILEVATA dal nome "${businessName}"
 
-Respond with ONLY valid JSON in this format:
+Rispondi SOLO con JSON valido nella lingua del business:
 {
-  "title": "Section title specific to ${businessType}",
-  "subtitle": "Supporting subtitle if needed",
-  "description": "Main content description",
+  "title": "Titolo sezione specifico per ${businessType}",
+  "subtitle": "Sottotitolo di supporto se necessario",
+  "description": "Descrizione principale del contenuto",
   "items": [
     {
-      "name": "Item/Service name",
-      "description": "Detailed description",
-      "price": "€XX (if applicable)",
-      "image": "description of what image would show"
+      "name": "Nome articolo/servizio",
+      "description": "Descrizione dettagliata",
+      "price": "€XX (se applicabile)",
+      "image": "descrizione di quale immagine mostrare"
     }
   ],
-  "links": ["relevant", "links", "if", "applicable"],
+  "links": ["link", "rilevanti", "se", "applicabili"],
   "contact": {
-    "email": "business-appropriate email",
-    "phone": "realistic phone number",
-    "address": "realistic address"
+    "email": "email appropriata per il business",
+    "phone": "numero di telefono realistico",
+    "address": "indirizzo realistico"
   },
   "metadata": {
-    "sectionPurpose": "what this section achieves",
-    "industrySpecific": "what makes this specific to ${businessType}"
+    "sectionPurpose": "cosa ottiene questa sezione",
+    "industrySpecific": "cosa rende questo specifico per ${businessType}"
   }
 }`;
 
