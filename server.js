@@ -158,6 +158,9 @@ app.use('/api/training', authenticateAPI, require('./src/api/training'));
 app.use('/api/design', authenticateAPI, require('./src/api/design-routes')); // 🎨 NEW: Design Analysis API
 app.use('/api', authenticateAPI, require('./src/api/setup-database')); // 🗄️ Database setup endpoint
 
+// 🤖 NEW: Claude Sonnet Website Generator - Parallel System V1.0
+app.use('/api/claude', authenticateAPI, require('./src/api/claude-generator')); // 🚀 Claude Sonnet endpoint
+
 // DB Admin API Route (deve essere dichiarata prima dei catch-all e dei 404 handler)
 const dbAdminRoute = require('./src/api/db-admin');
 app.use('/api/db-admin', dbAdminRoute);
@@ -200,6 +203,8 @@ app.get('/api/status', authenticateAPI, (req, res) => {
       'POST /api/generate/layout',
       'POST /api/generate/design-palette', // NEW: Design patterns
       'GET /api/analyze/design-trends/:businessType', // NEW: Design analytics
+      'POST /api/claude/generate', // 🤖 NEW: Claude Sonnet website generator
+      'GET /api/claude/patterns/:businessType', // 🔍 NEW: Claude pattern analysis
       'POST /api/optimize/blocks',
       'POST /api/validate/template'
     ]
@@ -318,6 +323,8 @@ app.use('/api/*', (req, res) => {
       'GET /health',
       'GET /status', 
       'POST /api/generate/layout',
+      'POST /api/claude/generate', // 🤖 Claude Sonnet generator
+      'GET /api/claude/patterns/:businessType', // 🔍 Claude pattern analysis  
       'POST /api/optimize/blocks',
       'POST /api/validate/template',
       'GET /training/',

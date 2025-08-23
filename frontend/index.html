@@ -1235,70 +1235,7 @@
             }
         }
         
-        // 🚀 BATCH AUTO-TRAINING FUNCTIONS
         
-        // Test sites for batch training - 50 diverse sites for comprehensive AI training
-        const testSites = [
-            // 🍕 RESTAURANTS (10 sites)
-            { url: 'https://www.pizzahut.com', expectedType: 'restaurant', description: 'Pizza restaurant chain' },
-            { url: 'https://www.mcdonalds.com', expectedType: 'restaurant', description: 'Fast food restaurant' },
-            { url: 'https://www.starbucks.com', expectedType: 'restaurant', description: 'Coffee shop chain' },
-            { url: 'https://www.kfc.com', expectedType: 'restaurant', description: 'Fried chicken restaurant' },
-            { url: 'https://www.subway.com', expectedType: 'restaurant', description: 'Sandwich restaurant' },
-            { url: 'https://www.burgerking.com', expectedType: 'restaurant', description: 'Burger restaurant' },
-            { url: 'https://www.dominos.com', expectedType: 'restaurant', description: 'Pizza delivery' },
-            { url: 'https://www.tacobellglobal.com', expectedType: 'restaurant', description: 'Mexican fast food' },
-            { url: 'https://www.dunkindonuts.com', expectedType: 'restaurant', description: 'Donuts and coffee' },
-            { url: 'https://www.chipotle.com', expectedType: 'restaurant', description: 'Mexican grill' },
-
-            // 🛒 ECOMMERCE (15 sites)
-            { url: 'https://www.etsy.com', expectedType: 'ecommerce', description: 'Handmade marketplace' },
-            { url: 'https://www.amazon.com', expectedType: 'ecommerce', description: 'Online marketplace' },
-            { url: 'https://www.ebay.com', expectedType: 'ecommerce', description: 'Auction marketplace' },
-            { url: 'https://www.walmart.com', expectedType: 'ecommerce', description: 'Retail store' },
-            { url: 'https://www.target.com', expectedType: 'ecommerce', description: 'Department store' },
-            { url: 'https://www.bestbuy.com', expectedType: 'ecommerce', description: 'Electronics retailer' },
-            { url: 'https://www.homedepot.com', expectedType: 'ecommerce', description: 'Home improvement' },
-            { url: 'https://www.lowes.com', expectedType: 'ecommerce', description: 'Hardware store' },
-            { url: 'https://www.costco.com', expectedType: 'ecommerce', description: 'Wholesale retailer' },
-            { url: 'https://www.macys.com', expectedType: 'ecommerce', description: 'Department store' },
-            { url: 'https://www.nike.com', expectedType: 'ecommerce', description: 'Sportswear brand' },
-            { url: 'https://www.adidas.com', expectedType: 'ecommerce', description: 'Athletic apparel' },
-            { url: 'https://www.zara.com', expectedType: 'ecommerce', description: 'Fashion retailer' },
-            { url: 'https://www.hm.com', expectedType: 'ecommerce', description: 'Fashion chain' },
-            { url: 'https://www.ikea.com', expectedType: 'ecommerce', description: 'Furniture retailer' },
-
-            // 🏠 REAL ESTATE (10 sites)
-            { url: 'https://www.remax.com', expectedType: 'real_estate', description: 'Real estate agency' },
-            { url: 'https://www.zillow.com', expectedType: 'real_estate', description: 'Real estate platform' },
-            { url: 'https://www.realtor.com', expectedType: 'real_estate', description: 'Property listings' },
-            { url: 'https://www.coldwellbanker.com', expectedType: 'real_estate', description: 'Real estate brokerage' },
-            { url: 'https://www.century21.com', expectedType: 'real_estate', description: 'Real estate franchise' },
-            { url: 'https://www.kw.com', expectedType: 'real_estate', description: 'Keller Williams Realty' },
-            { url: 'https://www.sothebysrealty.com', expectedType: 'real_estate', description: 'Luxury real estate' },
-            { url: 'https://www.cbcommercial.com', expectedType: 'real_estate', description: 'Commercial real estate' },
-            { url: 'https://www.cushmanwakefield.com', expectedType: 'real_estate', description: 'Commercial real estate services' },
-            { url: 'https://www.cbre.com', expectedType: 'real_estate', description: 'Commercial real estate' },
-
-            // ✈️ TRAVEL (10 sites)
-            { url: 'https://www.booking.com', expectedType: 'travel', description: 'Hotel booking platform' },
-            { url: 'https://www.expedia.com', expectedType: 'travel', description: 'Travel booking site' },
-            { url: 'https://www.airbnb.com', expectedType: 'travel', description: 'Vacation rentals' },
-            { url: 'https://www.hotels.com', expectedType: 'travel', description: 'Hotel reservations' },
-            { url: 'https://www.priceline.com', expectedType: 'travel', description: 'Travel deals' },
-            { url: 'https://www.kayak.com', expectedType: 'travel', description: 'Travel search engine' },
-            { url: 'https://www.tripadvisor.com', expectedType: 'travel', description: 'Travel reviews' },
-            { url: 'https://www.marriott.com', expectedType: 'travel', description: 'Hotel chain' },
-            { url: 'https://www.hilton.com', expectedType: 'travel', description: 'Hotel group' },
-            { url: 'https://www.delta.com', expectedType: 'travel', description: 'Airline company' },
-
-            // 🔧 SERVICES (5 sites)
-            { url: 'https://www.squarespace.com', expectedType: 'services', description: 'Website building service' },
-            { url: 'https://www.wix.com', expectedType: 'services', description: 'Website builder' },
-            { url: 'https://www.wordpress.com', expectedType: 'services', description: 'Blog platform' },
-            { url: 'https://www.shopify.com', expectedType: 'services', description: 'Ecommerce platform' },
-            { url: 'https://www.godaddy.com', expectedType: 'services', description: 'Domain and hosting' }
-        ];
         
         async function testAutoClassification() {
             try {
