@@ -943,6 +943,10 @@ async function extractRealSiteStructures(layoutPatterns) {
 function extractSectionOrder(layoutStructure) {
   const sections = [];
   
+  console.log(`🔍 [Section Order] Analyzing layout structure:`, layoutStructure);
+  console.log(`🔍 [Section Order] Structure keys:`, Object.keys(layoutStructure));
+  console.log(`🔍 [Section Order] Structure values:`, Object.values(layoutStructure));
+  
   // MAPPA dei elementi layout_structure → sezioni sito reali
   const layoutToSection = {
     'header': 'header',
@@ -966,11 +970,20 @@ function extractSectionOrder(layoutStructure) {
   // ORDINE TIPICO delle sezioni (se non c'è order esplicito)
   const typicalOrder = ['header', 'navigation', 'hero', 'main-content', 'gallery', 'products', 'services', 'about', 'contact', 'sidebar', 'footer'];
   
-  // Estrai sezioni presenti (quelle con valore true)
+  // Estrai sezioni presenti (quelle con valore true O che esistono come chiavi)
   const presentSections = Object.entries(layoutStructure)
-    .filter(([key, value]) => value === true)
+    .filter(([key, value]) => value === true || value === 1 || (typeof value === 'object' && value !== null))
     .map(([key]) => layoutToSection[key] || key)
     .filter(section => section); // Rimuovi undefined
+  
+  // PLUS: Se non troviamo sezioni con valori true, usa le chiavi direttamente
+  if (presentSections.length === 0) {
+    console.log(`🔧 [Section Order] No true values found, using keys directly:`, Object.keys(layoutStructure));
+    const directSections = Object.keys(layoutStructure)
+      .map(key => layoutToSection[key] || key)
+      .filter(section => section);
+    presentSections.push(...directSections);
+  }
   
   // Ordina secondo l'ordine tipico
   for (const section of typicalOrder) {
@@ -985,6 +998,9 @@ function extractSectionOrder(layoutStructure) {
       sections.push(section);
     }
   }
+  
+  console.log(`✅ [Section Order] Final sections: [${sections.join(', ')}]`);
+  console.log(`✅ [Section Order] Present sections found: [${presentSections.join(', ')}]`);
   
   return [...new Set(sections)]; // Rimuovi duplicati
 }
@@ -1165,9 +1181,18 @@ async function applyTrainingBasedStyles(blocks, designData, layoutPatterns) {
   return Array.isArray(styledBlocks) ? styledBlocks : [];
 }
 
-/**
- * 🔍 Funzioni helper per il sistema dinamico
- */
+// 🔢 Helper functions per il sistema dinamico
+
+// Calcola semantic score basato sui blocchi generati
+function calculateSemanticScore(blocks, businessType) {
+  if (!blocks || blocks.length === 0) return 0;
+  
+  const baseScore = blocks.length * 20; // 20 punti per blocco
+  const confidenceBonus = blocks.reduce((sum, block) => sum + (block.confidence || 70), 0);
+  const typeBonus = blocks.filter(block => block.aiEnhanced).length * 10; // 10 punti per blocco AI
+  
+  return Math.min(100, baseScore + (confidenceBonus / blocks.length) + typeBonus);
+}
 
 // Calcola il peso di un pattern basato su confidence e data
 function calculatePatternWeight(confidence, updatedAt) {
