@@ -222,28 +222,36 @@ async function generateDynamicBlocks(businessType, businessName, patterns, aiCon
   
   try {
     // GENERAZIONE 100% AI: Crea sezioni UNICHE per questo business
-    const prompt = `You are creating a UNIQUE website structure for "${businessName}" (type: ${businessType}).
+    const prompt = `Stai creando una struttura sito web UNICA per "${businessName}" (tipo: ${businessType}).
 
-IMPORTANT: DO NOT use generic sections like "hero", "services", "about", "contact".
-CREATE ORIGINAL section names that are SPECIFIC to this business.
+IMPORTANTE: Rileva la lingua del business "${businessName}" e rispondi in quella lingua.
+NON usare sezioni generiche come "hero", "servizi", "chi siamo", "contatti".
+CREA nomi di sezioni ORIGINALI che sono SPECIFICI per questo business.
+NON creare più sezioni che parlano di contatti o informazioni simili.
 
-Business context:
+Contesto business:
 - Business: ${businessName}
-- Type: ${businessType} 
-- AI Content: ${JSON.stringify(aiContent).substring(0, 500)}...
+- Tipo: ${businessType} 
+- Contenuto AI: ${JSON.stringify(aiContent).substring(0, 500)}...
 
-Generate 4-6 UNIQUE sections with names that are SPECIFIC to this business.
-For a florist, think: "seasonal-collections", "wedding-arrangements", "delivery-zones", "care-instructions"
-For a restaurant: "signature-dishes", "chef-story", "reservation-system", "wine-pairings"
+Genera 3-4 sezioni UNICHE con nomi SPECIFICI per questo business.
+Per un fioraio, pensa: "collezioni-stagionali", "matrimoni-eventi", "cura-fiori"
+Per un ristorante: "piatti-signature", "storia-chef", "wine-pairing"
 
-Respond ONLY with JSON:
+REGOLE:
+- Solo 1 sezione può contenere informazioni di contatto 
+- Evita duplicazioni di contenuto simile
+- Concentrati su servizi/prodotti specifici del business
+- Usa nomi creativi e specifici
+
+Rispondi SOLO con JSON nella lingua del business:
 {
   "sections": [
     {
-      "name": "unique-section-name",
-      "purpose": "what this section does",
+      "name": "nome-sezione-unica",
+      "purpose": "cosa fa questa sezione",
       "priority": 1-10,
-      "businessSpecific": "why this matters for ${businessType}"
+      "businessSpecific": "perché questo è importante per ${businessType}"
     }
   ]
 }`;
