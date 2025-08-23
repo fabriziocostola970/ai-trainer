@@ -5,6 +5,7 @@ const DesignIntelligence = require('../ai/design-intelligence');
 const OpenAI = require('openai');
 const puppeteer = require('puppeteer');
 
+// 🚀 v2.0 - Sistema 100% Dinamico OpenAI (Deploy 23-08-2025)
 // 🤖 OpenAI content generation with fallback
 async function generateBusinessContentWithAI(businessType, businessName) {
   try {
@@ -584,17 +585,21 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       });
     }
 
-    // 🔧 SISTEMA DINAMICO: SEMPRE classificazione OpenAI - NO mapping statico
+    // 🔧 SISTEMA DINAMICO: SEMPRE classificazione OpenAI PRIMA di tutto
     console.log(`🤖 [Dynamic Classification] Starting OpenAI classification for: "${businessType}"`);
     
-    // 🎯 STEP 1: Genera sempre immagini con classificazione OpenAI dinamica
-    // Questo farà automaticamente la classificazione corretta dentro getBusinessImagesFromDB
-    const imageResult = await getBusinessImagesFromDB(businessType, businessName, 6);
-    const galleryImages = imageResult.images || imageResult; // Backward compatibility
+    // 🎯 STEP 1: SEMPRE classificazione OpenAI per qualsiasi input
+    let finalBusinessType = businessType;
+    if (businessName) {
+      // Se abbiamo un businessName, usalo per la classificazione più accurata
+      const classificationResult = await generateAndScrapeCompetitors(businessType, businessName);
+      finalBusinessType = classificationResult?.identifiedBusinessType || businessType;
+      console.log(`🎯 [Dynamic] OpenAI classified: "${businessType}" → "${finalBusinessType}"`);
+    }
     
-    // 🎯 STEP 2: Usa SEMPRE il businessType identificato da OpenAI
-    const finalBusinessType = imageResult.identifiedBusinessType || businessType;
-    console.log(`🎯 [Dynamic] OpenAI classified: "${businessType}" → "${finalBusinessType}"`);
+    // 🎯 STEP 2: Ora usa il businessType CORRETTO per cercare immagini nel database
+    const imageResult = await getBusinessImagesFromDB(finalBusinessType, businessName, 6);
+    const galleryImages = imageResult.images || imageResult; // Backward compatibility
     
     // 🤖 STEP 3: Genera contenuto AI con il businessType CORRETTO
     console.log('🤖 Generating AI content with correct business type...');
@@ -697,7 +702,7 @@ router.post('/layout', authenticateAPI, async (req, res) => {
         metadata: {
           businessType: finalBusinessType,
           originalBusinessType: businessType,
-          translatedBusinessType: englishBusinessType,
+          translatedBusinessType: finalBusinessType,
           style,
           confidence: confidenceValue,
           generatedAt: new Date().toISOString(),
