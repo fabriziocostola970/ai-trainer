@@ -751,11 +751,10 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     const response = {
       success: true,
       source: 'pure-ai-dynamic-v6',
+      layout: blocks, // ✅ Frontend compatibility
       layoutData: {
         blocks,
         design: designData.design,
-        dynamicCSS,
-        designSystem: dynamicDesignSystem,
         metadata: {
           businessType: finalBusinessType,
           originalBusinessType: businessType,
@@ -775,6 +774,11 @@ router.post('/layout', authenticateAPI, async (req, res) => {
           aiGeneratedColors: true
         }
       },
+      // ✅ CSS DINAMICO DISPONIBILE PER FRONTEND
+      dynamicCSS,
+      designSystem: dynamicDesignSystem,
+      style,
+      businessName,
       businessType: finalBusinessType,
       semanticScore: calculateSemanticScore(blocks, finalBusinessType),
       suggestedBlocks: blocks.map(block => block.type),
