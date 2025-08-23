@@ -1162,7 +1162,7 @@ function analyzeCommonLayoutPatterns(patterns) {
 // Trova il pattern più comune per un tipo specifico
 function findMostCommonPattern(layoutPatterns, type) {
   return layoutPatterns.find(pattern => 
-    pattern.type.includes(type) || pattern.examples.some(ex => ex.type?.includes(type))
+    pattern.type.includes(type) || (pattern.examples && Array.isArray(pattern.examples) && pattern.examples.some(ex => ex.type?.includes(type)))
   );
 }
 
@@ -1279,7 +1279,7 @@ function calculateAverageConfidence(blocks) {
 function findStylePatternForBlockType(layoutPatterns, blockType) {
   return layoutPatterns.find(pattern => 
     pattern.type === blockType || 
-    pattern.examples.some(ex => ex.type === blockType)
+    (pattern.examples && Array.isArray(pattern.examples) && pattern.examples.some(ex => ex.type === blockType))
   );
 }
 
