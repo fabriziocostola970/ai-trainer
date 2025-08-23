@@ -25,13 +25,15 @@ async function generateBusinessContentWithAI(businessType, businessName) {
 
     const prompt = `Genera contenuti specifici per un business di tipo "${businessType}" chiamato "${businessName}".
     
+    IMPORTANTE: Rispondi SEMPRE e SOLO in ITALIANO. Tutti i testi, titoli, descrizioni devono essere in italiano.
+    
     Fornisci contenuti in formato JSON per:
     1. Hero section (titolo, sottotitolo, descrizione, CTA)
     2. Servizi/Prodotti (3 elementi con nome, descrizione, prezzo indicativo)
     3. About section (storia del business)
     4. Contact (metodi di contatto)
     
-    Rispondi SOLO con JSON valido, senza markdown:
+    Rispondi SOLO con JSON valido, senza markdown, TUTTO IN ITALIANO:
     {
       "hero": {
         "title": "...",
