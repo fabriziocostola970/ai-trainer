@@ -1139,32 +1139,50 @@
             }
             
             try {
-                logMessage('👀 Opening layout preview...', 'info');
+                logMessage('� Opening V5.0 DYNAMIC layout preview...', 'info');
                 
-                // Generate sections from AI blocks
-                const generateSectionHTML = (blockName) => {
-                    const blockMap = {
-                        'navigation-elegant': `<nav style="background: rgba(255,255,255,0.95); padding: 1rem 0; position: fixed; width: 100%; top: 0; z-index: 1000;"><div class="container" style="display: flex; justify-content: space-between; align-items: center;"><div style="font-weight: bold; font-size: 1.2rem;">${generatedLayout.businessName}</div><div><a href="#about" style="margin: 0 1rem; text-decoration: none; color: #333;">About</a><a href="#services" style="margin: 0 1rem; text-decoration: none; color: #333;">Menu</a><a href="#contact" style="margin: 0 1rem; text-decoration: none; color: #333;">Contact</a></div></div></nav>`,
+                // 🔥 V5.0: GENERATE SECTIONS DYNAMICALLY FROM AI BLOCKS
+                const generateSectionHTML = (blockData) => {
+                    // Se è un oggetto block con content AI, usa quello
+                    if (blockData && blockData.content) {
+                        const content = blockData.content;
+                        const blockType = blockData.type || 'ai-dynamic';
                         
-                        'hero-restaurant': `<section class="hero" style="margin-top: 80px;"><div class="container"><h1>${generatedLayout.businessName}</h1><p>Layout generato dall'AI allenata - Stile: ${generatedLayout.style}</p><button style="background: white; color: #667eea; padding: 1rem 2rem; border: none; border-radius: 5px; font-size: 1.1rem; margin-top: 2rem; cursor: pointer;">Prenota Ora</button></div></section>`,
-                        
-                        'menu-showcase': `<section class="section" id="menu"><div class="container"><h2>🍽️ Menu Speciali</h2><div class="grid"><div class="card"><h3>Antipasti Gourmet</h3><p>Selezione di antipasti preparati con ingredienti freschi e locali</p><span style="color: #667eea; font-weight: bold;">€15</span></div><div class="card"><h3>Primi Piatti</h3><p>Pasta fresca fatta in casa con sughi tradizionali</p><span style="color: #667eea; font-weight: bold;">€18</span></div><div class="card"><h3>Secondi di Carne</h3><p>Carni selezionate cotte alla griglia con contorni stagionali</p><span style="color: #667eea; font-weight: bold;">€25</span></div></div></div></section>`,
-                        
-                        'about-story': `<section class="section" id="about"><div class="container"><h2>La Nostra Storia</h2><p>Questo layout è stato generato dall'AI dopo il training con i tuoi siti custom. Un ristorante che combina tradizione e innovazione, offrendo un'esperienza culinaria unica nel cuore della città.</p></div></section>`,
-                        
-                        'gallery-food': `<section class="section"><div class="container"><h2>📸 Gallery Piatti</h2><div class="grid"><div class="card" style="background: linear-gradient(45deg, #ff6b6b, #feca57); color: white; text-align: center; min-height: 200px; display: flex; align-items: center; justify-content: center;"><h3>🥗 Piatto del Giorno</h3></div><div class="card" style="background: linear-gradient(45deg, #48cae4, #023e8a); color: white; text-align: center; min-height: 200px; display: flex; align-items: center; justify-content: center;"><h3>🍝 Pasta Fresca</h3></div><div class="card" style="background: linear-gradient(45deg, #f72585, #b5179e); color: white; text-align: center; min-height: 200px; display: flex; align-items: center; justify-content: center;"><h3>🥩 Carne alla Griglia</h3></div></div></div></section>`,
-                        
-                        'reviews-customers': `<section class="section"><div class="container"><h2>⭐ Recensioni Clienti</h2><div class="grid"><div class="card"><h3>Marco R.</h3><p>"Esperienza fantastica! Il cibo è delizioso e il servizio impeccabile. Consiglio vivamente!"</p><div style="color: #ffd700;">⭐⭐⭐⭐⭐</div></div><div class="card"><h3>Sofia M.</h3><p>"Ambiente accogliente e piatti creativi. Perfetto per una serata romantica."</p><div style="color: #ffd700;">⭐⭐⭐⭐⭐</div></div><div class="card"><h3>Andrea T.</h3><p>"Qualità eccellente e prezzi giusti. Tornerò sicuramente!"</p><div style="color: #ffd700;">⭐⭐⭐⭐⭐</div></div></div></div></section>`,
-                        
-                        'contact-reservation': `<section class="section" id="contact"><div class="container"><h2>📞 Contatti & Prenotazioni</h2><div class="grid"><div class="card"><h3>📍 Dove Siamo</h3><p>Via Roma 123<br>00100 Roma, Italia</p></div><div class="card"><h3>📞 Telefono</h3><p>+39 06 123 4567<br>Aperto: 19:00 - 23:30</p></div><div class="card"><h3>📧 Email</h3><p>info@${generatedLayout.businessName.toLowerCase().replace(/\s+/g, '')}.com</p></div></div></div></section>`,
-                        
-                        'footer-social': `<footer class="footer"><div class="container"><p>🤖 Generated by AI-Trainer | Score: ${generatedLayout.semanticScore}/100</p><div style="margin-top: 1rem;"><span style="margin: 0 1rem;">📘 Facebook</span><span style="margin: 0 1rem;">📷 Instagram</span><span style="margin: 0 1rem;">🐦 Twitter</span></div></div></footer>`
-                    };
+                        return `<section class="section ai-dynamic" id="${blockData.id}">
+                            <div class="container">
+                                <h2>${content.title || 'Sezione AI'}</h2>
+                                ${content.subtitle ? `<h3>${content.subtitle}</h3>` : ''}
+                                <p>${content.description || ''}</p>
+                                ${content.items && content.items.length ? `
+                                <div class="grid">
+                                    ${content.items.map(item => `
+                                        <div class="card">
+                                            <h3>${item.name || ''}</h3>
+                                            <p>${item.description || ''}</p>
+                                            ${item.price ? `<span style="color: #667eea; font-weight: bold;">${item.price}</span>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>` : ''}
+                                ${content.contact ? `
+                                <div class="contact-info">
+                                    ${content.contact.email ? `<p>📧 ${content.contact.email}</p>` : ''}
+                                    ${content.contact.phone ? `<p>📞 ${content.contact.phone}</p>` : ''}
+                                    ${content.contact.address ? `<p>📍 ${content.contact.address}</p>` : ''}
+                                </div>` : ''}
+                            </div>
+                        </section>`;
+                    }
                     
-                    return blockMap[blockName] || `<section class="section"><div class="container"><h2>${blockName}</h2><p>Sezione generata dall'AI: ${blockName}</p></div></section>`;
+                    // Fallback per blocchi senza content
+                    return `<section class="section dynamic-fallback">
+                        <div class="container">
+                            <h2>Sezione Dinamica</h2>
+                            <p>Contenuto generato dall'AI V5.0</p>
+                        </div>
+                    </section>`;
                 };
                 
-                // Generate HTML from AI blocks
+                // � V5.0: Generate HTML from AI dynamic blocks
                 const sectionsHTML = generatedLayout.layout.map(block => generateSectionHTML(block)).join('\n');
                 
                 console.log('🔍 Generated sections HTML:', sectionsHTML.substring(0, 500) + '...');
