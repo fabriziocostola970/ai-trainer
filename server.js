@@ -148,7 +148,9 @@ app.get('/debug/business-types', async (req, res) => {
 app.use('/training', authenticateAPI, require('./src/training/training-interface'));
 
 // Public API Routes (with authentication) 
-app.use('/api/generate', authenticateAPI, require('./src/api/generate-layout'));
+// 🎨 AI Layout Generation Routes - V6.0 Compatible
+app.use('/api/generate-layout', authenticateAPI, require('./src/api/generate-layout'));  // New V6.0 route
+app.use('/api/generate', authenticateAPI, require('./src/api/generate-layout'));  // Legacy compatibility
 app.use('/api/generate', authenticateAPI, require('./src/api/generate-design')); // NEW: Design patterns API
 app.use('/api/optimize', authenticateAPI, require('./src/api/optimize-blocks'));
 app.use('/api/validate', authenticateAPI, require('./src/api/validate-template'));
