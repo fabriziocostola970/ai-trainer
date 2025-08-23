@@ -522,21 +522,7 @@ async function saveBusinessImages(businessType, businessImages, confidence = 85)
   }
 }
 
-
-
-// 🔄 MAPPING BUSINESS TYPES (Italiano → Inglese per training data)
-const BUSINESS_TYPE_MAPPING = {
-  'alimentare': ['restaurant', 'food', 'catering', 'cafe'],
-  'restaurant': ['restaurant', 'food', 'catering'],
-  'ristorante': ['restaurant', 'food', 'catering'],
-  'cibo': ['restaurant', 'food', 'catering'],
-  'tecnologia': ['technology', 'tech', 'software', 'startup'],
-  'moda': ['fashion', 'clothing', 'style'],
-  'ecommerce': ['ecommerce', 'shop', 'store'],
-  'portfolio': ['portfolio', 'personal', 'freelance'],
-  'azienda': ['business', 'corporate', 'company'],
-  'servizi': ['services', 'consulting', 'professional']
-};
+// � BUSINESS_TYPE_MAPPING RIMOSSO - Sistema 100% dinamico usa solo OpenAI
 
 // Middleware per autenticazione API
 const authenticateAPI = (req, res, next) => {
@@ -1423,102 +1409,390 @@ async function generateContentFromPattern(pattern, blockType, businessType, busi
 // 🧠 GENERATORI DI CONTENUTO DINAMICI
 
 async function generateGalleryContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
-  return {
-    title: `Galleria ${businessName}`,
-    subtitle: 'Le nostre realizzazioni in immagini',
-    description: 'Scopri il nostro lavoro attraverso una selezione curata delle nostre migliori realizzazioni.',
-    image: getTrainingBasedImage('gallery', businessType),
-    images: galleryImages.slice(0, 4),
-    confidence: pattern.confidence || 80
-  };
+  try {
+    console.log(`🤖 [Dynamic Gallery] Generating gallery for ${businessName} (${businessType})`);
+    
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key required for dynamic gallery generation');
+    }
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const prompt = `Generate compelling gallery section content for a ${businessType} business called "${businessName}".
+
+Context: This is for a real business website gallery section that will showcase:
+- Professional work/products of the ${businessType} business
+- Visual portfolio to attract customers
+- High-quality representations of their offerings
+
+Business Type: ${businessType}
+Business Name: ${businessName}
+
+Respond with ONLY valid JSON in this exact format:
+{
+  "title": "Gallery section title",
+  "subtitle": "Professional subtitle about visual portfolio",
+  "description": "Brief description of what visitors will see in the gallery",
+  "imageDescriptions": [
+    "Description of image 1 content",
+    "Description of image 2 content",
+    "Description of image 3 content",
+    "Description of image 4 content"
+  ]
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 500,
+      temperature: 0.7
+    });
+
+    const galleryData = JSON.parse(completion.choices[0].message.content.trim());
+    console.log(`✅ [Dynamic Gallery] Generated gallery content for ${businessName}`);
+    
+    return {
+      ...galleryData,
+      image: getTrainingBasedImage('gallery', businessType),
+      images: galleryImages.slice(0, 4),
+      confidence: pattern.confidence || 80
+    };
+    
+  } catch (error) {
+    console.log(`❌ [Dynamic Gallery] AI generation failed: ${error.message}`);
+    throw new Error(`Dynamic gallery generation failed: ${error.message}`);
+  }
 }
 
 async function generateServicesContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
-  const businessServices = {
-    'florist': ['Bouquet e composizioni', 'Decorazioni eventi', 'Piante da interno'],
-    'restaurant': ['Servizio al tavolo', 'Catering eventi', 'Delivery'],
-    'technology': ['Sviluppo software', 'Consulenza IT', 'Supporto tecnico'],
-    'beauty': ['Taglio e piega', 'Trattamenti viso', 'Colorazione'],
-    'automotive': ['Riparazione auto', 'Manutenzione', 'Diagnosi computerizzata']
-  };
-  
-  const services = businessServices[businessType] || ['Servizio professionale', 'Consulenza specializzata', 'Supporto clienti'];
-  
-  return {
-    title: `Servizi ${businessName}`,
-    subtitle: 'La nostra offerta professionale',
-    description: 'Scopri tutti i servizi che offriamo per soddisfare le tue esigenze.',
-    image: getTrainingBasedImage('services', businessType),
-    services: services.map((service, index) => ({
-      name: service,
-      description: `${service} professionale di alta qualità`,
-      icon: `service-${index + 1}`
-    })),
-    confidence: pattern.confidence || 80
-  };
+  try {
+    console.log(`🤖 [Dynamic Services] Generating services for ${businessName} (${businessType})`);
+    
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key required for dynamic services generation');
+    }
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const prompt = `Generate 3-4 specific services for a ${businessType} business called "${businessName}".
+
+Context: This is for a real business website, so services must be:
+- Realistic and specific to the ${businessType} industry
+- Professional and market-appropriate
+- Relevant to potential customers
+- Different from generic services
+
+Business Type: ${businessType}
+Business Name: ${businessName}
+
+Respond with ONLY valid JSON in this exact format:
+{
+  "title": "Services title for ${businessName}",
+  "subtitle": "Professional subtitle about services",
+  "description": "Brief description of service offerings",
+  "services": [
+    {
+      "name": "Service Name 1",
+      "description": "Detailed professional description",
+      "icon": "service-1"
+    },
+    {
+      "name": "Service Name 2", 
+      "description": "Detailed professional description",
+      "icon": "service-2"
+    },
+    {
+      "name": "Service Name 3",
+      "description": "Detailed professional description", 
+      "icon": "service-3"
+    }
+  ]
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 800,
+      temperature: 0.7
+    });
+
+    const servicesData = JSON.parse(completion.choices[0].message.content.trim());
+    console.log(`✅ [Dynamic Services] Generated ${servicesData.services.length} services for ${businessName}`);
+    
+    return {
+      ...servicesData,
+      image: getTrainingBasedImage('services', businessType),
+      confidence: pattern.confidence || 80
+    };
+    
+  } catch (error) {
+    console.log(`❌ [Dynamic Services] AI generation failed: ${error.message}`);
+    throw new Error(`Dynamic services generation failed: ${error.message}`);
+  }
 }
 
 async function generateProductsContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
-  const businessProducts = {
-    'florist': ['Rose fresche', 'Composizioni miste', 'Piante da regalo'],
-    'restaurant': ['Antipasti della casa', 'Primi piatti', 'Dolci tradizionali'],
-    'technology': ['Software personalizzato', 'App mobile', 'Sistemi web'],
-    'retail': ['Prodotto premium', 'Articolo bestseller', 'Novità stagionale']
-  };
-  
-  const products = businessProducts[businessType] || ['Prodotto di qualità', 'Articolo popolare', 'Offerta speciale'];
-  
-  return {
-    title: `Prodotti ${businessName}`,
-    subtitle: 'La nostra selezione di qualità',
-    description: 'Scopri i nostri prodotti selezionati per offrirti sempre il meglio.',
-    image: getTrainingBasedImage('products', businessType),
-    products: products.map((product, index) => ({
-      name: product,
-      description: `${product} di alta qualità`,
-      price: `€${(index + 1) * 25}`
-    })),
-    confidence: pattern.confidence || 80
-  };
+  try {
+    console.log(`🤖 [Dynamic Products] Generating products for ${businessName} (${businessType})`);
+    
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key required for dynamic products generation');
+    }
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const prompt = `Generate 3-4 specific products for a ${businessType} business called "${businessName}".
+
+Context: This is for a real business website, so products must be:
+- Realistic and specific to the ${businessType} industry
+- Market-appropriate with realistic pricing
+- Appealing to potential customers
+- Different from generic products
+
+Business Type: ${businessType}
+Business Name: ${businessName}
+
+Respond with ONLY valid JSON in this exact format:
+{
+  "title": "Products title for ${businessName}",
+  "subtitle": "Professional subtitle about products",
+  "description": "Brief description of product offerings",
+  "products": [
+    {
+      "name": "Product Name 1",
+      "description": "Detailed product description",
+      "price": "€XX"
+    },
+    {
+      "name": "Product Name 2",
+      "description": "Detailed product description", 
+      "price": "€XX"
+    },
+    {
+      "name": "Product Name 3",
+      "description": "Detailed product description",
+      "price": "€XX"
+    }
+  ]
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 800,
+      temperature: 0.7
+    });
+
+    const productsData = JSON.parse(completion.choices[0].message.content.trim());
+    console.log(`✅ [Dynamic Products] Generated ${productsData.products.length} products for ${businessName}`);
+    
+    return {
+      ...productsData,
+      image: getTrainingBasedImage('products', businessType),
+      confidence: pattern.confidence || 80
+    };
+    
+  } catch (error) {
+    console.log(`❌ [Dynamic Products] AI generation failed: ${error.message}`);
+    throw new Error(`Dynamic products generation failed: ${error.message}`);
+  }
 }
 
 async function generateAboutContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
-  return {
-    title: `Chi Siamo - ${businessName}`,
-    subtitle: 'La nostra storia e i nostri valori',
-    description: `${businessName} è un'azienda leader nel settore ${businessType}, con anni di esperienza e passione per l'eccellenza.`,
-    image: getTrainingBasedImage('about', businessType),
-    story: `Fondata con la missione di offrire servizi di alta qualità nel settore ${businessType}, ${businessName} ha costruito una reputazione solida basata su professionalità, affidabilità e innovazione.`,
-    confidence: pattern.confidence || 80
-  };
+  try {
+    console.log(`🤖 [Dynamic About] Generating about section for ${businessName} (${businessType})`);
+    
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key required for dynamic about generation');
+    }
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const prompt = `Generate a compelling "About Us" section for a ${businessType} business called "${businessName}".
+
+Context: This is for a real business website, so content must be:
+- Professional and credible
+- Specific to the ${businessType} industry
+- Tells a believable business story
+- Highlights unique value proposition
+- Connects with potential customers
+
+Business Type: ${businessType}
+Business Name: ${businessName}
+
+Respond with ONLY valid JSON in this exact format:
+{
+  "title": "About section title",
+  "subtitle": "Professional subtitle about the business",
+  "description": "Brief intro about ${businessName}",
+  "story": "Detailed business story (2-3 sentences about founding, mission, values)",
+  "values": [
+    "Core value 1",
+    "Core value 2", 
+    "Core value 3"
+  ]
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 600,
+      temperature: 0.7
+    });
+
+    const aboutData = JSON.parse(completion.choices[0].message.content.trim());
+    console.log(`✅ [Dynamic About] Generated about section for ${businessName}`);
+    
+    return {
+      ...aboutData,
+      image: getTrainingBasedImage('about', businessType),
+      confidence: pattern.confidence || 80
+    };
+    
+  } catch (error) {
+    console.log(`❌ [Dynamic About] AI generation failed: ${error.message}`);
+    throw new Error(`Dynamic about generation failed: ${error.message}`);
+  }
 }
 
 async function generateContactContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
-  return {
-    title: `Contatta ${businessName}`,
-    subtitle: 'Siamo qui per aiutarti',
-    description: 'Mettiti in contatto con noi per informazioni, preventivi o per prenotare i nostri servizi.',
-    image: getTrainingBasedImage('contact', businessType),
-    email: 'info@example.com',
-    phone: '+39 06 1234567',
-    address: 'Via Example 123, Roma',
-    confidence: pattern.confidence || 80
-  };
+  try {
+    console.log(`🤖 [Dynamic Contact] Generating contact section for ${businessName} (${businessType})`);
+    
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key required for dynamic contact generation');
+    }
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const prompt = `Generate a professional contact section for a ${businessType} business called "${businessName}".
+
+Context: This is for a real business website contact section that should:
+- Encourage customer contact
+- Be professional and welcoming
+- Include relevant contact methods for the ${businessType} industry
+- Build trust and accessibility
+
+Business Type: ${businessType}
+Business Name: ${businessName}
+
+Respond with ONLY valid JSON in this exact format:
+{
+  "title": "Contact section title",
+  "subtitle": "Professional subtitle encouraging contact",
+  "description": "Brief description about getting in touch",
+  "contactMethods": [
+    {
+      "type": "email",
+      "label": "Email",
+      "value": "info@example.com",
+      "description": "For general inquiries"
+    },
+    {
+      "type": "phone", 
+      "label": "Phone",
+      "value": "+39 06 1234567",
+      "description": "Call us during business hours"
+    },
+    {
+      "type": "address",
+      "label": "Address",
+      "value": "Via Example 123, Roma",
+      "description": "Visit our location"
+    }
+  ]
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 500,
+      temperature: 0.7
+    });
+
+    const contactData = JSON.parse(completion.choices[0].message.content.trim());
+    console.log(`✅ [Dynamic Contact] Generated contact section for ${businessName}`);
+    
+    return {
+      ...contactData,
+      image: getTrainingBasedImage('contact', businessType),
+      confidence: pattern.confidence || 80
+    };
+    
+  } catch (error) {
+    console.log(`❌ [Dynamic Contact] AI generation failed: ${error.message}`);
+    throw new Error(`Dynamic contact generation failed: ${error.message}`);
+  }
 }
 
 async function generateTestimonialsContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
-  return {
-    title: 'Cosa Dicono i Nostri Clienti',
-    subtitle: 'Recensioni autentiche',
-    description: 'La soddisfazione dei nostri clienti è la nostra priorità assoluta.',
-    image: getTrainingBasedImage('testimonials', businessType),
-    testimonials: [
-      { name: 'Marco R.', text: `Servizio eccellente da ${businessName}. Altamente raccomandato!`, rating: 5 },
-      { name: 'Laura S.', text: 'Professionalità e qualità al top. Tornerò sicuramente.', rating: 5 },
-      { name: 'Giuseppe M.', text: 'Esperienza fantastica, personale molto competente.', rating: 5 }
-    ],
-    confidence: pattern.confidence || 80
-  };
+  try {
+    console.log(`🤖 [Dynamic Testimonials] Generating testimonials for ${businessName} (${businessType})`);
+    
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key required for dynamic testimonials generation');
+    }
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const prompt = `Generate 3 realistic customer testimonials for a ${businessType} business called "${businessName}".
+
+Context: These testimonials should be:
+- Realistic and credible for the ${businessType} industry
+- Specific to services/products a ${businessType} business would offer
+- Varied in tone and focus (quality, service, experience)
+- Professional but authentic-sounding
+
+Business Type: ${businessType}
+Business Name: ${businessName}
+
+Respond with ONLY valid JSON in this exact format:
+{
+  "title": "Testimonials section title",
+  "subtitle": "Professional subtitle about customer satisfaction",
+  "description": "Brief description about customer reviews",
+  "testimonials": [
+    {
+      "name": "Customer Name 1",
+      "text": "Detailed review text mentioning specific experience",
+      "rating": 5,
+      "location": "City"
+    },
+    {
+      "name": "Customer Name 2", 
+      "text": "Detailed review text mentioning specific experience",
+      "rating": 5,
+      "location": "City"
+    },
+    {
+      "name": "Customer Name 3",
+      "text": "Detailed review text mentioning specific experience", 
+      "rating": 5,
+      "location": "City"
+    }
+  ]
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 700,
+      temperature: 0.7
+    });
+
+    const testimonialsData = JSON.parse(completion.choices[0].message.content.trim());
+    console.log(`✅ [Dynamic Testimonials] Generated ${testimonialsData.testimonials.length} testimonials for ${businessName}`);
+    
+    return {
+      ...testimonialsData,
+      image: getTrainingBasedImage('testimonials', businessType),
+      confidence: pattern.confidence || 80
+    };
+    
+  } catch (error) {
+    console.log(`❌ [Dynamic Testimonials] AI generation failed: ${error.message}`);
+    throw new Error(`Dynamic testimonials generation failed: ${error.message}`);
+  }
 }
 
 async function generateMenuContent(blockType, businessType, businessName, pattern, aiContent, galleryImages) {
