@@ -1185,25 +1185,43 @@ function generateHeroContentFromTraining(heroPattern, businessType, businessName
 
 // Estrae pattern di contenuto per business type
 function extractContentPatterns(layoutPatterns, businessType) {
-  const contentTypes = {
-    'florist': ['gallery', 'products', 'services', 'testimonials'],
-    'restaurant': ['menu', 'gallery', 'reviews', 'reservation'],
-    'technology': ['features', 'portfolio', 'case-studies', 'pricing'],
-    'beauty': ['services', 'gallery', 'booking', 'testimonials'],
-    'default': ['features', 'gallery', 'testimonials', 'contact']
+  console.log(`🔍 [Pattern Extract] Extracting content patterns for ${businessType}`);
+  console.log(`🔍 [Pattern Extract] Available patterns:`, layoutPatterns.length);
+  
+  // 🌸 NUOVO: Genera sempre blocchi specifici per business type, indipendentemente dai pattern
+  const businessSpecificBlocks = {
+    'florist': [
+      { type: 'services-florist', priority: 1, confidence: 85 },
+      { type: 'gallery-flowers', priority: 2, confidence: 80 },
+      { type: 'products-arrangements', priority: 3, confidence: 75 },
+      { type: 'testimonials-customers', priority: 4, confidence: 70 }
+    ],
+    'restaurant': [
+      { type: 'menu-showcase', priority: 1, confidence: 85 },
+      { type: 'gallery-food', priority: 2, confidence: 80 },
+      { type: 'reviews-customers', priority: 3, confidence: 75 },
+      { type: 'reservation-booking', priority: 4, confidence: 70 }
+    ],
+    'technology': [
+      { type: 'features-tech', priority: 1, confidence: 85 },
+      { type: 'portfolio-projects', priority: 2, confidence: 80 },
+      { type: 'case-studies', priority: 3, confidence: 75 },
+      { type: 'pricing-plans', priority: 4, confidence: 70 }
+    ],
+    'default': [
+      { type: 'features-general', priority: 1, confidence: 85 },
+      { type: 'gallery-business', priority: 2, confidence: 80 },
+      { type: 'testimonials-general', priority: 3, confidence: 75 },
+      { type: 'contact-info', priority: 4, confidence: 70 }
+    ]
   };
   
-  const relevantTypes = contentTypes[businessType] || contentTypes.default;
+  const businessBlocks = businessSpecificBlocks[businessType] || businessSpecificBlocks.default;
   
-  return layoutPatterns
-    .filter(pattern => relevantTypes.some(type => pattern.type.includes(type)))
-    .slice(0, 4)
-    .map((pattern, index) => ({
-      ...pattern,
-      priority: index + 1,
-      relevanceScore: calculateRelevanceScore(pattern, relevantTypes)
-    }))
-    .sort((a, b) => b.relevanceScore - a.relevanceScore);
+  console.log(`✅ [Pattern Extract] Generated ${businessBlocks.length} business-specific blocks for ${businessType}`);
+  console.log(`📋 [Pattern Extract] Block types:`, businessBlocks.map(b => b.type));
+  
+  return businessBlocks;
 }
 
 // Genera blocco da pattern specifico
@@ -1308,30 +1326,91 @@ function inferBlockTypeFromPattern(pattern) {
 }
 
 async function generateContentFromPattern(pattern, blockType, businessType, businessName, aiContent, galleryImages) {
+  console.log(`🎨 [Content Gen] Generating content for ${blockType} (${businessType})`);
+  
+  // 🌸 CONTENUTO SPECIFICO PER FIORISTI
+  if (businessType === 'florist') {
+    switch (blockType) {
+      case 'services-florist':
+        return {
+          title: 'I Nostri Servizi Floreali',
+          subtitle: 'Creazioni uniche per ogni occasione',
+          description: 'Offriamo servizi personalizzati per matrimoni, eventi aziendali, funerali e occasioni speciali.',
+          image: 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=800&h=600&fit=crop',
+          services: [
+            { name: 'Bouquet Sposa', description: 'Composizioni eleganti per il giorno più importante', price: 'Da €80' },
+            { name: 'Decorazioni Eventi', description: 'Allestimenti floreali per cerimonie e feste', price: 'Da €150' },
+            { name: 'Piante da Appartamento', description: 'Selezione di piante per la casa e ufficio', price: 'Da €25' }
+          ]
+        };
+        
+      case 'gallery-flowers':
+        return {
+          title: 'Galleria delle Nostre Creazioni',
+          subtitle: 'Fiori freschi e composizioni artistiche',
+          description: 'Scopri le nostre composizioni floreali realizzate con passione e creatività.',
+          image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&h=600&fit=crop',
+          images: [
+            'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=400&h=300&fit=crop',
+            'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=300&fit=crop',
+            'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=400&h=300&fit=crop',
+            'https://images.unsplash.com/photo-1477414348463-c0eb7f1359b6?w=400&h=300&fit=crop'
+          ]
+        };
+        
+      case 'products-arrangements':
+        return {
+          title: 'Composizioni e Bouquet',
+          subtitle: 'Fiori freschi di stagione',
+          description: 'Selezione curata di bouquet e composizioni floreali per ogni gusto.',
+          image: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800&h=600&fit=crop',
+          products: [
+            { name: 'Bouquet di Rose Rosse', description: 'Classico bouquet con 12 rose rosse fresche', price: '€45' },
+            { name: 'Composizione Mista Primaverile', description: 'Mix di fiori di stagione colorati', price: '€35' },
+            { name: 'Orchidea in Vaso', description: 'Elegante orchidea bianca in vaso decorativo', price: '€55' }
+          ]
+        };
+        
+      case 'testimonials-customers':
+        return {
+          title: 'Cosa Dicono i Nostri Clienti',
+          subtitle: 'Recensioni autentiche',
+          description: 'La soddisfazione dei nostri clienti è la nostra priorità.',
+          image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop',
+          testimonials: [
+            { name: 'Maria Rossi', text: 'Bouquet meraviglioso per il mio matrimonio. Consigliatissimo!', rating: 5 },
+            { name: 'Giuseppe Bianchi', text: 'Servizio eccellente e fiori sempre freschi.', rating: 5 },
+            { name: 'Anna Verdi', text: 'Personale gentile e competente. Tornerò sicuramente.', rating: 5 }
+          ]
+        };
+    }
+  }
+  
+  // 🍴 CONTENUTO SPECIFICO PER RISTORANTI
+  if (businessType === 'restaurant') {
+    switch (blockType) {
+      case 'menu-showcase':
+        return {
+          title: `Menu ${businessName}`,
+          subtitle: 'Sapori autentici della tradizione',
+          description: 'Scopri i nostri piatti preparati con ingredienti freschi e ricette tradizionali.',
+          image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&h=600&fit=crop',
+          menuItems: [
+            { name: 'Spaghetti Carbonara', description: 'Pasta fresca con guanciale, uova e pecorino', price: '€12' },
+            { name: 'Bistecca alla Fiorentina', description: 'Carne di manzo pregiata alla griglia', price: '€35' },
+            { name: 'Tiramisù della Casa', description: 'Dolce tradizionale fatto in casa', price: '€6' }
+          ]
+        };
+    }
+  }
+  
+  // 💻 CONTENUTO GENERICO FALLBACK
   const baseContent = {
     title: `${blockType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} - ${businessName}`,
-    subtitle: 'Contenuto generato dai pattern di training',
-    description: 'Questo contenuto è stato generato analizzando i competitor di successo nel tuo settore.',
+    subtitle: 'Contenuto generato dal sistema AI dinamico',
+    description: 'Questo contenuto è stato generato automaticamente basandosi sui pattern del settore.',
     image: getTrainingBasedImage('content', businessType)
   };
-
-  // Usa contenuto AI se disponibile
-  if (aiContent && blockType.includes('gallery')) {
-    return {
-      ...baseContent,
-      title: aiContent.gallery?.title || baseContent.title,
-      images: galleryImages.slice(0, 4),
-      items: aiContent.gallery?.items || []
-    };
-  }
-
-  if (aiContent && blockType.includes('menu')) {
-    return {
-      ...baseContent,
-      title: aiContent.menu?.title || baseContent.title,
-      items: aiContent.menu?.items || []
-    };
-  }
 
   return baseContent;
 }
