@@ -881,8 +881,8 @@ async function generateBlocksFromTrainingPatterns(layoutPatterns, businessType, 
   const heroPattern = findMostCommonPattern(layoutPatterns, 'hero');
   blocks.push({
     id: `hero-${blockId++}`,
-    type: heroPattern?.type || getOptimalHeroType(businessType),
-    content: generateHeroContentFromTraining(heroPattern, businessType, businessName, aiContent),
+    type: heroPattern?.type || 'hero-modern-dynamic',
+    content: await generateHeroContentFromTraining(heroPattern, businessType, businessName, aiContent),
     confidence: heroPattern?.confidence || 85,
     source: 'training-hero',
     aiEnhanced: true
@@ -1064,17 +1064,74 @@ function extractMenuItemsFromPatterns(layoutPatterns) {
   return null;
 }
 
-// Genera contenuto hero dai pattern di training
-function generateHeroContentFromTraining(heroPattern, businessType, businessName, aiContent) {
-  const trainingContent = heroPattern?.examples?.[0] || {};
-  
-  return {
-    title: aiContent?.hero?.title || trainingContent.title || `Benvenuto in ${businessName}`,
-    subtitle: aiContent?.hero?.subtitle || trainingContent.subtitle || getBusinessSubtitle(businessType, businessName),
-    description: aiContent?.hero?.description || trainingContent.description || getBusinessDescription(businessType),
-    image: getTrainingBasedImage('hero', businessType),
-    cta: aiContent?.hero?.cta || trainingContent.cta || getBusinessCTA(businessType)
-  };
+// Genera contenuto hero dai pattern di training - SISTEMA DINAMICO
+async function generateHeroContentFromTraining(heroPattern, businessType, businessName, aiContent) {
+  try {
+    console.log(`🤖 [Dynamic Hero] Generating hero content for ${businessName} (${businessType})`);
+    
+    // Se abbiamo già contenuto AI specifico per hero, usalo
+    if (aiContent?.hero) {
+      return {
+        title: aiContent.hero.title || `Benvenuto in ${businessName}`,
+        subtitle: aiContent.hero.subtitle || `Il meglio per ${businessType}`,
+        description: aiContent.hero.description || `Scopri ${businessName}`,
+        image: getTrainingBasedImage('hero', businessType),
+        cta: aiContent.hero.cta || 'Scopri di Più'
+      };
+    }
+    
+    // Altrimenti genera dinamicamente con OpenAI
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key required for dynamic hero generation');
+    }
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const prompt = `Generate compelling hero section content for a ${businessType} business called "${businessName}".
+
+Context: This is the main hero section of the website that should:
+- Grab visitor attention immediately
+- Clearly communicate the business value
+- Be specific to the ${businessType} industry
+- Include a strong call-to-action
+
+Business Type: ${businessType}
+Business Name: ${businessName}
+
+Respond with ONLY valid JSON in this exact format:
+{
+  "title": "Compelling main headline",
+  "subtitle": "Supporting subtitle that explains value",
+  "description": "Brief description of what the business offers",
+  "cta": "Strong call-to-action button text"
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 300,
+      temperature: 0.7
+    });
+
+    const heroData = JSON.parse(completion.choices[0].message.content.trim());
+    console.log(`✅ [Dynamic Hero] Generated hero content for ${businessName}`);
+    
+    return {
+      ...heroData,
+      image: getTrainingBasedImage('hero', businessType)
+    };
+    
+  } catch (error) {
+    console.log(`❌ [Dynamic Hero] AI generation failed: ${error.message}`);
+    // Fallback semplice invece di funzioni statiche
+    return {
+      title: `Benvenuto in ${businessName}`,
+      subtitle: `Professionalità e qualità nel settore ${businessType}`,
+      description: `Scopri ${businessName}, la tua scelta ideale per servizi di qualità.`,
+      image: getTrainingBasedImage('hero', businessType),
+      cta: 'Scopri di Più'
+    };
+  }
 }
 
 // Estrae pattern di contenuto per business type - SISTEMA VERAMENTE DINAMICO
