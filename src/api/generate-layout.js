@@ -584,25 +584,21 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       });
     }
 
-    // 🔧 FIX: Rispetta sempre la scelta dell'utente - NO Smart Classification
-    // Traduzione business type per compatibilità con training data
-    const englishBusinessType = BUSINESS_TYPE_MAPPING[businessType.toLowerCase()]?.[0] || businessType;
+    // 🔧 SISTEMA DINAMICO: SEMPRE classificazione OpenAI - NO mapping statico
+    console.log(`🤖 [Dynamic Classification] Starting OpenAI classification for: "${businessType}"`);
     
-    console.log(`🔄 Business type mapping: ${businessType} → ${englishBusinessType}`);
-    
-    // 🤖 Try to generate content with OpenAI first
-    console.log('🤖 Attempting AI content generation...');
-    const aiContent = await generateBusinessContentWithAI(englishBusinessType, businessName);
-    
-    // 🖼️ Generate gallery images from database (stock images only) - PASS businessName per traduzione
-    const imageResult = await getBusinessImagesFromDB(englishBusinessType, businessName, 6);
+    // 🎯 STEP 1: Genera sempre immagini con classificazione OpenAI dinamica
+    // Questo farà automaticamente la classificazione corretta dentro getBusinessImagesFromDB
+    const imageResult = await getBusinessImagesFromDB(businessType, businessName, 6);
     const galleryImages = imageResult.images || imageResult; // Backward compatibility
     
-    // 🎯 FIX CRITICAL: Usa il businessType CORRETTO identificato da OpenAI
-    const finalBusinessType = imageResult.identifiedBusinessType || englishBusinessType;
-    if (finalBusinessType !== englishBusinessType) {
-      console.log(`🎯 OpenAI corrected business type: ${englishBusinessType} → ${finalBusinessType}`);
-    }
+    // 🎯 STEP 2: Usa SEMPRE il businessType identificato da OpenAI
+    const finalBusinessType = imageResult.identifiedBusinessType || businessType;
+    console.log(`🎯 [Dynamic] OpenAI classified: "${businessType}" → "${finalBusinessType}"`);
+    
+    // 🤖 STEP 3: Genera contenuto AI con il businessType CORRETTO
+    console.log('🤖 Generating AI content with correct business type...');
+    const aiContent = await generateBusinessContentWithAI(finalBusinessType, businessName);
     
     // 🎨 Initialize Design Intelligence
     const designIntelligence = new DesignIntelligence();
@@ -641,8 +637,6 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       };
     }
     
-    console.log(`🔄 Business type mapping: ${businessType} → ${englishBusinessType}`);
-
     // Verifica disponibilità database prima di procedere
     const designAI = new DesignIntelligence();
     

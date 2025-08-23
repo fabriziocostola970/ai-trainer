@@ -29,7 +29,8 @@ async function testLayoutGeneration() {
     console.log('🧪 Testing Layout Generation...\n');
     
     const testPayload = {
-      businessType: 'florist',
+      businessType: 'services',  // Test con input generico 
+      businessName: 'Fioraio Roma Center',
       description: 'fioraio a Roma',
       language: 'it'
     };
