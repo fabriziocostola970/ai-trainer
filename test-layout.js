@@ -26,19 +26,18 @@ function makeHttpsRequest(url, options = {}, postData = null) {
 
 async function testLayoutGeneration() {
   try {
-    console.log('🧪 Testing Layout Generation...\n');
+    console.log('🎨 Testing V6.0 CSS Dynamic System on Railway...\n');
     
     const testPayload = {
-      businessType: 'services',  // Test con input generico 
-      businessName: 'Fioraio Roma Center',
-      description: 'fioraio a Roma',
-      language: 'it'
+      businessType: 'Fioraio a Roma',  // V6.0: Nome business per classificazione AI
+      businessName: 'Fioraio a Roma',
+      style: 'elegant'
     };
     
-    console.log('📤 Request payload:', JSON.stringify(testPayload, null, 2));
+    console.log('📤 V6.0 Request payload:', JSON.stringify(testPayload, null, 2));
     
     const result = await makeHttpsRequest(
-      'https://ai-trainer-production-8fd9.up.railway.app/api/generate/layout',
+      'https://ai-trainer-production-8fd9.up.railway.app/api/generate-layout',
       {
         method: 'POST',
         headers: {
@@ -49,16 +48,28 @@ async function testLayoutGeneration() {
       JSON.stringify(testPayload)
     );
     
-    console.log('\n📥 Response status:', result.status);
-    console.log('📥 Response data:', JSON.stringify(result.data, null, 2));
+    console.log('\n📥 V6.0 Response status:', result.status);
+    console.log('📥 V6.0 Response data:', JSON.stringify(result.data, null, 2));
     
     if (result.status === 200 && result.data.success) {
-      console.log('\n✅ Layout generation successful!');
-      console.log('🎯 Blocks generated:', result.data.layoutStructure?.blocks?.length || 0);
-      console.log('🎨 Design system:', result.data.designSystem ? 'Applied' : 'Not applied');
-      console.log('📊 Metadata:', result.data.metadata);
+      console.log('\n✅ V6.0 Layout generation successful!');
+      console.log('🎯 Blocks generated:', result.data.layout?.length || 0);
+      console.log('🎨 CSS Dynamic:', result.data.dynamicCSS ? 'PRESENT ✅' : 'MISSING ❌');
+      console.log('🎨 Design System:', result.data.designSystem ? 'PRESENT ✅' : 'MISSING ❌');
+      console.log('📊 Semantic Score:', result.data.semanticScore);
+      console.log('🏢 Business Type:', result.data.businessType);
+      
+      // Test colori specifici fioraio
+      if (result.data.dynamicCSS) {
+        const hasFloristColors = result.data.dynamicCSS.includes('#E91E63') || result.data.dynamicCSS.includes('#4CAF50');
+        console.log('🌸 Florist Colors (Rosa/Verde):', hasFloristColors ? 'FOUND ✅' : 'NOT FOUND ❌');
+        console.log('📏 CSS Length:', result.data.dynamicCSS.length, 'characters');
+      }
+      
     } else {
-      console.log('\n❌ Layout generation failed');
+      console.log('\n❌ V6.0 Layout generation failed');
+      console.log('❌ Error:', result.data.error);
+      console.log('📝 Message:', result.data.message);
     }
     
   } catch (error) {
