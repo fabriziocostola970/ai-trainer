@@ -16,8 +16,8 @@ async function generateBusinessContentWithAI(businessType, businessName) {
     });
     
     if (!process.env.OPENAI_API_KEY) {
-      console.log('⚠️ OpenAI API key not configured, using static content');
-      return null;
+      console.log('❌ OpenAI API key not configured - DYNAMIC SYSTEM REQUIRES AI');
+      throw new Error('OpenAI API key required for dynamic system');
     }
 
     const prompt = `Genera contenuti specifici per un business di tipo "${businessType}" chiamato "${businessName}".
@@ -85,14 +85,13 @@ async function generateBusinessContentWithAI(businessType, businessName) {
     return content;
     
   } catch (error) {
-    console.log(`❌ [OpenAI Content] Generation failed:`, {
+    console.log(`❌ [OpenAI Content] DYNAMIC CONTENT GENERATION FAILED:`, {
       error: error.message,
       stack: error.stack?.split('\n')[0],
       businessType,
       businessName
     });
-    console.log('⚠️ AI content generation failed, using fallback:', error.message);
-    return null;
+    throw new Error(`OpenAI content generation failed: ${error.message}`);
   }
 }
 
@@ -135,9 +134,8 @@ async function getBusinessImagesFromDB(businessType, businessName, count = 4) {
     return { images: galleryImages, identifiedBusinessType: actualBusinessType };
     
   } catch (error) {
-    console.log('⚠️ Database error, using fallback stock images:', error.message);
-    const fallbackImages = generateFallbackStockImages(businessType, count);
-    return { images: fallbackImages, identifiedBusinessType: businessType };
+    console.log('❌ Database error - DYNAMIC SYSTEM REQUIRES DATABASE:', error.message);
+    throw new Error(`Database connection required for dynamic images: ${error.message}`);
   }
 }
 
@@ -211,14 +209,13 @@ async function generateAndScrapeCompetitors(businessType, businessName = null) {
       return { identifiedBusinessType: actualBusinessType, competitorCount: competitorSites.length };
       
     } else {
-      console.log("No competitor sites generated for", businessType, "using default stock images");
-      return { identifiedBusinessType: businessType, competitorCount: 0 };
+      console.log("❌ NO competitor sites generated for", businessType, "- DYNAMIC SYSTEM FAILED");
+      throw new Error('OpenAI competitor generation failed - dynamic system requires competitors');
     }
 
   } catch (error) {
-    console.log("Error in automatic competitor generation:", error.message);
-    console.log("Continuing with stock images fallback");
-    return { identifiedBusinessType: businessType, competitorCount: 0 };
+    console.log("❌ COMPETITOR GENERATION FAILED:", error.message);
+    throw new Error(`Dynamic competitor analysis failed: ${error.message}`);
   }
 }
 
@@ -391,56 +388,71 @@ async function startAutomaticTraining(businessType, competitorSites) {
   }
 }
 
-// 🎨 Genera immagini stock sicure per settore specifico
+// 🎨 Genera immagini stock dinamicamente usando OpenAI + Unsplash
 async function generateStockImagesForBusiness(businessType) {
-  // 🔍 Mapping intelligente settore → parole chiave Unsplash
-  const sectorKeywords = {
-    restaurant: ['restaurant', 'food', 'dining', 'chef'],
-    ecommerce: ['shopping', 'products', 'retail', 'store'],
-    technology: ['technology', 'computer', 'office', 'innovation'],
-    fashion: ['fashion', 'clothing', 'style', 'boutique'],
-    dentist: ['dental', 'medical', 'healthcare', 'clinic'],
-    gym: ['fitness', 'workout', 'gym', 'health'],
-    bakery: ['bakery', 'bread', 'pastry', 'oven'],
-    lawyer: ['law', 'justice', 'legal', 'office'],
-    beauty: ['beauty', 'salon', 'spa', 'wellness'],
-    automotive: ['car', 'automotive', 'garage', 'repair'],
-    real_estate: ['house', 'property', 'real-estate', 'home'],
-    photography: ['camera', 'photography', 'studio', 'portrait'],
-    consulting: ['business', 'meeting', 'consulting', 'office'],
-    education: ['education', 'school', 'learning', 'classroom'],
-    default: ['business', 'professional', 'modern', 'clean']
-  };
-  
-  const keywords = sectorKeywords[businessType] || sectorKeywords.default;
-  
-  // ✅ Generate Unsplash URLs (copyright-free)
-  const businessImages = {
-    hero: `https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=1200&h=600&fit=crop&crop=center&q=${keywords[0]}`,
-    logo: `https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=100&fit=crop&crop=center&q=${keywords[1]}`,
-    gallery: keywords.map((keyword, index) => 
-      `https://images.unsplash.com/photo-${getUnsplashPhotoId(keyword, index)}?w=800&h=600&fit=crop&crop=center`
-    )
-  };
-  
-  return businessImages;
+  try {
+    console.log(`🤖 [Dynamic Images] Generating Unsplash keywords for: ${businessType}`);
+    
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key required for dynamic image generation');
+    }
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const prompt = `Generate 4 specific Unsplash search keywords for a "${businessType}" business.
+    
+    Rules:
+    - Keywords must be specific to the business type
+    - Must work well with Unsplash search
+    - Focus on visual elements that represent the business
+    - Avoid generic terms like "business" or "professional"
+    - Make them highly visual and industry-specific
+    
+    Respond with ONLY a JSON array of 4 keywords:
+    ["keyword1", "keyword2", "keyword3", "keyword4"]`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 100,
+      temperature: 0.7
+    });
+
+    const keywords = JSON.parse(completion.choices[0].message.content.trim());
+    console.log(`✅ [Dynamic Images] Generated keywords: ${keywords.join(', ')}`);
+    
+    // Generate dynamic Unsplash URLs
+    const businessImages = {
+      hero: `https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=1200&h=600&fit=crop&crop=center&q=${encodeURIComponent(keywords[0])}`,
+      logo: `https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=100&fit=crop&crop=center&q=${encodeURIComponent(keywords[1])}`,
+      gallery: keywords.map((keyword, index) => 
+        `https://images.unsplash.com/photo-${generateDynamicPhotoId(keyword, index)}?w=800&h=600&fit=crop&crop=center&q=${encodeURIComponent(keyword)}`
+      )
+    };
+    
+    return businessImages;
+  } catch (error) {
+    console.log(`❌ [Dynamic Images] Failed to generate: ${error.message}`);
+    throw new Error(`Dynamic image generation failed: ${error.message}`);
+  }
 }
 
-// 🎯 Mappa settori specifici a foto Unsplash verificate
-function getUnsplashPhotoId(keyword, index) {
-  const stockPhotos = {
-    restaurant: ['1517248135467-4c7edcad34c4', '1565299624946-b28f40a0ca4b', '1546069901-ba9599a7e63c', '1414235077428-338989a2e8c0'],
-    food: ['1546069901-ba9599a7e63c', '1565299624946-b28f40a0ca4b', '1504674900247-0877df9cc836', '1559339352-11d035aa65de'],
-    technology: ['1460925895917-afdab827c52f', '1552581234-26160f608093', '1518709268805-4e9042af2176', '1504384308090-c894fdcc538d'],
-    shopping: ['1441986300917-64674bd600d8', '1472851294608-062f824d29cc', '1441984904996-e0b6ba687e04', '1556742049-0cfed4f6a45d'],
-    medical: ['1559757148-5c350d0d3c56', '1576091160399-112ba8d25d1f', '1582750433449-648ed127bb54', '1559757175-5c350d0d3c56'],
-    fitness: ['1571019613454-1cb2f99b2d8b', '1534438327276-14e5300c3a48', '1571019614242-c5c5dee9f50b', '1544367567-0f2fcb009e0b'],
-    business: ['1497032628192-86f99bcd76bc', '1552581234-26160f608093', '1507003211169-0a1dd7228f2d', '1554224155-6726b3ff858f'],
-    default: ['1497032628192-86f99bcd76bc', '1552581234-26160f608093', '1507003211169-0a1dd7228f2d', '1554224155-6726b3ff858f']
-  };
+// 🎯 Generate dynamic photo IDs based on keyword hash
+function generateDynamicPhotoId(keyword, index) {
+  const baseIds = [
+    '1497032628192-86f99bcd76bc',
+    '1552581234-26160f608093', 
+    '1507003211169-0a1dd7228f2d',
+    '1554224155-6726b3ff858f'
+  ];
   
-  const photos = stockPhotos[keyword] || stockPhotos.default;
-  return photos[index % photos.length];
+  // Use keyword hash to select consistent but varied IDs
+  const hash = keyword.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  
+  return baseIds[Math.abs(hash + index) % baseIds.length];
 }
 
 // 💾 Salva immagini nel database
@@ -510,17 +522,7 @@ async function saveBusinessImages(businessType, businessImages, confidence = 85)
   }
 }
 
-// 🔄 Fallback immagini stock sicure
-function generateFallbackStockImages(businessType, count = 4) {
-  const fallbackImages = [
-    'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1552581234-26160f608093?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&h=600&fit=crop'
-  ];
-  
-  return fallbackImages.slice(0, count);
-}
+
 
 // 🔄 MAPPING BUSINESS TYPES (Italiano → Inglese per training data)
 const BUSINESS_TYPE_MAPPING = {
@@ -612,27 +614,8 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       console.log(`🎯 [Design] Components: colors✓ typography✓ layout✓ css✓`);
       
     } catch (designError) {
-      console.log(`⚠️ [Design] Fallback mode:`, designError.message);
-      designData = {
-        design: {
-          colors: { 
-            primary: '#3B82F6', 
-            secondary: '#10B981', 
-            accent: '#F59E0B',
-            background: '#FFFFFF',
-            text: '#1F2937',
-            confidence: 'medium'
-          },
-          typography: { 
-            primary: 'Inter', 
-            secondary: 'system-ui',
-            weights: [400, 600, 700],
-            sizes: { h1: 48, h2: 36, h3: 24, body: 16 },
-            confidence: 'medium'
-          }
-        },
-        confidence: 70
-      };
+      console.log(`❌ [Design] DESIGN INTELLIGENCE FAILED:`, designError.message);
+      throw new Error(`Design Intelligence failed - dynamic system requires AI design: ${designError.message}`);
     }
     
     // Verifica disponibilità database prima di procedere
@@ -642,16 +625,10 @@ router.post('/layout', authenticateAPI, async (req, res) => {
       // Test rapido per verificare se il database ai_design_patterns esiste
       await designAI.pool.query('SELECT 1 FROM ai_design_patterns LIMIT 1');
     } catch (dbError) {
+      // 🚫 REMOVE FALLBACK MAINTENANCE MODE - Sistema deve essere dinamico
       console.log(`❌ Database ai_design_patterns not available: ${dbError.message}`);
       await designAI.close();
-      
-      // Restituisci modalità manutenzione quando il database non è disponibile
-      return res.status(503).json({
-        success: false,
-        error: 'Service temporarily unavailable - database maintenance in progress',
-        isFallback: true,
-        redirect: '/maintenance'
-      });
+      throw new Error(`Database ai_design_patterns required for dynamic system: ${dbError.message}`);
     }
 
     // Utilizza Design Intelligence già calcolato sopra (rimuove duplicazione)
@@ -713,11 +690,13 @@ router.post('/layout', authenticateAPI, async (req, res) => {
     res.json(response);
     
   } catch (error) {
-    console.error('❌ Error generating layout:', error);
+    console.error('❌ DYNAMIC LAYOUT GENERATION FAILED:', error);
+    // 🚫 NO FALLBACK - Sistema deve essere 100% dinamico
     res.status(500).json({
       success: false,
-      error: error.message,
-      fallback: generateFallbackLayout()
+      error: 'Dynamic layout system failed',
+      details: error.message,
+      requiresDynamic: true
     });
   }
 });
@@ -766,60 +745,7 @@ router.post('/template', async (req, res) => {
   }
 });
 
-// 🔄 Fallback per quando non ci sono dati di training
-function generateFallbackLayout(businessType) {
-  console.log(`🔄 Using fallback layout for ${businessType}`);
-  
-  const fallbackLayouts = {
-    restaurant: [
-      'navigation-elegant',
-      'hero-restaurant', 
-      'menu-showcase',
-      'about-story',
-      'gallery-food',
-      'reviews-customers',
-      'contact-reservation',
-      'footer-social'
-    ],
-    ecommerce: [
-      'navigation-shop',
-      'hero-product',
-      'categories-grid',
-      'featured-products',
-      'testimonials-customers',
-      'newsletter-signup',
-      'footer-ecommerce'
-    ],
-    technology: [
-      'navigation-tech',
-      'hero-tech',
-      'features-tech',
-      'case-studies',
-      'pricing-plans',
-      'contact-tech',
-      'footer-tech'
-    ],
-    default: [
-      'navigation-standard',
-      'hero-default',
-      'features-grid',
-      'about-section',
-      'contact-form',
-      'footer-standard'
-    ]
-  };
-  
-  return {
-    blocks: fallbackLayouts[businessType] || fallbackLayouts.default,
-    confidence: 75,
-    trainingData: {
-      sessionsAnalyzed: 0,
-      samplesAnalyzed: 0,
-      sitesAnalyzed: 0,
-      patternsFound: ['fallback-mode']
-    }
-  };
-}
+
 
 /**
  * 🧠 SISTEMA DINAMICO - Genera blocchi basati sui dati di training reali
@@ -857,9 +783,9 @@ async function generateDynamicBlocks(businessType, businessName, designData, cur
     return styledBlocks;
     
   } catch (error) {
-    console.log(`⚠️ [Dynamic] Fallback to static system:`, error.message);
-    // Fallback al sistema statico se il dinamico fallisce
-    return generateEnhancedBlocksStatic(businessType, businessName, designData, currentBlocks, aiContent, galleryImages);
+    console.log(`❌ [Dynamic] DYNAMIC SYSTEM FAILED - ABORTING:`, error.message);
+    // 🚫 NESSUN FALLBACK - Sistema deve essere completamente dinamico
+    throw new Error(`Dynamic system failure: ${error.message}`);
   }
 }
 
@@ -1046,26 +972,8 @@ async function applyTrainingBasedStyles(blocks, designData, layoutPatterns) {
       styledBlocks.push(styledBlock);
       
     } catch (error) {
-      console.log(`⚠️ [Training Styles] Error styling block ${block.type}: ${error.message}`);
-      
-      // 🔄 Fallback a stili di base se il sistema dinamico fallisce
-      const fallbackStyles = generateFallbackCSS(block.type, designData);
-      styledBlocks.push({
-        ...block,
-        style: {
-          ...(block.style || {}),
-          ...fallbackStyles
-        },
-        cssClass: `ai-${block.type.replace(/-/g, '_')} fallback-styles`,
-        trainingBased: false,
-        styleConfidence: 0.3,
-        metadata: {
-          ...(block.metadata || {}),
-          trainingBased: false,
-          confidence: 0.3,
-          fallback: true
-        }
-      });
+      console.log(`❌ [Training Styles] DYNAMIC STYLING FAILED for block ${block.type}: ${error.message}`);
+      throw new Error(`Dynamic styling failed for ${block.type}: ${error.message}`);
     }
   }
   
@@ -1267,7 +1175,7 @@ function extractContentPatterns(layoutPatterns, businessType) {
 
 // Genera blocco da pattern specifico
 async function generateBlockFromPattern(pattern, businessType, businessName, aiContent, galleryImages, blockId) {
-  const blockType = inferBlockTypeFromPattern(pattern);
+  const blockType = await inferBlockTypeFromPattern(pattern, businessType, null);
   if (!blockType) return null;
   
   return {
@@ -1432,13 +1340,57 @@ function calculateRelevanceScore(pattern, relevantTypes) {
   return (typeMatch / relevantTypes.length) * pattern.confidence;
 }
 
-function inferBlockTypeFromPattern(pattern) {
-  if (pattern.type.includes('gallery')) return 'gallery-dynamic';
-  if (pattern.type.includes('menu')) return 'menu-showcase';
-  if (pattern.type.includes('features')) return 'features-grid';
-  if (pattern.type.includes('testimonials') || pattern.type.includes('reviews')) return 'testimonials-dynamic';
-  if (pattern.type.includes('contact')) return 'contact-form';
-  return pattern.type.includes('product') ? 'products-showcase' : 'content-block';
+async function inferBlockTypeFromPattern(pattern, businessType, competitorData) {
+  console.log(`🧠 [Dynamic Inference] Analyzing pattern: ${pattern.type} for ${businessType}`);
+  
+  try {
+    // 🚫 NESSUN MAPPING STATICO - Solo analisi AI dinamica
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key required for dynamic semantic inference');
+    }
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    // 🧠 PROMPT PER ANALISI SEMANTICA DINAMICA
+    const prompt = `Analyze this layout pattern from a ${businessType} website:
+
+Pattern Type: "${pattern.type}"
+Pattern Frequency: ${pattern.frequency || 'unknown'}x
+Pattern Confidence: ${pattern.confidence || 'unknown'}%
+Business Type: ${businessType}
+
+Context: This pattern was extracted from real competitor analysis of ${businessType} websites.
+
+Question: What type of content section would this pattern most likely contain in a ${businessType} business?
+
+Consider:
+- The structural layout indicated by "${pattern.type}"
+- Industry-specific content patterns for ${businessType}
+- Common sections that use this layout structure
+- Business context and user expectations
+
+Options: hero, services, gallery, products, about, contact, testimonials, features, menu, pricing, portfolio, blog
+
+Respond with ONLY the most appropriate section type (single word, lowercase).`;
+
+    console.log(`🤖 [Dynamic Inference] Requesting AI analysis for ${pattern.type}`);
+    
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 50,
+      temperature: 0.3
+    });
+
+    const inferredType = completion.choices[0].message.content.trim().toLowerCase();
+    console.log(`✅ [Dynamic Inference] AI inference: ${pattern.type} → ${inferredType} (${businessType})`);
+    
+    return inferredType;
+    
+  } catch (error) {
+    console.log(`❌ [Dynamic Inference] AI inference failed: ${error.message}`);
+    throw new Error(`Dynamic semantic inference failed: ${error.message}`);
+  }
 }
 
 async function generateContentFromPattern(pattern, blockType, businessType, businessName, aiContent, galleryImages) {
@@ -1904,819 +1856,11 @@ function findMostCommonValue(values) {
     .sort(([,a], [,b]) => b - a)[0][0];
 }
 
-/**
- * 🔄 Fallback CSS quando i pattern non sono sufficienti
- */
-function generateFallbackCSS(blockType, designData) {
-  const colors = designData?.design?.colors || {};
-  const typography = designData?.design?.typography || {};
-  
-  return {
-    backgroundColor: colors.background || '#FFFFFF',
-    color: colors.text || '#1F2937',
-    fontFamily: typography.primary || 'Inter, sans-serif',
-    fontSize: '16px',
-    lineHeight: '1.6',
-    padding: '1rem',
-    '--primary-color': colors.primary || '#3B82F6',
-    '--secondary-color': colors.secondary || '#8B5CF6',
-    '--accent-color': colors.accent || '#F59E0B',
-    '--pattern-confidence': 0.3
-  };
-}
+// � SISTEMA COMPLETAMENTE DINAMICO - Nessun fallback consentito
+// Tutte le funzioni di fallback sono state rimosse per garantire
+// che il sistema sia 100% dinamico e basato su AI + Database
 
 /**
  * 🔄 SISTEMA STATICO - Fallback quando il sistema dinamico non è disponibile
  */
-function generateEnhancedBlocksStatic(businessType, businessName, designData, currentBlocks = [], aiContent = null, galleryImages = []) {
-  console.log(`🔄 [Static] Generating fallback blocks for ${businessType}`);
-  
-  // 🎨 Working image service function (statico)
-  const getWorkingImage = (type, businessType) => {
-    const businessImages = {
-      restaurant: {
-        logo: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=200&h=100&fit=crop&crop=center',
-        hero: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&h=600&fit=crop&crop=center'
-      },
-      ecommerce: {
-        logo: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=200&h=100&fit=crop&crop=center',
-        hero: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=600&fit=crop&crop=center'
-      },
-      technology: {
-        logo: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=200&h=100&fit=crop&crop=center',
-        hero: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=600&fit=crop&crop=center'
-      },
-      default: {
-        logo: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=100&fit=crop&crop=center',
-        hero: 'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=1200&h=600&fit=crop&crop=center'
-      }
-    };
-    
-    const images = businessImages[businessType] || businessImages.default;
-    return images[type] || images.hero;
-  };
-
-  // 🎨 NEW: Generate complete CSS styles for each block based on design intelligence
-  const generateBlockStyles = (blockType, designData) => {
-    const colors = designData?.design?.colors || {};
-    const typography = designData?.design?.typography || {};
-    const css = designData?.design?.css || {};
-    
-    const baseStyles = {
-      backgroundColor: colors.background || '#FFFFFF',
-      color: colors.text || '#1F2937',
-      fontFamily: typography.primary || 'Inter, sans-serif',
-      fontSize: '16px',
-      lineHeight: '1.6'
-    };
-
-    // Block-specific style overrides
-    const blockSpecificStyles = {
-      'navigation-modern': {
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: `1px solid ${colors.accent || '#E5E7EB'}`,
-        padding: '1rem 0',
-        position: 'sticky',
-        top: '0',
-        zIndex: '1000'
-      },
-      'hero-restaurant-showcase': {
-        background: colors.primary ? 
-          `linear-gradient(135deg, ${colors.primary}, ${colors.secondary || colors.primary})` :
-          'linear-gradient(135deg, #D97706, #DC2626)',
-        color: '#FFFFFF',
-        padding: '5rem 2rem',
-        textAlign: 'center',
-        borderRadius: '12px',
-        marginBottom: '2rem'
-      },
-      'menu-showcase': {
-        backgroundColor: colors.background || '#FFFFFF',
-        border: `1px solid ${colors.accent || '#E5E7EB'}`,
-        borderRadius: '12px',
-        padding: '2rem',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-      },
-      'gallery-food': {
-        backgroundColor: colors.background || '#FFFFFF',
-        borderRadius: '12px',
-        padding: '2rem',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-      },
-      'reviews-customers': {
-        backgroundColor: colors.background || '#F9FAFB',
-        border: `1px solid ${colors.accent || '#E5E7EB'}`,
-        borderRadius: '12px',
-        padding: '2rem'
-      }
-    };
-
-    return {
-      ...baseStyles,
-      ...(blockSpecificStyles[blockType] || {}),
-      // Add CSS custom properties for dynamic styling
-      '--primary-color': colors.primary || '#3B82F6',
-      '--secondary-color': colors.secondary || '#8B5CF6',
-      '--accent-color': colors.accent || '#F59E0B',
-      '--font-primary': typography.primary || 'Inter',
-      '--font-secondary': typography.secondary || 'system-ui'
-    };
-  };
-  
-  const blocks = [];
-  
-  // 1. Navigation (sempre ottimizzata con design patterns e logo)
-  blocks.push({
-    id: `nav-${Date.now()}`,
-    type: 'navigation-modern',
-    content: {
-      title: businessName,
-      logo: getWorkingImage('logo', businessType),
-      menuItems: ['Home', 'Servizi', 'Chi Siamo', 'Contatti']
-    },
-    style: generateBlockStyles('navigation-modern', designData),
-    cssClass: 'ai-navigation-modern',
-    aiEnhanced: true,
-    confidence: 95
-  });
-  
-  // 2. Hero Section (personalizzata per business type con immagine e contenuto AI)
-  const heroContent = aiContent?.hero ? {
-    title: aiContent.hero.title || `Benvenuto in ${businessName}`,
-    subtitle: aiContent.hero.subtitle || getBusinessSubtitle(businessType, businessName),
-    description: aiContent.hero.description || getBusinessDescription(businessType),
-    image: getWorkingImage('hero', businessType),
-    cta: aiContent.hero.cta || getBusinessCTA(businessType)
-  } : {
-    title: `Benvenuto in ${businessName}`,
-    subtitle: getBusinessSubtitle(businessType, businessName),
-    description: getBusinessDescription(businessType),
-    image: getWorkingImage('hero', businessType),
-    cta: getBusinessCTA(businessType)
-  };
-
-  blocks.push({
-    id: `hero-${Date.now()}`,
-    type: getOptimalHeroType(businessType),
-    content: heroContent,
-    style: generateBlockStyles('hero-restaurant-showcase', designData),
-    cssClass: 'ai-hero-section',
-    aiEnhanced: true,
-    confidence: 90
-  });
-  
-  // 3. Content blocks basati sui pattern estratti con stili AI e contenuto personalizzato
-  const contentBlocks = generateBusinessSpecificBlocks(businessType, businessName, designData, aiContent, galleryImages);
-  
-  // Apply AI styles to content blocks
-  const styledContentBlocks = contentBlocks.map(block => ({
-    ...block,
-    style: generateBlockStyles(block.type, designData),
-    cssClass: `ai-${block.type.replace('-', '_')}`,
-    aiEnhanced: true
-  }));
-  
-  blocks.push(...styledContentBlocks);
-  
-  return blocks;
-}
-
-// 🎯 Helper functions for business-specific content
-function getBusinessSubtitle(businessType, businessName) {
-  const subtitles = {
-    restaurant: `Sapori autentici e tradizione culinaria`,
-    ecommerce: `La tua destinazione per lo shopping online`,
-    technology: `Innovazione e soluzioni tecnologiche avanzate`,
-    default: `Qualità e professionalità al tuo servizio`
-  };
-  return subtitles[businessType] || subtitles.default;
-}
-
-function getBusinessDescription(businessType) {
-  const descriptions = {
-    restaurant: 'Vieni a scoprire la nostra cucina, dove tradizione e innovazione si incontrano per offrirti un\'esperienza gastronomica indimenticabile.',
-    ecommerce: 'Scopri la nostra vasta selezione di prodotti di alta qualità, con spedizioni rapide e un servizio clienti sempre a tua disposizione.',
-    technology: 'Trasformiamo le tue idee in soluzioni digitali innovative, utilizzando le tecnologie più avanzate per far crescere il tuo business.',
-    default: 'Siamo qui per offrirti il meglio dei nostri servizi, con professionalità e dedizione per soddisfare ogni tua esigenza.'
-  };
-  return descriptions[businessType] || descriptions.default;
-}
-
-function getBusinessCTA(businessType) {
-  const ctas = {
-    restaurant: 'Prenota un Tavolo',
-    ecommerce: 'Inizia a Comprare',
-    technology: 'Richiedi Preventivo',
-    default: 'Scopri di Più'
-  };
-  return ctas[businessType] || ctas.default;
-}
-
-function getOptimalHeroType(businessType) {
-  const heroTypes = {
-    restaurant: 'hero-restaurant-showcase',
-    ecommerce: 'hero-product-featured',
-    technology: 'hero-tech-innovation',
-    portfolio: 'hero-creative-showcase',
-    default: 'hero-modern-clean'
-  };
-  return heroTypes[businessType] || heroTypes.default;
-}
-
-function generateBusinessSpecificBlocks(businessType, businessName, designData, aiContent = null, galleryImages = []) {
-  // 🎨 ENHANCED: Generate structured content with working images and AI content
-  const getWorkingImage = (type) => {
-    const imageServices = {
-      'menu-showcase': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&h=600&fit=crop&crop=center',
-      'gallery-food': 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=600&fit=crop&crop=center',
-      'reviews-customers': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
-      'featured-products': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop&crop=center',
-      'categories-grid': 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=600&h=400&fit=crop&crop=center',
-      'testimonials-social': 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face',
-      'features-tech': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop&crop=center',
-      'case-studies': 'https://images.unsplash.com/photo-1552581234-26160f608093?w=800&h=600&fit=crop&crop=center',
-      'pricing-plans': 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&h=400&fit=crop&crop=center'
-    };
-    return imageServices[type] || 'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=800&h=600&fit=crop&crop=center';
-  };
-
-  // 🤖 Use AI content if available, otherwise fallback to static content
-  const getContentWithAI = (blockType, fallbackContent) => {
-    if (!aiContent) return fallbackContent;
-    
-    // Map AI content to specific blocks
-    switch (blockType) {
-      case 'menu-showcase':
-        return {
-          ...fallbackContent,
-          title: aiContent.menu?.title || fallbackContent.title,
-          subtitle: aiContent.menu?.subtitle || fallbackContent.subtitle,
-          description: aiContent.menu?.description || fallbackContent.description,
-          items: aiContent.menu?.items || []
-        };
-      case 'gallery-food':
-      case 'gallery-tech':
-      case 'gallery-products':
-        return {
-          ...fallbackContent,
-          title: aiContent.gallery?.title || fallbackContent.title,
-          subtitle: aiContent.gallery?.subtitle || fallbackContent.subtitle,
-          description: aiContent.gallery?.description || fallbackContent.description,
-          images: galleryImages.slice(0, 4),
-          galleryItems: aiContent.gallery?.items || []
-        };
-      case 'reviews-customers':
-      case 'testimonials-social':
-        return {
-          ...fallbackContent,
-          title: aiContent.reviews?.title || fallbackContent.title,
-          subtitle: aiContent.reviews?.subtitle || fallbackContent.subtitle,
-          description: aiContent.reviews?.description || fallbackContent.description,
-          testimonials: aiContent.reviews?.testimonials || []
-        };
-      default:
-        return fallbackContent;
-    }
-  };
-
-  const businessBlocks = {
-    restaurant: [
-      {
-        type: 'menu-showcase',
-        content: getContentWithAI('menu-showcase', {
-          title: `Menu ${businessName}`,
-          subtitle: 'I nostri piatti più amati dai clienti',
-          description: 'Scopri la nostra selezione di specialità culinarie preparate con ingredienti freschi e di alta qualità.',
-          image: getWorkingImage('menu-showcase'),
-          cta: 'Guarda il Menu'
-        }),
-        priority: 1
-      },
-      {
-        type: 'gallery-food',
-        content: getContentWithAI('gallery-food', {
-          title: 'Galleria Gastronomica',
-          subtitle: 'Un viaggio visivo nei nostri sapori',
-          description: 'Ogni piatto è una piccola opera d\'arte culinaria.',
-          image: getWorkingImage('gallery-food'),
-          images: galleryImages.slice(0, 4),
-          cta: 'Vedi Tutte le Foto'
-        }),
-        priority: 2
-      },
-      {
-        type: 'reviews-customers',
-        content: getContentWithAI('reviews-customers', {
-          title: 'Testimonianze',
-          subtitle: 'Cosa dicono i nostri clienti',
-          description: 'La soddisfazione dei nostri ospiti è la nostra priorità.',
-          image: getWorkingImage('reviews-customers'),
-          cta: 'Leggi Tutte le Recensioni'
-        }),
-        priority: 3
-      }
-    ],
-    ecommerce: [
-      {
-        type: 'featured-products',
-        content: getContentWithAI('featured-products', {
-          title: `Prodotti in Evidenza - ${businessName}`,
-          subtitle: 'I più venduti del mese',
-          description: 'Scopri i prodotti che stanno conquistando i nostri clienti.',
-          image: getWorkingImage('featured-products'),
-          cta: 'Acquista Ora'
-        }),
-        priority: 1
-      },
-      {
-        type: 'gallery-products',
-        content: getContentWithAI('gallery-products', {
-          title: 'Galleria Prodotti',
-          subtitle: 'La nostra collezione',
-          description: 'Esplora la varietà dei nostri prodotti di alta qualità.',
-          image: getWorkingImage('categories-grid'),
-          images: galleryImages.slice(0, 4),
-          cta: 'Esplora Categorie'
-        }),
-        priority: 2
-      },
-      {
-        type: 'testimonials-social',
-        content: getContentWithAI('testimonials-social', {
-          title: 'Recensioni Clienti',
-          subtitle: 'Fiducia e qualità garantita',
-          description: 'Migliaia di clienti soddisfatti che ci hanno scelto.',
-          image: getWorkingImage('testimonials-social'),
-          cta: 'Leggi le Recensioni'
-        }),
-        priority: 3
-      }
-    ],
-    technology: [
-      {
-        type: 'features-tech',
-        content: getContentWithAI('features-tech', {
-          title: `Funzionalità ${businessName}`,
-          subtitle: 'Tecnologia all\'avanguardia',
-          description: 'Scopri le caratteristiche innovative che rendono unica la nostra soluzione.',
-          image: getWorkingImage('features-tech'),
-          cta: 'Scopri di Più'
-        }),
-        priority: 1
-      },
-      {
-        type: 'gallery-tech',
-        content: getContentWithAI('gallery-tech', {
-          title: 'Progetti e Innovazioni',
-          subtitle: 'Le nostre realizzazioni',
-          description: 'Esplora i progetti che abbiamo sviluppato per i nostri clienti.',
-          image: getWorkingImage('case-studies'),
-          images: galleryImages.slice(0, 4),
-          cta: 'Vedi Tutti i Progetti'
-        }),
-        priority: 2
-      },
-      {
-        type: 'case-studies',
-        content: getContentWithAI('case-studies', {
-          title: 'Casi di Successo',
-          subtitle: 'Risultati che parlano da soli',
-          description: 'Scopri come abbiamo aiutato i nostri clienti a raggiungere i loro obiettivi.',
-          image: getWorkingImage('case-studies'),
-          cta: 'Leggi i Casi Studio'
-        }),
-        priority: 3
-      }
-    ]
-  };
-  
-  const blocks = businessBlocks[businessType] || businessBlocks.technology;
-  
-  return blocks.map((block, index) => ({
-    id: `${block.type}-${Date.now()}-${index}`,
-    type: block.type,
-    content: block.content,
-    // Style will be applied by generateBlockStyles in the calling function
-    aiEnhanced: true,
-    confidence: Math.max(85 - (block.priority * 5), 70),
-    priority: block.priority
-  }));
-}
-
-function calculateSemanticScore(blocks, businessType) {
-  if (!blocks || blocks.length === 0) return 50;
-  
-  const businessRelevantTypes = {
-    restaurant: ['menu', 'food', 'gallery', 'reviews', 'reservation'],
-    ecommerce: ['product', 'shop', 'cart', 'testimonials', 'categories'],
-    technology: ['features', 'tech', 'case-studies', 'pricing', 'demo']
-  };
-  
-  const relevantTypes = businessRelevantTypes[businessType] || businessRelevantTypes.technology;
-  
-  const relevantBlocks = blocks.filter(block => 
-    relevantTypes.some(type => block.type?.includes(type))
-  );
-  
-  const baseScore = Math.min((relevantBlocks.length / blocks.length) * 100, 95);
-  const aiBonus = blocks.some(block => block.aiEnhanced) ? 10 : 0;
-  
-  return Math.round(Math.min(baseScore + aiBonus, 99));
-}
-
-/**
- * Scraping avanzato con Puppeteer.
- * Estrae HTML, CSS inline, titolo, meta description e screenshot.
- */
-async function scrapeCompetitorSite(url, businessType) {
-  let browser;
-  const startTime = Date.now();
-  try {
-    // 🚀 BYPASS: Per siti problematici, usa dati mock invece di scraping reale
-    const problematicSites = [
-      'accenture.com', 'deloitte.com', 'ey.com', 'pwc.com', 'bcg.com', 'mckinsey.com', 
-      'capgemini.com', 'bain.com', 'oliverwyman.com',
-      'interflora.com', 'venus.com', 'farmgirlflowers.com', 'bloomsybox.com',
-      // 🌸 FLORIST sites che spesso falliscono
-      'venus-et-fleur.com', 'fromyouflowers.com', 'bouqs.com', 'blooms', 'flowers.com',
-      'ftd.com', 'proflowers.com', 'teleflora.com', 'bloomnation.com', 'oliveclove.com',
-      'bloom-wild.com', 'bloomex.ca', 'florists.com', 'serenataflowers.com', '1-800-flowers.com'
-    ];
-    const isProblematic = problematicSites.some(site => url.includes(site));
-    
-    if (isProblematic) {
-      console.log(`🔄 Using mock data for problematic site: ${url}`);
-      return createMockCompetitorData(url, businessType, startTime);
-    }
-
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security', '--disable-features=VizDisplayCompositor']
-    });
-    const page = await browser.newPage();
-    
-    // Timeout più corto e gestione errori migliore
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 10000 });
-
-    // Estrai HTML
-    const html_content = await page.content();
-
-    // Estrai CSS inline (tutti i <style> nel DOM)
-    const css_content = await page.$$eval('style', styles =>
-      styles.map(style => style.innerHTML).join('\n')
-    );
-
-    // Estrai titolo e meta description
-    const design_analysis = {
-      title: await page.title(),
-      description: await page.$eval('meta[name="description"]', el => el.content).catch(() => ''),
-      keywords: await page.$eval('meta[name="keywords"]', el => el.content).catch(() => ''),
-      businessType,
-      scraped_at: new Date().toISOString()
-    };
-
-    // 🔧 FIX: Analisi avanzata del design PRIMA di chiudere il browser
-    const colorPalette = await extractColorPalette(page);
-    const fontFamilies = await extractFontFamilies(page);
-    const layoutStructure = await extractLayoutStructure(page);
-    const mobileResponsive = await checkMobileResponsive(page);
-    
-    // Screenshot (opzionale, salva come base64)
-    const screenshot = await page.screenshot({ encoding: 'base64', fullPage: true });
-
-    // 🔧 FIX: Chiudere browser DOPO aver estratto tutti i dati
-    await browser.close();
-
-    return {
-      businessType,
-      url,
-      html_content,
-      css_content,
-      design_analysis,
-      color_palette: colorPalette,
-      font_families: fontFamilies,
-      layout_structure: layoutStructure,
-      semantic_analysis: { 
-        title: design_analysis.title, // 🔧 FIX: Usa title già estratto
-        description: design_analysis.description, // 🔧 FIX: Usa description già estratto
-        keywords: design_analysis.keywords || '' // 🔧 FIX: Fallback per keywords
-      },
-      performance_metrics: { 
-        load_time: Date.now() - startTime,
-        content_length: html_content.length + css_content.length
-      },
-      accessibility_score: 75, // Placeholder
-      design_score: 80, // Placeholder
-      mobile_responsive: mobileResponsive, // 🔧 FIX: Usa valore già estratto
-      status: "active",
-      tags: ["competitor", businessType],
-      confidence_score: 70,
-      training_priority: 1,
-      business_images: {}, // Le immagini business vengono gestite separatamente
-      screenshot: screenshot, // Screenshot separato per reference
-    };
-  } catch (error) {
-    if (browser) await browser.close();
-    console.error(`❌ Scraping fallito per ${url}:`, error.message);
-    
-    // 🚀 FALLBACK: Se c'è un errore (incluso "detached Frame"), usa dati mock completi
-    if (error.message.includes('detached Frame') || error.message.includes('Target closed') || error.message.includes('Navigation timeout')) {
-      console.log(`🔄 Using mock data fallback for failed scraping: ${url}`);
-      return createMockCompetitorData(url, businessType, startTime);
-    }
-    
-    return {
-      businessType,
-      url,
-      html_content: '',
-      css_content: '',
-      design_analysis: { error: error.message },
-      color_palette: [],
-      font_families: [],
-      layout_structure: {},
-      semantic_analysis: {},
-      performance_metrics: {},
-      accessibility_score: null,
-      design_score: null,
-      mobile_responsive: null,
-      status: "error",
-      tags: ["competitor", businessType],
-      confidence_score: 0,
-      training_priority: 1,
-      business_images: {}
-    };
-  }
-}
-
-// Funzione di orchestrazione del flusso automatico
-async function orchestrateBusinessGeneration({ businessName, businessDescription }) {
-  const axios = require('axios');
-  const storage = new DatabaseStorage();
-  const API_HOST = process.env.AI_TRAINER_API_HOST || 'https://ai-trainer-production.up.railway.app';
-
-  // 1. Ottieni businessType da OpenAI tramite API Railway
-  const response = await axios.post(
-    `${API_HOST}/api/ai/competitors`,
-    { businessName, description: businessDescription },
-    { headers: { Authorization: `Bearer ${process.env.AI_TRAINER_API_KEY}` } }
-  );
-  const { businessType, competitors } = response.data;
-
-  // 2. Verifica se ci sono almeno 5 siti nel DB
-  const result = await storage.pool.query(
-    'SELECT COUNT(*) FROM ai_design_patterns WHERE business_type = $1 AND status = $2',
-    [businessType, 'active']
-  );
-  const siteCount = parseInt(result.rows[0].count);
-
-  // 3. Se meno di 5, chiedi competitor, filtra e fai scraping
-  if (siteCount < 5) {
-    // Se la risposta API non ha già 15 competitor, richiedili
-    let competitorsList = competitors;
-    if (!competitorsList || competitorsList.length < 10) {
-      const compResp = await axios.post(
-        `${API_HOST}/api/ai/competitors`,
-        { businessName, description: businessDescription, count: 15 },
-        { headers: { Authorization: `Bearer ${process.env.AI_TRAINER_API_KEY}` } }
-      );
-      competitorsList = compResp.data.competitors;
-    }
-    // Filtra quelli già presenti
-    const existingResult = await storage.pool.query(
-      'SELECT source_url FROM ai_design_patterns WHERE business_type = $1',
-      [businessType]
-    );
-    const existingUrls = new Set(existingResult.rows.map(row => row.source_url));
-    const newCompetitors = competitorsList.filter(site => !existingUrls.has(site.url));
-
-    // Scraping e salvataggio
-    for (const site of newCompetitors) {
-      const scrapedSite = await scrapeCompetitorSite(site.url, businessType);
-      await storage.saveScrapedCompetitorToDesignPatterns(scrapedSite);
-    }
-  }
-
-  // 4. Genera immagini stock e salvale
-  const businessImages = await generateStockImagesForBusiness(businessType);
-  await saveBusinessImages(businessType, businessImages);
-
-  return { businessType, status: 'completed' };
-}
-
-// 🎨 Funzioni di analisi design avanzata
-async function extractColorPalette(page) {
-  try {
-    return await page.evaluate(() => {
-      const colors = new Set();
-      const elements = document.querySelectorAll('*');
-      
-      for (let el of elements) {
-        const style = window.getComputedStyle(el);
-        const bgColor = style.backgroundColor;
-        const textColor = style.color;
-        
-        if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
-          colors.add(bgColor);
-        }
-        if (textColor && textColor !== 'rgba(0, 0, 0, 0)') {
-          colors.add(textColor);
-        }
-        
-        if (colors.size >= 10) break; // Limita a 10 colori principali
-      }
-      
-      return Array.from(colors);
-    });
-  } catch (error) {
-    return ['#333333', '#ffffff', '#0066cc']; // Fallback colors
-  }
-}
-
-async function extractFontFamilies(page) {
-  try {
-    return await page.evaluate(() => {
-      const fonts = new Set();
-      const elements = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, div');
-      
-      for (let el of elements) {
-        const style = window.getComputedStyle(el);
-        const fontFamily = style.fontFamily;
-        if (fontFamily && fontFamily !== 'inherit') {
-          fonts.add(fontFamily.replace(/['"]/g, ''));
-        }
-        
-        if (fonts.size >= 5) break; // Limita a 5 font principali
-      }
-      
-      return Array.from(fonts);
-    });
-  } catch (error) {
-    return ['Arial', 'sans-serif']; // Fallback fonts
-  }
-}
-
-async function extractLayoutStructure(page) {
-  try {
-    return await page.evaluate(() => {
-      const structure = {
-        header: !!document.querySelector('header, .header, nav, .nav'),
-        navigation: !!document.querySelector('nav, .nav, .menu, .navigation'),
-        main: !!document.querySelector('main, .main, .content'),
-        sidebar: !!document.querySelector('aside, .sidebar, .side'),
-        footer: !!document.querySelector('footer, .footer'),
-        grid_system: !!document.querySelector('[class*="grid"], [class*="col-"], .row'),
-        flexbox: !!document.querySelector('[style*="flex"], [class*="flex"]')
-      };
-      
-      return structure;
-    });
-  } catch (error) {
-    return { header: true, main: true, footer: true }; // Fallback structure
-  }
-}
-
-async function checkMobileResponsive(page) {
-  try {
-    return await page.evaluate(() => {
-      const viewport = document.querySelector('meta[name="viewport"]');
-      const hasMediaQueries = Array.from(document.styleSheets).some(sheet => {
-        try {
-          return Array.from(sheet.cssRules || []).some(rule => 
-            rule.type === CSSRule.MEDIA_RULE && rule.conditionText.includes('max-width')
-          );
-        } catch (e) {
-          return false;
-        }
-      });
-      
-      return !!(viewport && hasMediaQueries);
-    });
-  } catch (error) {
-    return true; // Assume mobile responsive by default
-  }
-}
-
-// 🚀 Crea dati mock per siti problematici
-function createMockCompetitorData(url, businessType, startTime) {
-  // 🎯 DIVERSIFICA MOCK DATA per ogni URL (FIX: usa dominio principale non www)
-  const urlParts = url.split('//')[1]?.split('.') || ['default'];
-  const urlHash = urlParts.length >= 2 ? urlParts[urlParts.length - 2] : urlParts[0]; // "1800flowers", "ftd", etc.
-  const siteIndex = Math.abs(urlHash.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % 10;
-  
-  // 🎨 PALETTE COLORI DIVERSE per ogni sito
-  const colorPalettes = [
-    ['#2563eb', '#1e40af', '#1d4ed8', '#3b82f6', '#60a5fa'],
-    ['#dc2626', '#b91c1c', '#991b1b', '#ef4444', '#f87171'],
-    ['#059669', '#047857', '#065f46', '#10b981', '#34d399'],
-    ['#7c3aed', '#6d28d9', '#5b21b6', '#8b5cf6', '#a78bfa'],
-    ['#ea580c', '#c2410c', '#9a3412', '#f97316', '#fb923c'],
-    ['#0891b2', '#0e7490', '#155e75', '#06b6d4', '#22d3ee'],
-    ['#be123c', '#9f1239', '#881337', '#e11d48', '#f43f5e'],
-    ['#4338ca', '#3730a3', '#312e81', '#5b21b6', '#7c3aed'],
-    ['#166534', '#15803d', '#16a34a', '#22c55e', '#4ade80'],
-    ['#b45309', '#d97706', '#f59e0b', '#fbbf24', '#fde047']
-  ];
-  
-  // 🔤 FONT FAMILIES DIVERSE per ogni sito
-  const fontSets = [
-    ['Inter', 'system-ui', 'sans-serif'],
-    ['Roboto', 'Arial', 'sans-serif'],
-    ['Open Sans', 'Helvetica', 'sans-serif'],
-    ['Lato', 'Verdana', 'sans-serif'],
-    ['Poppins', 'Geneva', 'sans-serif'],
-    ['Montserrat', 'Tahoma', 'sans-serif'],
-    ['Source Sans Pro', 'Calibri', 'sans-serif'],
-    ['Nunito', 'Segoe UI', 'sans-serif'],
-    ['Raleway', 'Trebuchet MS', 'sans-serif'],
-    ['Playfair Display', 'Georgia', 'serif']
-  ];
-  
-  // 📝 CONTENUTI HTML/CSS DIVERSI per ogni sito
-  const htmlTemplates = [
-    `<html><head><title>Premium ${businessType} Services</title></head><body><header><nav>Home | Services | About</nav></header><main><h1>Excellence in ${businessType}</h1><p>Professional quality service</p></main></body></html>`,
-    `<html><head><title>Modern ${businessType} Solutions</title></head><body><div class="container"><h1>Innovative ${businessType}</h1><section>Your trusted partner</section></div></body></html>`,
-    `<html><head><title>Elite ${businessType} Company</title></head><body><header class="hero"><h1>Leading ${businessType} Provider</h1></header><main>Quality guaranteed</main></body></html>`,
-    `<html><head><title>${businessType} Experts</title></head><body><nav>Menu</nav><article><h1>Professional ${businessType}</h1><p>Experience matters</p></article></body></html>`,
-    `<html><head><title>Superior ${businessType}</title></head><body><div id="main"><h1>Top-rated ${businessType}</h1><div class="content">Exceptional service</div></div></body></html>`,
-    `<html><head><title>Advanced ${businessType}</title></head><body><section class="header"><h1>Cutting-edge ${businessType}</h1></section><main class="body">Innovation first</main></body></html>`,
-    `<html><head><title>Luxury ${businessType}</title></head><body><header><h1>Premium ${businessType} Experience</h1></header><section>Unmatched quality</section></body></html>`,
-    `<html><head><title>Professional ${businessType}</title></head><body><main><h1>Certified ${businessType} Services</h1><p>Trust and reliability</p></main></body></html>`,
-    `<html><head><title>Dynamic ${businessType}</title></head><body><div class="wrapper"><h1>Next-gen ${businessType}</h1><div>Forward thinking</div></div></body></html>`,
-    `<html><head><title>Exclusive ${businessType}</title></head><body><container><h1>Boutique ${businessType}</h1><content>Personalized approach</content></container></body></html>`
-  ];
-  
-  const cssTemplates = [
-    `body { font-family: '${fontSets[siteIndex][0]}', sans-serif; color: ${colorPalettes[siteIndex][0]}; background: #fff; }`,
-    `.container { max-width: 1200px; margin: 0 auto; color: ${colorPalettes[siteIndex][1]}; font-family: '${fontSets[siteIndex][1]}'; }`,
-    `.hero { background: ${colorPalettes[siteIndex][2]}; color: white; padding: 2rem; font-family: '${fontSets[siteIndex][2]}'; }`,
-    `nav { background: ${colorPalettes[siteIndex][3]}; } article { font-family: '${fontSets[siteIndex][0]}'; color: ${colorPalettes[siteIndex][4]}; }`,
-    `#main { padding: 1rem; background: ${colorPalettes[siteIndex][4]}; font-family: '${fontSets[siteIndex][1]}'; }`,
-    `.header { background: linear-gradient(45deg, ${colorPalettes[siteIndex][0]}, ${colorPalettes[siteIndex][1]}); font-family: '${fontSets[siteIndex][2]}'; }`,
-    `header { text-align: center; background: ${colorPalettes[siteIndex][2]}; color: white; font-family: '${fontSets[siteIndex][0]}'; }`,
-    `main { font-family: '${fontSets[siteIndex][1]}'; color: ${colorPalettes[siteIndex][3]}; line-height: 1.6; }`,
-    `.wrapper { display: flex; flex-direction: column; font-family: '${fontSets[siteIndex][2]}'; color: ${colorPalettes[siteIndex][0]}; }`,
-    `container { grid-template-columns: 1fr 2fr; gap: 2rem; font-family: '${fontSets[siteIndex][0]}'; background: ${colorPalettes[siteIndex][1]}; }`
-  ];
-  
-  const selectedPalette = colorPalettes[siteIndex];
-  const selectedFonts = fontSets[siteIndex];
-  const selectedHtml = htmlTemplates[siteIndex];
-  const selectedCss = cssTemplates[siteIndex];
-  
-  // 🖼️ GENERA BUSINESS IMAGES per ogni mock site
-  const mockBusinessImages = {
-    hero: `https://images.unsplash.com/photo-${getUnsplashPhotoId('business', siteIndex)}?w=1200&h=600&fit=crop&crop=center`,
-    logo: `https://images.unsplash.com/photo-${getUnsplashPhotoId('logo', siteIndex)}?w=200&h=100&fit=crop&crop=center`,
-    gallery: [
-      `https://images.unsplash.com/photo-${getUnsplashPhotoId(businessType, siteIndex)}?w=800&h=600&fit=crop&crop=center`,
-      `https://images.unsplash.com/photo-${getUnsplashPhotoId(businessType, (siteIndex + 1) % 10)}?w=800&h=600&fit=crop&crop=center`,
-      `https://images.unsplash.com/photo-${getUnsplashPhotoId(businessType, (siteIndex + 2) % 10)}?w=800&h=600&fit=crop&crop=center`,
-      `https://images.unsplash.com/photo-${getUnsplashPhotoId(businessType, (siteIndex + 3) % 10)}?w=800&h=600&fit=crop&crop=center`
-    ]
-  };
-  
-  return {
-    businessType,
-    url,
-    html_content: selectedHtml,
-    css_content: selectedCss,
-    design_analysis: { 
-      layout: siteIndex % 2 === 0 ? 'modern' : 'classic', 
-      style: siteIndex % 3 === 0 ? 'professional' : siteIndex % 3 === 1 ? 'creative' : 'minimal',
-      components: ['header', 'navigation', 'content', 'footer'].slice(0, (siteIndex % 4) + 2)
-    },
-    color_palette: selectedPalette,
-    font_families: selectedFonts,
-    layout_structure: {
-      header: siteIndex % 2 === 0,
-      navigation: siteIndex % 3 !== 0,
-      main: true,
-      sidebar: siteIndex % 4 === 0,
-      footer: siteIndex % 2 === 1,
-      grid_system: siteIndex % 3 === 0,
-      flexbox: siteIndex % 3 !== 0
-    },
-    semantic_analysis: { 
-      title: htmlTemplates[siteIndex].match(/<title>(.*?)<\/title>/)?.[1] || `Professional ${businessType} Services`,
-      description: `${siteIndex % 2 === 0 ? 'Leading' : 'Premium'} ${businessType} service provider with ${siteIndex % 3 === 0 ? 'innovative' : siteIndex % 3 === 1 ? 'professional' : 'personalized'} approach`,
-      keywords: `${businessType}, ${siteIndex % 2 === 0 ? 'premium' : 'professional'}, ${siteIndex % 3 === 0 ? 'modern' : 'quality'}, services`
-    },
-    performance_metrics: { 
-      load_time: Date.now() - startTime + (siteIndex * 50), // Varia il load time
-      content_length: selectedHtml.length + selectedCss.length
-    },
-    accessibility_score: 75 + (siteIndex % 15), // Varia 75-89
-    design_score: 80 + (siteIndex % 10), // Varia 80-89
-    mobile_responsive: siteIndex % 3 !== 2, // Varia true/false
-    status: "active",
-    tags: ["competitor", businessType],
-    confidence_score: 70 + (siteIndex % 20), // Varia 70-89
-    training_priority: (siteIndex % 3) + 1, // Varia 1-3
-    business_images: mockBusinessImages, // 🔧 FIX: Aggiunte business images ai mock
-    screenshot: null,
-    scraped_at: new Date().toISOString()
-  };
-}
-
 module.exports = router;
