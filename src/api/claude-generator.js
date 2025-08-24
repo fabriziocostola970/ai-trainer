@@ -524,9 +524,6 @@ async function simulateClaudeResponse(prompt, businessName, businessType, busine
     }
   };
 }
-    }
-  };
-}
 
 /**
  * 🚀 ROUTE PRINCIPALE CLAUDE GENERATOR
