@@ -522,22 +522,8 @@ async function simulateClaudeResponse(prompt, businessName, businessType, busine
       hasBusinessDescription: !!businessDescription,
       intelligenceLevel: intelligence ? 'specific' : 'dynamic'
     }
-        price: index < selectedSections.length - 1 ? `€${(i + 1) * 25}` : ''
-      })),
-      hasContacts: index === selectedSections.length - 1 // Solo ultima sezione
-    })),
-    design: {
-      primaryColor: template.colors.primary,
-      secondaryColor: template.colors.secondary,
-      accentColor: template.colors.accent,
-      style: complexity >= 7 ? 'luxury' : complexity >= 5 ? 'modern' : 'clean',
-      businessPersonality: `Professional ${businessType} design with ${complexity >= 6 ? 'sophisticated' : 'clean'} aesthetic`
-    },
-    metadata: {
-      generatedBy: 'claude-sonnet-simulation',
-      basedOnPatterns: 0,
-      patternQuality: 'simulated',
-      sections: selectedSections.length
+  };
+}
     }
   };
 }
