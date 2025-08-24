@@ -408,7 +408,7 @@ router.post('/generate', async (req, res) => {
   const startTime = Date.now();
   
   try {
-    const { businessName, businessType } = req.body;
+    const { businessName, businessType, businessDescription } = req.body;
     
     if (!businessName || !businessType) {
       return res.status(400).json({
@@ -417,10 +417,10 @@ router.post('/generate', async (req, res) => {
       });
     }
     
-    console.log(`🚀 [Claude Route] Starting generation for: ${businessName} (${businessType})`);
+    console.log(`🚀 [Claude Route] Starting generation for: ${businessName} (${businessType})${businessDescription ? ' with description' : ''}`);
     
     // Genera sito con Claude Sonnet
-    const result = await generateWebsiteWithClaude(businessName, businessType);
+    const result = await generateWebsiteWithClaude(businessName, businessType, businessDescription);
     
     const processingTime = Date.now() - startTime;
     
