@@ -343,44 +343,185 @@ async function generateWebsiteWithClaude(businessName, businessType, businessDes
 /**
  * 🎭 SIMULAZIONE RISPOSTA CLAUDE (PLACEHOLDER)
  */
-async function simulateClaudeResponse(prompt, businessName, businessType, complexity) {
+async function simulateClaudeResponse(prompt, businessName, businessType, businessDescription, complexity) {
   // Questa è una simulazione - sarà sostituita con vera API Claude
-  console.log(`🎭 [Claude Simulation] Simulating Claude response for: ${businessName}`);
+  console.log(`🎭 [Claude Simulation] Simulating intelligent Claude response for: ${businessName} (${businessType})`);
   
   const sectionCount = complexity >= 6 ? 5 : complexity >= 4 ? 4 : 3;
   
-  // Template basato su business type e complexity
-  const businessTemplates = {
+  // 🧠 SISTEMA DINAMICO DI GENERAZIONE CONTENUTI
+  const businessIntelligence = {
     'florist': {
-      sections: ['Seasonal Arrangements', 'Custom Bouquets', 'Wedding Services', 'Delivery Info', 'Contact'],
+      sections: ['Composizioni Stagionali', 'Bouquet Personalizzati', 'Servizi Matrimonio', 'Consegna a Domicilio', 'Contatti'],
+      content: {
+        'Composizioni Stagionali': [
+          { name: 'Composizioni Primaverili', description: 'Tulipani, narcisi e giacinti freschi di stagione', price: '€35' },
+          { name: 'Bouquet Estivi', description: 'Girasoli, margherite e fiori di campo colorati', price: '€28' },
+          { name: 'Decorazioni Autunnali', description: 'Crisantemi, dalie e foglie dorate', price: '€42' }
+        ],
+        'Bouquet Personalizzati': [
+          { name: 'Bouquet Romantico', description: 'Rose rosse e bianche con baby breath delicato', price: '€45' },
+          { name: 'Composizione Moderna', description: 'Orchidee esotiche con verde decorativo', price: '€65' },
+          { name: 'Mazzo Profumato', description: 'Peonie, lavanda e eucalipto', price: '€38' }
+        ],
+        'Servizi Matrimonio': [
+          { name: 'Bouquet Sposa', description: 'Composizione unica su misura per il giorno speciale', price: '€120' },
+          { name: 'Addobbi Chiesa', description: 'Decorazioni floreali complete per cerimonia', price: '€350' },
+          { name: 'Centrotavola', description: 'Composizioni eleganti per ricevimento', price: '€45' }
+        ]
+      },
       colors: { primary: '#E91E63', secondary: '#4CAF50', accent: '#FF9800' }
     },
+    
     'restaurant': {
-      sections: ['Menu Highlights', 'Chef Specials', 'Private Events', 'Reservations', 'Location'],
+      sections: ['Menu del Giorno', 'Specialità Chef', 'Eventi Privati', 'Prenotazioni', 'Location'],
+      content: {
+        'Menu del Giorno': [
+          { name: 'Antipasti Misti', description: 'Selezione di salumi, formaggi e verdure stagionali', price: '€18' },
+          { name: 'Pasta Fresca', description: 'Tagliatelle ai porcini con tartufo nero pregiato', price: '€24' },
+          { name: 'Pesce del Giorno', description: 'Branzino in crosta di sale con verdure grigliate', price: '€32' }
+        ],
+        'Specialità Chef': [
+          { name: 'Risotto ai Funghi', description: 'Carnaroli mantecato con parmigiano 24 mesi', price: '€22' },
+          { name: 'Bistecca Fiorentina', description: 'Carne chianina da 800g cotta alla griglia', price: '€45' },
+          { name: 'Tiramisù della Casa', description: 'Dolce tradizionale con mascarpone e caffè', price: '€8' }
+        ],
+        'Eventi Privati': [
+          { name: 'Cena Romantica', description: 'Tavolo riservato con menu degustazione', price: '€80' },
+          { name: 'Compleanno Famiglia', description: 'Sala privata fino a 20 persone', price: '€35' },
+          { name: 'Business Lunch', description: 'Menu veloce per pranzi di lavoro', price: '€25' }
+        ]
+      },
       colors: { primary: '#F44336', secondary: '#FFC107', accent: '#8BC34A' }
     },
+    
     'technology': {
-      sections: ['Product Features', 'Pricing Plans', 'Case Studies', 'API Docs', 'Support'],
+      sections: ['Soluzioni Software', 'Piani Pricing', 'Case Studies', 'Supporto Tecnico', 'Contatti'],
+      content: {
+        'Soluzioni Software': [
+          { name: 'CRM Avanzato', description: 'Gestione clienti con AI e automazioni integrate', price: '€99/mese' },
+          { name: 'E-commerce Platform', description: 'Piattaforma completa per vendite online', price: '€149/mese' },
+          { name: 'App Mobile', description: 'Applicazione nativa iOS e Android personalizzata', price: '€299/mese' }
+        ],
+        'Piani Pricing': [
+          { name: 'Starter', description: 'Perfetto per piccole imprese e startup', price: '€29/mese' },
+          { name: 'Professional', description: 'Funzioni avanzate per aziende in crescita', price: '€79/mese' },
+          { name: 'Enterprise', description: 'Soluzione completa per grandi organizzazioni', price: '€199/mese' }
+        ],
+        'Case Studies': [
+          { name: 'Retail Chain', description: 'Aumento vendite del 150% in 6 mesi', price: '' },
+          { name: 'Startup FinTech', description: 'Riduzione costi operativi del 40%', price: '' },
+          { name: 'Agenzia Marketing', description: 'Automazione workflow e produttività +200%', price: '' }
+        ]
+      },
       colors: { primary: '#2196F3', secondary: '#9C27B0', accent: '#00BCD4' }
+    },
+    
+    'travel': {
+      sections: ['Destinazioni Top', 'Pacchetti Viaggio', 'Servizi Premium', 'Assistenza', 'Contatti'],
+      content: {
+        'Destinazioni Top': [
+          { name: 'Maldive Luxury', description: 'Resort 5 stelle con spa e diving center', price: '€2.500' },
+          { name: 'Safari Kenya', description: 'Tour fotografico nella savana africana', price: '€1.800' },
+          { name: 'Giappone Tradizionale', description: 'Cultura, templi e cucina giapponese autentica', price: '€2.200' }
+        ],
+        'Pacchetti Viaggio': [
+          { name: 'Weekend Europa', description: 'Capitali europee con volo e hotel inclusi', price: '€350' },
+          { name: 'Settimana Mare', description: 'Sicilia o Sardegna con pensione completa', price: '€890' },
+          { name: 'Tour Culturale', description: 'Italia artistica con guide esperte', price: '€1.200' }
+        ],
+        'Servizi Premium': [
+          { name: 'Consulenza Personalizzata', description: 'Itinerario su misura per ogni esigenza', price: '€100' },
+          { name: 'Assistenza 24/7', description: 'Supporto completo durante tutto il viaggio', price: 'Incluso' },
+          { name: 'Transfer Luxury', description: 'Auto di lusso e chauffeur privato', price: '€150/giorno' }
+        ]
+      },
+      colors: { primary: '#009688', secondary: '#FF5722', accent: '#FFC107' }
     }
   };
   
-  const template = businessTemplates[businessType] || businessTemplates['florist'];
-  const selectedSections = template.sections.slice(0, sectionCount);
+  // 🎯 FALLBACK INTELLIGENTE per business types non definiti
+  const createDynamicContent = (businessType, sectionName) => {
+    const templates = {
+      'services': [
+        { name: `Servizio ${sectionName} Base`, description: `Soluzione professionale per ${businessType}`, price: '€50' },
+        { name: `Servizio ${sectionName} Premium`, description: `Opzione avanzata con supporto dedicato`, price: '€100' },
+        { name: `Pacchetto ${sectionName} Completo`, description: `Soluzione all-inclusive per ogni esigenza`, price: '€150' }
+      ],
+      'retail': [
+        { name: `Prodotto ${sectionName} Classico`, description: `Qualità garantita e prezzo conveniente`, price: '€25' },
+        { name: `Prodotto ${sectionName} Premium`, description: `Materiali di alta qualità e design curato`, price: '€65' },
+        { name: `Edizione ${sectionName} Limitata`, description: `Pezzo unico per veri intenditori`, price: '€120' }
+      ]
+    };
+    
+    const category = businessType.includes('service') ? 'services' : 'retail';
+    return templates[category] || templates['services'];
+  };
+  
+  const intelligence = businessIntelligence[businessType];
+  let selectedSections, colors, contentData;
+  
+  if (intelligence) {
+    // Business type conosciuto - usa dati specifici
+    selectedSections = intelligence.sections.slice(0, sectionCount);
+    colors = intelligence.colors;
+    contentData = intelligence.content;
+  } else {
+    // Business type sconosciuto - genera contenuti dinamici
+    selectedSections = [
+      'Servizi Principali', 'Offerte Speciali', 'Informazioni', 
+      'Assistenza', 'Contatti'
+    ].slice(0, sectionCount);
+    
+    colors = { primary: '#2196F3', secondary: '#4CAF50', accent: '#FF9800' };
+    contentData = {};
+    
+    selectedSections.forEach(section => {
+      contentData[section] = createDynamicContent(businessType, section);
+    });
+  }
   
   return {
     businessName,
     businessType,
+    businessDescription: businessDescription || '',
     complexity,
     totalSections: selectedSections.length,
-    sections: selectedSections.map((sectionName, index) => ({
-      id: `${sectionName.toLowerCase().replace(/\s+/g, '-')}-${index + 1}`,
-      type: `${sectionName.replace(/\s+/g, '')}-ai-dynamic`,
-      title: sectionName,
-      description: `Professional ${sectionName.toLowerCase()} for ${businessName}`,
-      items: Array.from({length: 3}, (_, i) => ({
-        name: `${sectionName} Item ${i + 1}`,
-        description: `High quality ${sectionName.toLowerCase()} service`,
+    sections: selectedSections.map((sectionName, index) => {
+      const sectionContent = contentData[sectionName] || createDynamicContent(businessType, sectionName);
+      const isContactSection = index === selectedSections.length - 1;
+      
+      return {
+        id: `${sectionName.toLowerCase().replace(/\s+/g, '-')}-${index + 1}`,
+        type: `${sectionName.replace(/\s+/g, '')}-ai-dynamic`,
+        title: sectionName,
+        description: isContactSection ? 
+          `Contatta ${businessName} per informazioni e prenotazioni` :
+          `${sectionName} professionali di ${businessName}`,
+        items: isContactSection ? [
+          { name: 'Telefono', description: '+39 06 12345678', price: '' },
+          { name: 'Email', description: 'info@' + businessName.toLowerCase().replace(/\s+/g, '') + '.it', price: '' },
+          { name: 'Orari', description: 'Lun-Ven 9:00-18:00, Sab 9:00-13:00', price: '' }
+        ] : sectionContent,
+        hasContacts: isContactSection
+      };
+    }),
+    design: {
+      primaryColor: colors.primary,
+      secondaryColor: colors.secondary,
+      accentColor: colors.accent,
+      style: complexity >= 7 ? 'luxury' : complexity >= 5 ? 'modern' : 'clean',
+      businessPersonality: `Design professionale ${businessType} con estetica ${complexity >= 6 ? 'sofisticata' : 'pulita'}`
+    },
+    metadata: {
+      generatedBy: 'claude-sonnet-simulation',
+      basedOnPatterns: 0,
+      patternQuality: 'simulated-intelligent',
+      sections: selectedSections.length,
+      hasBusinessDescription: !!businessDescription,
+      intelligenceLevel: intelligence ? 'specific' : 'dynamic'
+    }
         price: index < selectedSections.length - 1 ? `€${(i + 1) * 25}` : ''
       })),
       hasContacts: index === selectedSections.length - 1 // Solo ultima sezione
