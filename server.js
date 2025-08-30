@@ -209,15 +209,15 @@ app.use('/training', authenticateExternalAPI, require('./src/training/training-i
 // 🎨 AI Layout Generation Routes - V6.0 Compatible
 app.use('/api/generate-layout', authenticateExternalAPI, require('./src/api/generate-layout'));  // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
 app.use('/api/generate', authenticateExternalAPI, require('./src/api/generate-layout'));  // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
-app.use('/api/generate', authenticateAPI, require('./src/api/generate-design')); // Design patterns API (mantiene API key)
-app.use('/api/optimize', authenticateAPI, require('./src/api/optimize-blocks'));
-app.use('/api/validate', authenticateAPI, require('./src/api/validate-template'));
-app.use('/api/training', authenticateAPI, require('./src/api/training'));
-app.use('/api/design', authenticateAPI, require('./src/api/design-routes')); // Design Analysis API
-app.use('/api', authenticateAPI, require('./src/api/setup-database')); // Database setup endpoint
+app.use('/api/generate', authenticateExternalAPI, require('./src/api/generate-design')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
+app.use('/api/optimize', authenticateExternalAPI, require('./src/api/optimize-blocks')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
+app.use('/api/validate', authenticateExternalAPI, require('./src/api/validate-template')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
+app.use('/api/training', authenticateExternalAPI, require('./src/api/training')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
+app.use('/api/design', authenticateExternalAPI, require('./src/api/design-routes')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
+app.use('/api', authenticateExternalAPI, require('./src/api/setup-database')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
 
 // 🤖 NEW: Claude Sonnet Website Generator - Parallel System V1.0
-app.use('/api/claude', authenticateAPI, require('./src/api/claude-generator')); // Claude Sonnet endpoint (mantiene API key)
+app.use('/api/claude', authenticateExternalAPI, require('./src/api/claude-generator')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
 app.use('/api/ai-trainer', authenticateExternalAPI, require('./src/api/generate-layout')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
 
 // DB Admin API Route (deve essere dichiarata prima dei catch-all e dei 404 handler)
