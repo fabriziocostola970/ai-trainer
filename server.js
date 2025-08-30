@@ -203,7 +203,7 @@ app.get('/debug/business-types', async (req, res) => {
 });
 
 // Training Interface Routes (with authentication)
-app.use('/training', authenticateAPI, require('./src/training/training-interface'));
+app.use('/training', authenticateExternalAPI, require('./src/training/training-interface'));
 
 // Public API Routes (with authentication) 
 // 🎨 AI Layout Generation Routes - V6.0 Compatible
