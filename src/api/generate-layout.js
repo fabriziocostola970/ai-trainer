@@ -401,9 +401,19 @@ Rispondi SOLO con JSON valido nella lingua del business:
 
     const sectionContent = JSON.parse(completion.choices[0].message.content.trim());
     
-    // Aggiungi immagine dinamica basata su business type
-    if (!sectionContent.image && sectionContent.metadata) {
-      sectionContent.image = generateAIBasedImage(sectionType, businessType, sectionContent.metadata.sectionPurpose);
+    // Converti sempre la descrizione immagine in URL reale
+    if (sectionContent.image && typeof sectionContent.image === 'string' && !sectionContent.image.startsWith('http')) {
+      sectionContent.image = generateAIBasedImage(sectionType, businessType, sectionContent.image);
+    }
+    
+    // Converti anche le immagini degli items
+    if (sectionContent.items && Array.isArray(sectionContent.items)) {
+      sectionContent.items = sectionContent.items.map(item => {
+        if (item.image && typeof item.image === 'string' && !item.image.startsWith('http')) {
+          item.image = generateAIBasedImage(sectionType, businessType, item.image);
+        }
+        return item;
+      });
     }
     
     console.log(`✅ [AI Universal] Generated ${sectionType} content for ${businessName}`);
