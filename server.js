@@ -46,10 +46,9 @@ app.use(express.static(path.join(__dirname, 'frontend'), {
   lastModified: true
 }));
 
-// API Authentication middleware
-const authenticateAPI = (req, res, next) => {
+// API Authentication middleware for external services (like VendiOnline.EU)
+const authenticateExternalAPI = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  const expectedKey = process.env.AI_TRAINER_API_KEY || 'your-api-key-here';
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
@@ -59,14 +58,31 @@ const authenticateAPI = (req, res, next) => {
   }
   
   const token = authHeader.substring(7);
-  if (token !== expectedKey) {
-    return res.status(401).json({
-      success: false,
-      error: 'Invalid API key'
-    });
+  
+  // Check if it's an API key (for direct AI-Trainer usage)
+  const expectedKey = process.env.AI_TRAINER_API_KEY || 'your-api-key-here';
+  if (token === expectedKey) {
+    return next();
   }
   
-  next();
+  // Check if it's a JWT token from VendiOnline.EU
+  try {
+    const jwt = require('jsonwebtoken');
+    const jwtSecret = process.env.JWT_SECRET || process.env.VENDI_ONLINE_JWT_SECRET;
+    
+    if (jwtSecret) {
+      const decoded = jwt.verify(token, jwtSecret);
+      console.log('✅ JWT token validated from VendiOnline.EU:', decoded.id || decoded.userId);
+      return next();
+    }
+  } catch (jwtError) {
+    console.log('❌ JWT validation failed:', jwtError.message);
+  }
+  
+  return res.status(401).json({
+    success: false,
+    error: 'Invalid API key or JWT token'
+  });
 };
 
 // Health check endpoint
@@ -150,18 +166,18 @@ app.use('/training', authenticateAPI, require('./src/training/training-interface
 
 // Public API Routes (with authentication) 
 // 🎨 AI Layout Generation Routes - V6.0 Compatible
-app.use('/api/generate-layout', authenticateAPI, require('./src/api/generate-layout'));  // New V6.0 route
-app.use('/api/generate', authenticateAPI, require('./src/api/generate-layout'));  // Legacy compatibility
-app.use('/api/generate', authenticateAPI, require('./src/api/generate-design')); // NEW: Design patterns API
+app.use('/api/generate-layout', authenticateExternalAPI, require('./src/api/generate-layout'));  // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
+app.use('/api/generate', authenticateExternalAPI, require('./src/api/generate-layout'));  // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
+app.use('/api/generate', authenticateAPI, require('./src/api/generate-design')); // Design patterns API (mantiene API key)
 app.use('/api/optimize', authenticateAPI, require('./src/api/optimize-blocks'));
 app.use('/api/validate', authenticateAPI, require('./src/api/validate-template'));
 app.use('/api/training', authenticateAPI, require('./src/api/training'));
-app.use('/api/design', authenticateAPI, require('./src/api/design-routes')); // 🎨 NEW: Design Analysis API
-app.use('/api', authenticateAPI, require('./src/api/setup-database')); // 🗄️ Database setup endpoint
+app.use('/api/design', authenticateAPI, require('./src/api/design-routes')); // Design Analysis API
+app.use('/api', authenticateAPI, require('./src/api/setup-database')); // Database setup endpoint
 
 // 🤖 NEW: Claude Sonnet Website Generator - Parallel System V1.0
-app.use('/api/claude', authenticateAPI, require('./src/api/claude-generator')); // 🚀 Claude Sonnet endpoint
-app.use('/api/ai-trainer', authenticateAPI, require('./src/api/generate-layout')); // 🤖 AI-Trainer Custom endpoint - CORRETTO: usa il nostro sistema
+app.use('/api/claude', authenticateAPI, require('./src/api/claude-generator')); // Claude Sonnet endpoint (mantiene API key)
+app.use('/api/ai-trainer', authenticateExternalAPI, require('./src/api/generate-layout')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
 
 // DB Admin API Route (deve essere dichiarata prima dei catch-all e dei 404 handler)
 const dbAdminRoute = require('./src/api/db-admin');
