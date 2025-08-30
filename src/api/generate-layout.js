@@ -1240,3 +1240,8 @@ function generateFallbackDesignSystem(businessType, style) {
 }
 
 module.exports = router;
+
+// Esporta funzioni per uso in altri moduli
+module.exports.generateAIBasedImage = generateAIBasedImage;
+module.exports.generateImageKeywords = generateImageKeywords;
+module.exports.getImageDimensions = getImageDimensions;

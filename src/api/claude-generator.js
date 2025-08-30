@@ -2,6 +2,88 @@ const express = require('express');
 const router = express.Router();
 const DatabaseStorage = require('../storage/database-storage');
 const OpenAI = require('openai');
+const axios = require('axios');
+
+// 📊 Rate limiting per Unsplash API (condiviso con generate-layout.js)
+let unsplashRequestCount = 0;
+let unsplashResetTime = Date.now() + 3600000; // 1 ora da ora
+
+function checkRateLimit() {
+  const now = Date.now();
+  if (now > unsplashResetTime) {
+    unsplashRequestCount = 0;
+    unsplashResetTime = now + 3600000;
+  }
+  return unsplashRequestCount < 40; // Lasciamo margine sotto il limite 50
+}
+
+function incrementRateLimit() {
+  unsplashRequestCount++;
+}
+
+// 🖼️ Versione semplificata per Claude Generator (senza API Unsplash complessa)
+async function generateAIBasedImageClaude(sectionType, businessType, sectionPurpose) {
+  console.log(`🖼️ [Claude Images] Generating image for ${sectionType} (${businessType})`);
+
+  // 🔒 Controlla API key
+  const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
+  if (!UNSPLASH_ACCESS_KEY) {
+    console.warn('⚠️ [Claude Images] API key mancante - usando fallback');
+    return `https://via.placeholder.com/300x200?text=${encodeURIComponent(businessType)}`;
+  }
+
+  // 📊 Controlla rate limiting
+  if (!checkRateLimit()) {
+    console.warn('⚠️ [Claude Images] Rate limit raggiunto - usando fallback');
+    return `https://via.placeholder.com/300x200?text=${encodeURIComponent(businessType)}`;
+  }
+
+  // ⏱️ Delay etico (2 secondi)
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // 🎯 Keywords semplificate per Claude
+  const keywords = {
+    'ristorante': ['food', 'restaurant', 'pizza'],
+    'parrucchiere': ['hair salon', 'beauty', 'hairstyle'],
+    'florist': ['flowers', 'bouquet', 'garden'],
+    'default': ['business', 'professional', 'service']
+  };
+
+  const keyword = keywords[businessType] ? keywords[businessType][0] : keywords.default[0];
+
+  try {
+    console.log(`🔍 [Claude Images] Searching for: "${keyword}"`);
+
+    // 🚀 Chiamata API semplificata
+    const response = await axios.get('https://api.unsplash.com/search/photos', {
+      params: {
+        query: keyword,
+        per_page: 1,
+        orientation: 'landscape'
+      },
+      headers: {
+        Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`
+      },
+      timeout: 5000
+    });
+
+    incrementRateLimit();
+
+    if (response.data.results && response.data.results.length > 0) {
+      const photo = response.data.results[0];
+      const dimensions = { width: 300, height: 200 }; // Dimensioni fisse per semplicità
+
+      const imageUrl = `${photo.urls.raw}&w=${dimensions.width}&h=${dimensions.height}&fit=crop&q=80`;
+      console.log(`✅ [Claude Images] Generated: ${imageUrl.substring(0, 50)}...`);
+      return imageUrl;
+    }
+  } catch (error) {
+    console.error(`❌ [Claude Images] API Error: ${error.message}`);
+  }
+
+  // 🚨 Fallback
+  return `https://via.placeholder.com/300x200?text=${encodeURIComponent(businessType)}`;
+}
 
 // 🤖 CLAUDE SONNET WEBSITE GENERATOR - Sistema Parallelo V1.0
 // 🎯 FOCUS: Generazione siti intelligente basata su pattern database esistenti
@@ -482,19 +564,19 @@ async function simulateClaudeResponse(prompt, businessName, businessType, busine
           name: `Servizio ${sectionName} Base`,
           description: `Soluzione professionale per ${businessType}`,
           price: '€50',
-          image: await generateAIBasedImage(sectionName.toLowerCase(), businessType, `Servizio base per ${businessType}`)
+          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Servizio base per ${businessType}`)
         },
         {
           name: `Servizio ${sectionName} Premium`,
           description: `Opzione avanzata con supporto dedicato`,
           price: '€100',
-          image: await generateAIBasedImage(sectionName.toLowerCase(), businessType, `Servizio premium per ${businessType}`)
+          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Servizio premium per ${businessType}`)
         },
         {
           name: `Pacchetto ${sectionName} Completo`,
           description: `Soluzione all-inclusive per ogni esigenza`,
           price: '€150',
-          image: await generateAIBasedImage(sectionName.toLowerCase(), businessType, `Pacchetto completo per ${businessType}`)
+          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Pacchetto completo per ${businessType}`)
         }
       ],
       'retail': [
@@ -502,19 +584,19 @@ async function simulateClaudeResponse(prompt, businessName, businessType, busine
           name: `Prodotto ${sectionName} Classico`,
           description: `Qualità garantita e prezzo conveniente`,
           price: '€25',
-          image: await generateAIBasedImage(sectionName.toLowerCase(), businessType, `Prodotto classico per ${businessType}`)
+          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Prodotto classico per ${businessType}`)
         },
         {
           name: `Prodotto ${sectionName} Premium`,
           description: `Materiali di alta qualità e design curato`,
           price: '€65',
-          image: await generateAIBasedImage(sectionName.toLowerCase(), businessType, `Prodotto premium per ${businessType}`)
+          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Prodotto premium per ${businessType}`)
         },
         {
           name: `Edizione ${sectionName} Limitata`,
           description: `Pezzo unico per veri intenditori`,
           price: '€120',
-          image: await generateAIBasedImage(sectionName.toLowerCase(), businessType, `Edizione limitata per ${businessType}`)
+          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Edizione limitata per ${businessType}`)
         }
       ]
     };
