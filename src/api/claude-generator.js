@@ -4,21 +4,50 @@ const DatabaseStorage = require('../storage/database-storage');
 const OpenAI = require('openai');
 const axios = require('axios');
 
-// 📊 Rate limiting per Unsplash API (condiviso con generate-layout.js)
-let unsplashRequestCount = 0;
-let unsplashResetTime = Date.now() + 3600000; // 1 ora da ora
+// 🧠 ANALISI DINAMICA BUSINESS TYPE con Claude
+async function analyzeBusinessTypeDynamically(businessProfile) {
+  try {
+    const businessName = businessProfile?.name || businessProfile?.businessName || '';
+    const businessDesc = businessProfile?.description || '';
+    const businessType = businessProfile?.businessType || 'business';
 
-function checkRateLimit() {
-  const now = Date.now();
-  if (now > unsplashResetTime) {
-    unsplashRequestCount = 0;
-    unsplashResetTime = now + 3600000;
+    // Se già abbiamo un tipo specifico, non rianalizziamo
+    if (businessType !== 'services' && businessType !== 'business' && businessType !== 'company') {
+      return businessType;
+    }
+
+    console.log('🧠 [Dynamic Analysis] Analyzing business type for:', businessName);
+
+    const prompt = `Analizza questo business e determina il tipo più specifico possibile:
+
+Nome: ${businessName}
+Descrizione: ${businessDesc}
+Tipo attuale: ${businessType}
+
+Istruzioni:
+- Analizza attentamente nome e descrizione
+- Identifica il settore specifico (es: ristorante, fioraio, parrucchiere, meccanico, etc.)
+- NON usare tipi generici come "services" o "business"
+- Se non riesci a determinare, usa "restaurant" come fallback
+
+Rispondi SOLO con il tipo specifico in minuscolo, senza spiegazioni aggiuntive.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'claude-3-5-sonnet-20241022',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 50,
+      temperature: 0.1
+    });
+
+    const analyzedType = response.choices[0].message.content.trim().toLowerCase();
+    console.log(`🧠 [Dynamic Analysis] Classified as: ${analyzedType}`);
+
+    return analyzedType;
+
+  } catch (error) {
+    console.error('❌ [Dynamic Analysis] Error:', error);
+    return businessType; // Fallback al tipo originale
   }
-  return unsplashRequestCount < 40; // Lasciamo margine sotto il limite 50
-}
-
-function incrementRateLimit() {
-  unsplashRequestCount++;
 }
 
 // 🖼️ Versione semplificata per Claude Generator (senza API Unsplash complessa)
@@ -608,20 +637,16 @@ async function simulateClaudeResponse(prompt, businessName, businessType, busine
   const intelligence = businessIntelligence[businessType];
   let selectedSections, colors, contentData;
   
-  // 🗺️ MAPPING per business types generici
-  const businessTypeMapping = {
-    'services': 'restaurant', // Mappa services a restaurant (ha pattern ricchi)
-    'business': 'restaurant',
-    'company': 'restaurant',
-    'agency': 'restaurant',
-    'consulting': 'restaurant'
-  };
-  
-  // Se businessType è generico, usa il mapping
-  const mappedType = businessTypeMapping[businessType] || businessType;
-  const mappedIntelligence = businessIntelligence[mappedType] || intelligence;
-  
-  if (mappedIntelligence) {
+  // 🧠 ANALISI DINAMICA: Usa Claude per classificare il business
+  let mappedType = businessType;
+
+  if (businessType === 'services' || businessType === 'business' || businessType === 'company') {
+    // Analizza dinamicamente il tipo di business
+    mappedType = await analyzeBusinessTypeDynamically(businessProfile);
+    console.log(`🧠 [Business Mapping] "${businessType}" → "${mappedType}" (dynamic analysis)`);
+  }
+
+  const mappedIntelligence = businessIntelligence[mappedType] || intelligence;  if (mappedIntelligence) {
     // Business type mappato - usa dati specifici
     console.log(`🗺️ [Business Mapping] "${businessType}" → "${mappedType}"`);
     selectedSections = mappedIntelligence.sections.slice(0, sectionCount);
