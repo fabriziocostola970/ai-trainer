@@ -608,13 +608,28 @@ async function simulateClaudeResponse(prompt, businessName, businessType, busine
   const intelligence = businessIntelligence[businessType];
   let selectedSections, colors, contentData;
   
-  if (intelligence) {
-    // Business type conosciuto - usa dati specifici
-    selectedSections = intelligence.sections.slice(0, sectionCount);
-    colors = intelligence.colors;
-    contentData = intelligence.content;
+  // 🗺️ MAPPING per business types generici
+  const businessTypeMapping = {
+    'services': 'restaurant', // Mappa services a restaurant (ha pattern ricchi)
+    'business': 'restaurant',
+    'company': 'restaurant',
+    'agency': 'restaurant',
+    'consulting': 'restaurant'
+  };
+  
+  // Se businessType è generico, usa il mapping
+  const mappedType = businessTypeMapping[businessType] || businessType;
+  const mappedIntelligence = businessIntelligence[mappedType] || intelligence;
+  
+  if (mappedIntelligence) {
+    // Business type mappato - usa dati specifici
+    console.log(`🗺️ [Business Mapping] "${businessType}" → "${mappedType}"`);
+    selectedSections = mappedIntelligence.sections.slice(0, sectionCount);
+    colors = mappedIntelligence.colors;
+    contentData = mappedIntelligence.content;
   } else {
     // Business type sconosciuto - genera contenuti dinamici
+    console.log(`🎭 [Dynamic Generation] No patterns for "${businessType}", using dynamic generation`);
     selectedSections = [
       'Servizi Principali', 'Offerte Speciali', 'Informazioni', 
       'Assistenza', 'Contatti'
