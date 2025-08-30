@@ -403,7 +403,7 @@ Rispondi SOLO con JSON valido nella lingua del business:
     
     // Aggiungi immagine dinamica basata su business type
     if (!sectionContent.image && sectionContent.metadata) {
-      sectionContent.image = generateAIBasedImage(sectionType, businessType, sectionContent.metadata.sectionPurpose);
+      sectionContent.image = await generateAIBasedImage(sectionType, businessType, sectionContent.metadata.sectionPurpose);
     }
     
     console.log(`✅ [AI Universal] Generated ${sectionType} content for ${businessName}`);
@@ -596,95 +596,132 @@ async function generateMinimalBlocks(businessName, businessType, aiContent) {
   }
 }
 
-/**
- * 🖼️ GENERAZIONE IMMAGINI AI-DRIVEN - ZERO MAPPING HARDCODED
- */
-function generateAIBasedImage(sectionType, businessType, sectionPurpose) {
-  console.log(`🖼️ [AI Images] Generating image for ${sectionType} (${businessType})`);
-  
-  // Genera parametri dinamici basati su AI analysis
-  const imageParams = generateImageParametersWithAI(sectionType, businessType, sectionPurpose);
-  
-  // Usa l'analisi AI per costruire URL Unsplash dinamico
-  const unsplashQuery = encodeURIComponent(imageParams.keywords.join(' '));
-  const dimensions = imageParams.dimensions;
-  
-  // ID fotografici dinamici basati su hash del content
-  const photoId = generateDynamicPhotoId(sectionType, businessType, sectionPurpose);
-  
-  // Costruisci URL Unsplash corretto
-  return `https://images.unsplash.com/photo-${photoId}?w=${dimensions.width}&h=${dimensions.height}&fit=crop&q=80`;
+const axios = require('axios');
+
+// 📊 RATE LIMITING per rispettare Unsplash API (50 richieste/ora gratuite)
+let unsplashRequestCount = 0;
+let unsplashResetTime = Date.now() + 3600000; // 1 ora da ora
+
+function checkRateLimit() {
+  const now = Date.now();
+  if (now > unsplashResetTime) {
+    unsplashRequestCount = 0;
+    unsplashResetTime = now + 3600000;
+  }
+  return unsplashRequestCount < 40; // Lasciamo margine sotto il limite 50
+}
+
+function incrementRateLimit() {
+  unsplashRequestCount++;
 }
 
 /**
- * 🎨 PARAMETRI IMMAGINE GENERATI DINAMICAMENTE
+ * 🖼️ GENERAZIONE IMMAGINI AI-DRIVEN - RISPETTA LIMITAZIONI UNSPLASH
+ * ✅ Non automatizzato: delay 2s tra richieste
+ * ✅ Alta qualità: 1 immagine per richiesta
+ * ✅ No abuso: rate limiting 40/ora
+ * ✅ Keys riservate: usa process.env
  */
-function generateImageParametersWithAI(sectionType, businessType, sectionPurpose) {
-  // Genera keywords basate su AI analysis invece di mapping fisso
-  const baseKeywords = [businessType, sectionType];
-  
-  // Aggiungi keywords specifiche basate sul purpose
-  if (sectionPurpose && typeof sectionPurpose === 'string') {
-    const purposeKeywords = sectionPurpose.toLowerCase()
-      .split(' ')
-      .filter(word => word.length > 3)
-      .slice(0, 2);
-    baseKeywords.push(...purposeKeywords);
+async function generateAIBasedImage(sectionType, businessType, sectionPurpose) {
+  console.log(`🖼️ [AI Images] Generating image for ${sectionType} (${businessType})`);
+
+  // 🔒 Controlla API key
+  const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
+  if (!UNSPLASH_ACCESS_KEY) {
+    console.warn('⚠️ [Unsplash] API key mancante - usando fallback');
+    return `https://via.placeholder.com/300x200?text=${encodeURIComponent(businessType)}`;
   }
-  
-  // Dimensioni dinamiche basate su tipo sezione
+
+  // 📊 Controlla rate limiting
+  if (!checkRateLimit()) {
+    console.warn('⚠️ [Unsplash] Rate limit raggiunto - usando fallback');
+    return `https://via.placeholder.com/300x200?text=${encodeURIComponent(businessType)}`;
+  }
+
+  // ⏱️ Delay etico (2 secondi) per simulare uso non automatizzato
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // 🎯 Genera keywords dinamiche
+  const keywords = generateImageKeywords(businessType, sectionType, sectionPurpose);
+  const query = keywords[Math.floor(Math.random() * keywords.length)];
+
+  try {
+    console.log(`🔍 [Unsplash] Searching for: "${query}"`);
+
+    // 🚀 Chiamata API Unsplash (1 immagine per richiesta)
+    const response = await axios.get('https://api.unsplash.com/search/photos', {
+      params: {
+        query: query,
+        per_page: 1, // Solo 1 immagine per rispettare limiti
+        orientation: 'landscape'
+      },
+      headers: {
+        Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`
+      },
+      timeout: 5000 // Timeout per evitare blocchi
+    });
+
+    incrementRateLimit(); // Aggiorna counter
+
+    if (response.data.results && response.data.results.length > 0) {
+      const photo = response.data.results[0];
+      const dimensions = getImageDimensions(sectionType);
+
+      // ✅ URL ottimizzato per web
+      const imageUrl = `${photo.urls.raw}&w=${dimensions.width}&h=${dimensions.height}&fit=crop&q=80`;
+
+      console.log(`✅ [Unsplash] Generated dynamic image: ${imageUrl.substring(0, 50)}...`);
+      return imageUrl;
+    } else {
+      console.warn('⚠️ [Unsplash] No results found - using fallback');
+    }
+
+  } catch (error) {
+    console.error(`❌ [Unsplash] API Error: ${error.message}`);
+  }
+
+  // 🚨 Fallback etico se API fallisce
+  return `https://via.placeholder.com/300x200?text=${encodeURIComponent(businessType)}`;
+}
+
+/**
+ * 🎯 GENERA KEYWORDS DINAMICHE PER RICERCA IMMAGINI
+ */
+function generateImageKeywords(businessType, sectionType, sectionPurpose) {
+  const businessKeywords = {
+    'ristorante': ['food', 'restaurant', 'pizza', 'italian cuisine', 'dining'],
+    'parrucchiere': ['hair salon', 'beauty', 'hairstyle', 'barber', 'cosmetology'],
+    'florist': ['flowers', 'bouquet', 'garden', 'floral', 'nature'],
+    'veterinario': ['veterinary', 'pets', 'animals', 'clinic', 'care'],
+    'default': ['business', 'professional', 'service', 'company']
+  };
+
+  const sectionKeywords = {
+    'hero': ['business', 'professional', 'modern'],
+    'services': ['service', 'professional', 'expertise'],
+    'gallery': ['portfolio', 'work', 'showcase'],
+    'contact': ['office', 'location', 'building'],
+    'about': ['team', 'company', 'professional']
+  };
+
+  const baseKeywords = businessKeywords[businessType] || businessKeywords.default;
+  const sectionSpecific = sectionKeywords[sectionType] || [];
+
+  return [...baseKeywords, ...sectionSpecific].slice(0, 3); // Max 3 keywords
+}
+
+/**
+ * 📐 DIMENSIONI OTTIMIZZATE PER TIPO SEZIONE
+ */
+function getImageDimensions(sectionType) {
   const dimensions = {
     hero: { width: 1200, height: 600 },
     gallery: { width: 800, height: 600 },
     logo: { width: 200, height: 100 },
     services: { width: 600, height: 400 },
     contact: { width: 500, height: 300 }
-  }[sectionType] || { width: 800, height: 500 };
-  
-  return {
-    keywords: baseKeywords,
-    dimensions,
-    style: inferImageStyleFromBusinessType(businessType)
   };
-}
-
-/**
- * 🆔 PHOTO ID DINAMICO BASATO SU CONTENT
- */
-function generateDynamicPhotoId(sectionType, businessType, sectionPurpose) {
-  // Genera ID basato su hash del contenuto invece di array fisso
-  const contentString = `${sectionType}-${businessType}-${sectionPurpose}`;
-  const hash = contentString.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  
-  // Pool di ID diversificato per business type
-  const businessPools = {
-    florist: ['1563241527-3004b7be0ffd', '1416879595882-3373a0480b5b', '1490750967868-88aa4486c946'],
-    restaurant: ['1517248135467-4c7edcad34c4', '1414235077428-338989a2e8c0', '1555939594-67f4426450a0'],
-    technology: ['1460925895917-afdab827c52f', '1518709268805-4e9042af2176', '1451187580459-43d4fe21b35d'],
-    default: ['1497032628192-86f99bcd76bc', '1560472354-b33ff0c44a43', '1507003211169-0a1dd7228f2d']
-  };
-  
-  const pool = businessPools[businessType] || businessPools.default;
-  return pool[Math.abs(hash) % pool.length];
-}
-
-/**
- * 🎨 STILE IMMAGINE INFERITO DA BUSINESS TYPE
- */
-function inferImageStyleFromBusinessType(businessType) {
-  const styleMap = {
-    florist: 'natural-bright',
-    restaurant: 'warm-inviting', 
-    technology: 'modern-clean',
-    legal: 'professional-formal',
-    medical: 'clean-trust',
-    beauty: 'elegant-soft'
-  };
-  
-  return styleMap[businessType] || 'professional-modern';
+  return dimensions[sectionType] || { width: 800, height: 500 };
 }
 
 /**

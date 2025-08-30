@@ -475,46 +475,46 @@ async function simulateClaudeResponse(prompt, businessName, businessType, busine
   };
   
   // 🎯 FALLBACK INTELLIGENTE per business types non definiti
-  const createDynamicContent = (businessType, sectionName) => {
+  const createDynamicContent = async (businessType, sectionName) => {
     const templates = {
       'services': [
-        { 
-          name: `Servizio ${sectionName} Base`, 
-          description: `Soluzione professionale per ${businessType}`, 
+        {
+          name: `Servizio ${sectionName} Base`,
+          description: `Soluzione professionale per ${businessType}`,
           price: '€50',
-          image: generateAIBasedImage(sectionName.toLowerCase(), businessType, `Servizio base per ${businessType}`)
+          image: await generateAIBasedImage(sectionName.toLowerCase(), businessType, `Servizio base per ${businessType}`)
         },
-        { 
-          name: `Servizio ${sectionName} Premium`, 
-          description: `Opzione avanzata con supporto dedicato`, 
+        {
+          name: `Servizio ${sectionName} Premium`,
+          description: `Opzione avanzata con supporto dedicato`,
           price: '€100',
-          image: generateAIBasedImage(sectionName.toLowerCase(), businessType, `Servizio premium per ${businessType}`)
+          image: await generateAIBasedImage(sectionName.toLowerCase(), businessType, `Servizio premium per ${businessType}`)
         },
-        { 
-          name: `Pacchetto ${sectionName} Completo`, 
-          description: `Soluzione all-inclusive per ogni esigenza`, 
+        {
+          name: `Pacchetto ${sectionName} Completo`,
+          description: `Soluzione all-inclusive per ogni esigenza`,
           price: '€150',
-          image: generateAIBasedImage(sectionName.toLowerCase(), businessType, `Pacchetto completo per ${businessType}`)
+          image: await generateAIBasedImage(sectionName.toLowerCase(), businessType, `Pacchetto completo per ${businessType}`)
         }
       ],
       'retail': [
-        { 
-          name: `Prodotto ${sectionName} Classico`, 
-          description: `Qualità garantita e prezzo conveniente`, 
+        {
+          name: `Prodotto ${sectionName} Classico`,
+          description: `Qualità garantita e prezzo conveniente`,
           price: '€25',
-          image: generateAIBasedImage(sectionName.toLowerCase(), businessType, `Prodotto classico per ${businessType}`)
+          image: await generateAIBasedImage(sectionName.toLowerCase(), businessType, `Prodotto classico per ${businessType}`)
         },
-        { 
-          name: `Prodotto ${sectionName} Premium`, 
-          description: `Materiali di alta qualità e design curato`, 
+        {
+          name: `Prodotto ${sectionName} Premium`,
+          description: `Materiali di alta qualità e design curato`,
           price: '€65',
-          image: generateAIBasedImage(sectionName.toLowerCase(), businessType, `Prodotto premium per ${businessType}`)
+          image: await generateAIBasedImage(sectionName.toLowerCase(), businessType, `Prodotto premium per ${businessType}`)
         },
-        { 
-          name: `Edizione ${sectionName} Limitata`, 
-          description: `Pezzo unico per veri intenditori`, 
+        {
+          name: `Edizione ${sectionName} Limitata`,
+          description: `Pezzo unico per veri intenditori`,
           price: '€120',
-          image: generateAIBasedImage(sectionName.toLowerCase(), businessType, `Edizione limitata per ${businessType}`)
+          image: await generateAIBasedImage(sectionName.toLowerCase(), businessType, `Edizione limitata per ${businessType}`)
         }
       ]
     };
@@ -541,9 +541,10 @@ async function simulateClaudeResponse(prompt, businessName, businessType, busine
     colors = { primary: '#2196F3', secondary: '#4CAF50', accent: '#FF9800' };
     contentData = {};
     
-    selectedSections.forEach(section => {
-      contentData[section] = createDynamicContent(businessType, section);
-    });
+    // Usa Promise.all per gestire async operations
+    await Promise.all(selectedSections.map(async (section) => {
+      contentData[section] = await createDynamicContent(businessType, section);
+    }));
   }
   
   return {
@@ -552,8 +553,8 @@ async function simulateClaudeResponse(prompt, businessName, businessType, busine
     businessDescription: businessDescription || '',
     complexity,
     totalSections: selectedSections.length,
-    sections: selectedSections.map((sectionName, index) => {
-      const sectionContent = contentData[sectionName] || createDynamicContent(businessType, sectionName);
+    sections: await Promise.all(selectedSections.map(async (sectionName, index) => {
+      const sectionContent = contentData[sectionName] || await createDynamicContent(businessType, sectionName);
       const isContactSection = index === selectedSections.length - 1;
       
       return {
@@ -570,7 +571,7 @@ async function simulateClaudeResponse(prompt, businessName, businessType, busine
         ] : sectionContent,
         hasContacts: isContactSection
       };
-    }),
+    })),
     design: {
       primaryColor: colors.primary,
       secondaryColor: colors.secondary,
