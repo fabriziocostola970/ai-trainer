@@ -1,10 +1,54 @@
 const express = require('express');
 const router = express.Router();
 const DatabaseStorage = require('../storage/database-storage');
+const OpenAI = require('openai');
 
 // 🤖 CLAUDE SONNET WEBSITE GENERATOR - Sistema Parallelo V1.0
 // 🎯 FOCUS: Generazione siti intelligente basata su pattern database esistenti
 // 🚫 NON TOCCA: Sistema AI-Trainer esistente, mantiene compatibilità totale
+
+/**
+ * 🎯 GENERA GUIDANCE SPECIFICO PER BUSINESS TYPE - 100% DINAMICO
+ */
+async function generateBusinessGuidanceWithAI(businessType, businessDescription = null) {
+  try {
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+
+    const prompt = `Genera una guida specifica per creare contenuti web eccellenti per un business di tipo "${businessType}".
+
+${businessDescription ? `DESCRIZIONE BUSINESS: "${businessDescription}"` : ''}
+
+Fornisci una guida concisa (max 100 parole) che includa:
+- Elementi chiave da enfatizzare per questo tipo di business
+- Caratteristiche uniche del settore
+- Cosa i clienti cercano tipicamente
+- Come presentare i servizi/prodotti al meglio
+
+Rispondi con una frase completa e professionale che possa essere usata come guida per generare contenuti web.
+
+Esempio per ristorante: "Enfatizza le specialità dello chef, il sistema di prenotazioni, l'atmosfera del locale e i punti di forza del menu."
+
+Rispondi SOLO con la guida, senza introduzioni:`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 150,
+      temperature: 0.7
+    });
+
+    const guidance = completion.choices[0].message.content.trim();
+    console.log(`🎯 [Dynamic Guidance] Generated for ${businessType}: ${guidance}`);
+    
+    return guidance;
+
+  } catch (error) {
+    console.error(`❌ [Dynamic Guidance] Error: ${error.message}`);
+    return `Focus on core services, unique value proposition, customer benefits, and contact information for ${businessType} businesses`;
+  }
+}
 
 /**
  * 🧠 ANALISI PATTERN DAL DATABASE ESISTENTE
@@ -199,18 +243,8 @@ async function generateIntelligentPrompt(businessName, businessType, businessDes
     patterns.commonSections.slice(0, optimalSections).map(s => s.name) :
     ['hero', 'services', 'about', 'contact'];
   
-  // Genera prompt specifico per business type
-  const businessSpecificGuidance = {
-    'florist': 'Focus on seasonal arrangements, custom bouquets, wedding services, and delivery information',
-    'restaurant': 'Emphasize menu highlights, chef specialties, reservation system, and location/ambiance',
-    'technology': 'Highlight product features, pricing tiers, case studies, and technical support',
-    'legal': 'Showcase practice areas, attorney profiles, case results, and consultation booking',
-    'medical': 'Present services, doctor credentials, patient testimonials, and appointment scheduling',
-    'retail': 'Feature product categories, promotions, customer reviews, and store locations'
-  };
-  
-  const guidance = businessSpecificGuidance[businessType] || 
-    `Focus on core services, unique value proposition, customer benefits, and contact information`;
+  // 🆕 Genera guidance specifico dinamicamente con AI invece di hardcoded
+  const guidance = await generateBusinessGuidanceWithAI(businessType, businessDescription);
 
   // 🆕 Usa la descrizione del business per personalizzazione avanzata
   const businessContext = businessDescription ? 
