@@ -4,6 +4,23 @@ const DatabaseStorage = require('../storage/database-storage');
 const OpenAI = require('openai');
 const axios = require('axios');
 
+// 📊 RATE LIMITING per rispettare Unsplash API (50 richieste/ora gratuite)
+let unsplashRequestCount = 0;
+let unsplashResetTime = Date.now() + 3600000; // 1 ora da ora
+
+function checkRateLimit() {
+  const now = Date.now();
+  if (now > unsplashResetTime) {
+    unsplashRequestCount = 0;
+    unsplashResetTime = now + 3600000;
+  }
+  return unsplashRequestCount < 40; // Lasciamo margine sotto il limite 50
+}
+
+function incrementRateLimit() {
+  unsplashRequestCount++;
+}
+
 // 🧠 ANALISI DINAMICA BUSINESS TYPE con Claude
 async function analyzeBusinessTypeDynamically(businessProfile) {
   try {
