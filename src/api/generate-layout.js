@@ -256,6 +256,10 @@ Rispondi SOLO con JSON nella lingua del business:
   ]
 }`;
 
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo", 
       messages: [{ role: "user", content: prompt }],
@@ -387,6 +391,7 @@ Rispondi SOLO con JSON valido nella lingua del business:
   }
 }`;
 
+    // Usa l'istanza openai già dichiarata sopra
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],

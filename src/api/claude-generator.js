@@ -62,15 +62,15 @@ async function analyzeBusinessPatterns(businessType) {
     // Query pattern esistenti nel database ai_design_patterns
     const result = await storage.pool.query(`
       SELECT 
-        "layoutPatterns",
-        "cssThemes", 
-        "qualityScore",
-        "semanticAnalysis",
-        "designAnalysis"
+        "layout_structure",
+        "css_themes", 
+        "quality_score",
+        "semantic_analysis",
+        "design_analysis"
       FROM ai_design_patterns 
-      WHERE "businessType" = $1 
-        AND "qualityScore" > 7.0
-      ORDER BY "qualityScore" DESC
+      WHERE "business_type" = $1 
+        AND "quality_score" > 7.0
+      ORDER BY "quality_score" DESC
       LIMIT 10
     `, [businessType]);
     
@@ -81,11 +81,11 @@ async function analyzeBusinessPatterns(businessType) {
     
     // Analizza pattern di successo
     const patterns = result.rows.map(row => ({
-      layout: row.layoutPatterns,
-      themes: row.cssThemes,
-      quality: row.qualityScore,
-      semantic: row.semanticAnalysis,
-      design: row.designAnalysis
+      layout: row.layout_structure,
+      themes: row.css_themes,
+      quality: row.quality_score,
+      semantic: row.semantic_analysis,
+      design: row.design_analysis
     }));
     
     // Calcola statistiche pattern
