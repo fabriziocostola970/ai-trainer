@@ -46,6 +46,45 @@ app.use(express.static(path.join(__dirname, 'frontend'), {
   lastModified: true
 }));
 
+// API Authentication middleware for external services (like VendiOnline.EU)
+const authenticateExternalAPI = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      error: 'Missing or invalid authorization header'
+    });
+  }
+  
+  const token = authHeader.substring(7);
+  
+  // Check if it's an API key (for direct AI-Trainer usage)
+  const expectedKey = process.env.AI_TRAINER_API_KEY || 'your-api-key-here';
+  if (token === expectedKey) {
+    return next();
+  }
+  
+  // Check if it's a JWT token from VendiOnline.EU
+  try {
+    const jwt = require('jsonwebtoken');
+    const jwtSecret = process.env.JWT_SECRET || process.env.VENDI_ONLINE_JWT_SECRET;
+    
+    if (jwtSecret) {
+      const decoded = jwt.verify(token, jwtSecret);
+      console.log('✅ JWT token validated from VendiOnline.EU:', decoded.id || decoded.userId);
+      return next();
+    }
+  } catch (jwtError) {
+    console.log('❌ JWT validation failed:', jwtError.message);
+  }
+  
+  return res.status(401).json({
+    success: false,
+    error: 'Invalid API key or JWT token'
+  });
+};
+
 // 🔍 Debug endpoint to check JWT_SECRET configuration
 app.get('/debug/jwt-secret', (req, res) => {
   const jwtSecret = process.env.JWT_SECRET;
@@ -86,45 +125,6 @@ app.get('/debug/test-jwt', authenticateExternalAPI, (req, res) => {
     auth_type: 'JWT or API Key accepted'
   });
 });
-
-// API Authentication middleware for external services (like VendiOnline.EU)
-const authenticateExternalAPI = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
-      error: 'Missing or invalid authorization header'
-    });
-  }
-  
-  const token = authHeader.substring(7);
-  
-  // Check if it's an API key (for direct AI-Trainer usage)
-  const expectedKey = process.env.AI_TRAINER_API_KEY || 'your-api-key-here';
-  if (token === expectedKey) {
-    return next();
-  }
-  
-  // Check if it's a JWT token from VendiOnline.EU
-  try {
-    const jwt = require('jsonwebtoken');
-    const jwtSecret = process.env.JWT_SECRET || process.env.VENDI_ONLINE_JWT_SECRET;
-    
-    if (jwtSecret) {
-      const decoded = jwt.verify(token, jwtSecret);
-      console.log('✅ JWT token validated from VendiOnline.EU:', decoded.id || decoded.userId);
-      return next();
-    }
-  } catch (jwtError) {
-    console.log('❌ JWT validation failed:', jwtError.message);
-  }
-  
-  return res.status(401).json({
-    success: false,
-    error: 'Invalid API key or JWT token'
-  });
-};
 
 // Health check endpoint
 app.get('/health', (req, res) => {
