@@ -160,6 +160,7 @@ app.use('/api', authenticateAPI, require('./src/api/setup-database')); // 🗄�
 
 // 🤖 NEW: Claude Sonnet Website Generator - Parallel System V1.0
 app.use('/api/claude', authenticateAPI, require('./src/api/claude-generator')); // 🚀 Claude Sonnet endpoint
+app.use('/api/ai-trainer', authenticateAPI, require('./src/api/generate-layout')); // 🤖 AI-Trainer Custom endpoint - CORRETTO: usa il nostro sistema
 
 // DB Admin API Route (deve essere dichiarata prima dei catch-all e dei 404 handler)
 const dbAdminRoute = require('./src/api/db-admin');
