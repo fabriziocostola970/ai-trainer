@@ -478,14 +478,44 @@ async function simulateClaudeResponse(prompt, businessName, businessType, busine
   const createDynamicContent = (businessType, sectionName) => {
     const templates = {
       'services': [
-        { name: `Servizio ${sectionName} Base`, description: `Soluzione professionale per ${businessType}`, price: '€50' },
-        { name: `Servizio ${sectionName} Premium`, description: `Opzione avanzata con supporto dedicato`, price: '€100' },
-        { name: `Pacchetto ${sectionName} Completo`, description: `Soluzione all-inclusive per ogni esigenza`, price: '€150' }
+        { 
+          name: `Servizio ${sectionName} Base`, 
+          description: `Soluzione professionale per ${businessType}`, 
+          price: '€50',
+          image: generateAIBasedImage(sectionName.toLowerCase(), businessType, `Servizio base per ${businessType}`)
+        },
+        { 
+          name: `Servizio ${sectionName} Premium`, 
+          description: `Opzione avanzata con supporto dedicato`, 
+          price: '€100',
+          image: generateAIBasedImage(sectionName.toLowerCase(), businessType, `Servizio premium per ${businessType}`)
+        },
+        { 
+          name: `Pacchetto ${sectionName} Completo`, 
+          description: `Soluzione all-inclusive per ogni esigenza`, 
+          price: '€150',
+          image: generateAIBasedImage(sectionName.toLowerCase(), businessType, `Pacchetto completo per ${businessType}`)
+        }
       ],
       'retail': [
-        { name: `Prodotto ${sectionName} Classico`, description: `Qualità garantita e prezzo conveniente`, price: '€25' },
-        { name: `Prodotto ${sectionName} Premium`, description: `Materiali di alta qualità e design curato`, price: '€65' },
-        { name: `Edizione ${sectionName} Limitata`, description: `Pezzo unico per veri intenditori`, price: '€120' }
+        { 
+          name: `Prodotto ${sectionName} Classico`, 
+          description: `Qualità garantita e prezzo conveniente`, 
+          price: '€25',
+          image: generateAIBasedImage(sectionName.toLowerCase(), businessType, `Prodotto classico per ${businessType}`)
+        },
+        { 
+          name: `Prodotto ${sectionName} Premium`, 
+          description: `Materiali di alta qualità e design curato`, 
+          price: '€65',
+          image: generateAIBasedImage(sectionName.toLowerCase(), businessType, `Prodotto premium per ${businessType}`)
+        },
+        { 
+          name: `Edizione ${sectionName} Limitata`, 
+          description: `Pezzo unico per veri intenditori`, 
+          price: '€120',
+          image: generateAIBasedImage(sectionName.toLowerCase(), businessType, `Edizione limitata per ${businessType}`)
+        }
       ]
     };
     
