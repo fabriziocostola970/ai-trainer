@@ -224,10 +224,10 @@ app.use('/api/ai-trainer', authenticateExternalAPI, require('./src/api/generate-
 const dbAdminRoute = require('./src/api/db-admin');
 app.use('/api/db-admin', dbAdminRoute);
 
-app.use('/api/ai/competitors', authenticateAPI, require('./src/api/competitors'));
+app.use('/api/ai/competitors', authenticateExternalAPI, require('./src/api/competitors'));
 
 // 🧠 Auto-classification API
-app.use('/api/training', authenticateAPI, require('./src/api/auto-classify'));
+app.use('/api/training', authenticateExternalAPI, require('./src/api/auto-classify'));
 
 /* // 🔧 Admin API (schema management)
 app.use('/api/admin', require('./src/api/admin')); */
@@ -239,7 +239,7 @@ app.use('/debug/training', require('./src/api/training'));
 app.use('/api/debug', require('./src/api/debug'));
 
 // API Status endpoint (with authentication)
-app.get('/api/status', authenticateAPI, (req, res) => {
+app.get('/api/status', authenticateExternalAPI, (req, res) => {
   res.json({
     status: 'online',
     service: 'AI-Trainer API',
