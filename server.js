@@ -46,6 +46,47 @@ app.use(express.static(path.join(__dirname, 'frontend'), {
   lastModified: true
 }));
 
+// 🔍 Debug endpoint to check JWT_SECRET configuration
+app.get('/debug/jwt-secret', (req, res) => {
+  const jwtSecret = process.env.JWT_SECRET;
+  const vendiOnlineJwtSecret = process.env.VENDI_ONLINE_JWT_SECRET;
+  const aiTrainerApiKey = process.env.AI_TRAINER_API_KEY;
+  
+  res.json({
+    status: 'JWT_SECRET Configuration Check',
+    timestamp: new Date().toISOString(),
+    jwt_secret: {
+      configured: !!jwtSecret,
+      length: jwtSecret?.length || 0,
+      source: jwtSecret ? 'JWT_SECRET' : null
+    },
+    vendi_online_jwt_secret: {
+      configured: !!vendiOnlineJwtSecret,
+      length: vendiOnlineJwtSecret?.length || 0,
+      source: vendiOnlineJwtSecret ? 'VENDI_ONLINE_JWT_SECRET' : null
+    },
+    ai_trainer_api_key: {
+      configured: !!aiTrainerApiKey,
+      length: aiTrainerApiKey?.length || 0
+    },
+    authentication_status: {
+      jwt_available: !!(jwtSecret || vendiOnlineJwtSecret),
+      api_key_available: !!aiTrainerApiKey,
+      hybrid_auth_supported: !!(jwtSecret || vendiOnlineJwtSecret) && !!aiTrainerApiKey
+    }
+  });
+});
+
+// 🔐 Debug endpoint to test JWT authentication
+app.get('/debug/test-jwt', authenticateExternalAPI, (req, res) => {
+  res.json({
+    status: 'JWT Authentication Test Successful',
+    timestamp: new Date().toISOString(),
+    message: 'Token validated successfully',
+    auth_type: 'JWT or API Key accepted'
+  });
+});
+
 // API Authentication middleware for external services (like VendiOnline.EU)
 const authenticateExternalAPI = (req, res, next) => {
   const authHeader = req.headers.authorization;
