@@ -17,7 +17,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://ai-trainer-production-8fd9.up.railway.app"]
+      connectSrc: ["'self'", "https://ai-trainer-production-8fd9.up.railway.app", "https://vendionline-eu-production.up.railway.app"]
     }
   }
 }));
@@ -27,6 +27,7 @@ app.use(cors({
     'http://localhost:3000',  // VendiOnline.EU dev
     'http://localhost:4000',  // AI-Trainer dev (for testing)
     'https://vendionline-eu.railway.app',  // VendiOnline.EU prod
+    'https://vendionline-eu-production.up.railway.app',  // VendiOnline.EU prod Railway (CORRETTO)
     'https://ai-trainer-production.up.railway.app',  // AI-Trainer prod Railway
     'https://ai-trainer-production-*.up.railway.app',  // Railway auto-generated URLs
     process.env.CORS_ORIGIN  // Railway environment variable
