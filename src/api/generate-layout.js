@@ -687,14 +687,76 @@ async function generateAIBasedImage(sectionType, businessType, sectionPurpose) {
 /**
  * 🎯 GENERA KEYWORDS DINAMICHE PER RICERCA IMMAGINI
  */
-function generateImageKeywords(businessType, sectionType, sectionPurpose) {
-  const businessKeywords = {
-    'ristorante': ['food', 'restaurant', 'pizza', 'italian cuisine', 'dining'],
-    'parrucchiere': ['hair salon', 'beauty', 'hairstyle', 'barber', 'cosmetology'],
-    'florist': ['flowers', 'bouquet', 'garden', 'floral', 'nature'],
-    'veterinario': ['veterinary', 'pets', 'animals', 'clinic', 'care'],
-    'default': ['business', 'professional', 'service', 'company']
-  };
+async function generateImageKeywords(businessType, sectionType, sectionPurpose) {
+  try {
+    // 🧠 Sistema dinamico: apprende keywords dai pattern esistenti
+    const storage = new DatabaseStorage();
+
+    const keywordPatterns = await storage.pool.query(`
+      SELECT business_type, semantic_analysis
+      FROM ai_design_patterns
+      WHERE business_type = $1 AND quality_score > 6.0
+      ORDER BY quality_score DESC
+      LIMIT 10
+    `, [businessType]);
+
+    const dynamicKeywords = [];
+
+    // Estrai keywords dal semantic analysis dei pattern di successo
+    keywordPatterns.rows.forEach(row => {
+      if (row.semantic_analysis) {
+        const words = row.semantic_analysis.toLowerCase()
+          .split(/[\s,.;!?]+/)
+          .filter(word => word.length > 3 && !['that', 'with', 'this', 'from', 'they', 'have', 'business'].includes(word))
+          .slice(0, 3); // Max 3 keywords per pattern
+
+        dynamicKeywords.push(...words);
+      }
+    });
+
+    // Rimuovi duplicati e limita a 5 keywords
+    const uniqueKeywords = [...new Set(dynamicKeywords)].slice(0, 5);
+
+    if (uniqueKeywords.length > 0) {
+      console.log(`🧠 [Dynamic Keywords] Learned for ${businessType}: ${uniqueKeywords.join(', ')}`);
+      return uniqueKeywords;
+    }
+
+  } catch (error) {
+    console.error('❌ [Dynamic Keywords] Error:', error);
+  }
+
+  // Fallback dinamico con GPT-4 se non trova pattern
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    const keywordPrompt = `Genera 5 keywords in inglese per immagini di un business "${businessType}" sezione "${sectionType}".
+
+Il business fa: ${sectionPurpose || 'servizi professionali'}
+
+Rispondi SOLO con le keywords separate da virgola, niente altro.`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [{ role: "user", content: keywordPrompt }],
+      max_tokens: 50,
+      temperature: 0.3
+    });
+
+    const keywords = response.choices[0].message.content
+      .split(',')
+      .map(k => k.trim().toLowerCase())
+      .filter(k => k.length > 2);
+
+    console.log(`🧠 [AI Keywords] Generated for ${businessType}: ${keywords.join(', ')}`);
+    return keywords;
+
+  } catch (error) {
+    console.error('❌ [AI Keywords] Error:', error);
+  }
+
+  // Fallback finale
+  return ['business', 'professional', 'service', 'modern'];
 
   const sectionKeywords = {
     'hero': ['business', 'professional', 'modern'],

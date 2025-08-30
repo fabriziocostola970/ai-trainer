@@ -495,95 +495,140 @@ async function simulateClaudeResponse(prompt, businessName, businessType, busine
   const sectionCount = complexity >= 6 ? 5 : complexity >= 4 ? 4 : 3;
   
   // 🧠 SISTEMA DINAMICO DI GENERAZIONE CONTENUTI
-  const businessIntelligence = {
-    'florist': {
-      sections: ['Composizioni Stagionali', 'Bouquet Personalizzati', 'Servizi Matrimonio', 'Consegna a Domicilio', 'Contatti'],
-      content: {
-        'Composizioni Stagionali': [
-          { name: 'Composizioni Primaverili', description: 'Tulipani, narcisi e giacinti freschi di stagione', price: '€35' },
-          { name: 'Bouquet Estivi', description: 'Girasoli, margherite e fiori di campo colorati', price: '€28' },
-          { name: 'Decorazioni Autunnali', description: 'Crisantemi, dalie e foglie dorate', price: '€42' }
-        ],
-        'Bouquet Personalizzati': [
-          { name: 'Bouquet Romantico', description: 'Rose rosse e bianche con baby breath delicato', price: '€45' },
-          { name: 'Composizione Moderna', description: 'Orchidee esotiche con verde decorativo', price: '€65' },
-          { name: 'Mazzo Profumato', description: 'Peonie, lavanda e eucalipto', price: '€38' }
-        ],
-        'Servizi Matrimonio': [
-          { name: 'Bouquet Sposa', description: 'Composizione unica su misura per il giorno speciale', price: '€120' },
-          { name: 'Addobbi Chiesa', description: 'Decorazioni floreali complete per cerimonia', price: '€350' },
-          { name: 'Centrotavola', description: 'Composizioni eleganti per ricevimento', price: '€45' }
-        ]
-      },
-      colors: { primary: '#E91E63', secondary: '#4CAF50', accent: '#FF9800' }
-    },
-    
-    'restaurant': {
-      sections: ['Menu del Giorno', 'Specialità Chef', 'Eventi Privati', 'Prenotazioni', 'Location'],
-      content: {
-        'Menu del Giorno': [
-          { name: 'Antipasti Misti', description: 'Selezione di salumi, formaggi e verdure stagionali', price: '€18' },
-          { name: 'Pasta Fresca', description: 'Tagliatelle ai porcini con tartufo nero pregiato', price: '€24' },
-          { name: 'Pesce del Giorno', description: 'Branzino in crosta di sale con verdure grigliate', price: '€32' }
-        ],
-        'Specialità Chef': [
-          { name: 'Risotto ai Funghi', description: 'Carnaroli mantecato con parmigiano 24 mesi', price: '€22' },
-          { name: 'Bistecca Fiorentina', description: 'Carne chianina da 800g cotta alla griglia', price: '€45' },
-          { name: 'Tiramisù della Casa', description: 'Dolce tradizionale con mascarpone e caffè', price: '€8' }
-        ],
-        'Eventi Privati': [
-          { name: 'Cena Romantica', description: 'Tavolo riservato con menu degustazione', price: '€80' },
-          { name: 'Compleanno Famiglia', description: 'Sala privata fino a 20 persone', price: '€35' },
-          { name: 'Business Lunch', description: 'Menu veloce per pranzi di lavoro', price: '€25' }
-        ]
-      },
-      colors: { primary: '#F44336', secondary: '#FFC107', accent: '#8BC34A' }
-    },
-    
-    'technology': {
-      sections: ['Soluzioni Software', 'Piani Pricing', 'Case Studies', 'Supporto Tecnico', 'Contatti'],
-      content: {
-        'Soluzioni Software': [
-          { name: 'CRM Avanzato', description: 'Gestione clienti con AI e automazioni integrate', price: '€99/mese' },
-          { name: 'E-commerce Platform', description: 'Piattaforma completa per vendite online', price: '€149/mese' },
-          { name: 'App Mobile', description: 'Applicazione nativa iOS e Android personalizzata', price: '€299/mese' }
-        ],
-        'Piani Pricing': [
-          { name: 'Starter', description: 'Perfetto per piccole imprese e startup', price: '€29/mese' },
-          { name: 'Professional', description: 'Funzioni avanzate per aziende in crescita', price: '€79/mese' },
-          { name: 'Enterprise', description: 'Soluzione completa per grandi organizzazioni', price: '€199/mese' }
-        ],
-        'Case Studies': [
-          { name: 'Retail Chain', description: 'Aumento vendite del 150% in 6 mesi', price: '' },
-          { name: 'Startup FinTech', description: 'Riduzione costi operativi del 40%', price: '' },
-          { name: 'Agenzia Marketing', description: 'Automazione workflow e produttività +200%', price: '' }
-        ]
-      },
-      colors: { primary: '#2196F3', secondary: '#9C27B0', accent: '#00BCD4' }
-    },
-    
-    'travel': {
-      sections: ['Destinazioni Top', 'Pacchetti Viaggio', 'Servizi Premium', 'Assistenza', 'Contatti'],
-      content: {
-        'Destinazioni Top': [
-          { name: 'Maldive Luxury', description: 'Resort 5 stelle con spa e diving center', price: '€2.500' },
-          { name: 'Safari Kenya', description: 'Tour fotografico nella savana africana', price: '€1.800' },
-          { name: 'Giappone Tradizionale', description: 'Cultura, templi e cucina giapponese autentica', price: '€2.200' }
-        ],
-        'Pacchetti Viaggio': [
-          { name: 'Weekend Europa', description: 'Capitali europee con volo e hotel inclusi', price: '€350' },
-          { name: 'Settimana Mare', description: 'Sicilia o Sardegna con pensione completa', price: '€890' },
-          { name: 'Tour Culturale', description: 'Italia artistica con guide esperte', price: '€1.200' }
-        ],
-        'Servizi Premium': [
-          { name: 'Consulenza Personalizzata', description: 'Itinerario su misura per ogni esigenza', price: '€100' },
-          { name: 'Assistenza 24/7', description: 'Supporto completo durante tutto il viaggio', price: 'Incluso' },
-          { name: 'Transfer Luxury', description: 'Auto di lusso e chauffeur privato', price: '€150/giorno' }
-        ]
-      },
-      colors: { primary: '#009688', secondary: '#FF5722', accent: '#FFC107' }
+  // 🧠 SISTEMA INTELLIGENTE DINAMICO - Apprendimento dai pattern esistenti
+  const businessIntelligence = await loadDynamicBusinessIntelligence(businessType);
+
+  /**
+   * Carica intelligence dinamica dal database
+   */
+  async function loadDynamicBusinessIntelligence(requestedType) {
+    try {
+      const storage = new DatabaseStorage();
+
+      // Query per apprendere pattern di successo
+      const patterns = await storage.pool.query(`
+        SELECT
+          business_type,
+          layout_structure,
+          css_themes,
+          semantic_analysis,
+          quality_score
+        FROM ai_design_patterns
+        WHERE quality_score > 7.0
+        ORDER BY quality_score DESC
+        LIMIT 100
+      `);
+
+      console.log(`🧠 [Dynamic Intelligence] Learning from ${patterns.rows.length} successful patterns`);
+
+      // Costruisci intelligence dinamica
+      const dynamicIntelligence = {};
+
+      patterns.rows.forEach(row => {
+        const type = row.business_type;
+        if (!dynamicIntelligence[type]) {
+          dynamicIntelligence[type] = {
+            sections: [],
+            content: {},
+            colors: { primary: '#2196F3', secondary: '#9C27B0', accent: '#00BCD4' },
+            learnedFrom: 0
+          };
+        }
+
+        // Apprendimento sezioni
+        if (row.layout_structure?.sections) {
+          row.layout_structure.sections.forEach(section => {
+            if (!dynamicIntelligence[type].sections.includes(section.type)) {
+              dynamicIntelligence[type].sections.push(section.type);
+            }
+          });
+        }
+
+        // Apprendimento colori dai temi CSS
+        if (row.css_themes) {
+          // Qui potremmo estrarre colori dai temi esistenti
+          dynamicIntelligence[type].learnedFrom++;
+        }
+
+        dynamicIntelligence[type].learnedFrom++;
+      });
+
+      // Genera contenuto dinamico per ogni tipo imparato
+      for (const [type, data] of Object.entries(dynamicIntelligence)) {
+        if (data.sections.length > 0) {
+          data.content = await generateDynamicContentForType(type, data.sections);
+        }
+      }
+
+      console.log(`🧠 [Dynamic Intelligence] Learned ${Object.keys(dynamicIntelligence).length} business types`);
+
+      return dynamicIntelligence;
+
+    } catch (error) {
+      console.error('❌ [Dynamic Intelligence] Error:', error);
+      // Fallback con struttura minima
+      return {
+        [requestedType]: {
+          sections: ['Servizi', 'Chi Siamo', 'Contatti'],
+          content: {
+            'Servizi': [
+              { name: 'Servizio Base', description: 'Soluzione professionale', price: '€50' },
+              { name: 'Servizio Premium', description: 'Opzione avanzata', price: '€100' }
+            ]
+          },
+          colors: { primary: '#2196F3', secondary: '#9C27B0', accent: '#00BCD4' }
+        }
+      };
     }
-  };
+  }
+
+  /**
+   * Genera contenuto dinamico per un tipo di business
+   */
+  async function generateDynamicContentForType(businessType, sections) {
+    const content = {};
+
+    for (const section of sections) {
+      try {
+        // Usa GPT-4 per generare contenuto specifico
+        const contentPrompt = `Genera 3 elementi di contenuto per la sezione "${section}" di un business "${businessType}".
+
+Formato JSON:
+[
+  {
+    "name": "Nome elemento",
+    "description": "Descrizione dettagliata",
+    "price": "Prezzo realistico o vuoto"
+  }
+]
+
+Mantieni tutto in italiano e realistico per il settore.`;
+
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const response = await openai.chat.completions.create({
+          model: "gpt-4",
+          messages: [{ role: "user", content: contentPrompt }],
+          max_tokens: 200,
+          temperature: 0.7
+        });
+
+        const generatedContent = JSON.parse(response.choices[0].message.content);
+        content[section] = generatedContent;
+
+        console.log(`🧠 [Dynamic Content] Generated content for ${businessType} → ${section}`);
+
+      } catch (error) {
+        console.error(`❌ [Dynamic Content] Error for ${section}:`, error);
+        // Fallback content
+        content[section] = [
+          { name: `${section} Base`, description: `Servizio base per ${businessType}`, price: '€50' },
+          { name: `${section} Premium`, description: `Opzione avanzata`, price: '€100' }
+        ];
+      }
+    }
+
+    return content;
+  }
   
   // 🎯 FALLBACK INTELLIGENTE per business types non definiti
   const createDynamicContent = async (businessType, sectionName) => {

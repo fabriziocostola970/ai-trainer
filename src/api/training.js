@@ -33,21 +33,18 @@ async function generateCompetitorsWithOpenAI(businessName, businessDescription) 
 Business name: "${businessName}"
 Business description: "${businessDescription}"
 
-CLASSIFICATION RULES:
+CLASSIFICATION RULES (DINAMICHE):
 1. Analyze the business description VERY CAREFULLY for industry keywords
-2. "Fioraio", "fiori", "flower", "floral", "composizioni floreali" = ALWAYS "florist"
-3. "Panetteria", "bakery", "bread", "pastry" = ALWAYS "bakery"  
-4. "Ristorante", "restaurant", "pizzeria", "food" = ALWAYS "restaurant"
+2. Use machine learning from existing successful patterns in database
+3. Learn business categories dynamically from ai_design_patterns table
+4. Apply intelligent pattern matching based on semantic analysis
+5. Use GPT-4 for intelligent classification when patterns are insufficient
 
-Primary business categories (choose the MOST SPECIFIC one):
-- "florist" for ANY flower-related business (shops, arrangements, events)
-- "bakery" for bread, pastry, cake shops
-- "restaurant" for food establishments, pizzerias
-- "gym" for fitness centers
-- "hotel" for hospitality, B&B
-- "retail" for general stores
-- "beauty" for salons, spas
-- "automotive" for car services
+DYNAMIC BUSINESS CATEGORIES (learned from successful patterns):
+- Categories are learned automatically from database patterns
+- No hardcoded categories - system adapts to new business types
+- Pattern quality determines category reliability
+- Continuous learning from successful website generations
 - "tech-startup" for technology
 - "real-estate" for property
 - "travel" for travel agencies

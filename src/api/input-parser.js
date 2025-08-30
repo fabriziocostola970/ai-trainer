@@ -69,79 +69,157 @@ RISPONDI SOLO CON JSON VALIDO`;
   }
 
   /**
-   * Fallback parser se OpenAI fallisce
+   * Fallback parser completamente dinamico - apprende dai dati esistenti
    */
-  fallbackParse(userInput) {
+  async fallbackParse(userInput) {
     const lowerInput = userInput.toLowerCase();
 
-    // Mapping intelligente per business italiani comuni
-    const typeMappings = {
-      'fioraio': ['fior', 'bouquet', 'composizion', 'matrimon', 'fiori'],
-      'ristorante': ['ristorant', 'pizzeria', 'trattoria', 'cucina', 'menu', 'cena', 'pranzo'],
-      'parrucchiere': ['parrucchier', 'barbier', 'capelli', 'taglio', 'acconciatur'],
-      'meccanico': ['meccanic', 'auto', 'riparazion', 'officina', 'carrozzeria'],
-      'idraulico': ['idraulic', 'tubi', 'acqua', 'scarico', 'rubinett'],
-      'elettricista': ['elettric', 'corrente', 'impiant', 'elettrico', 'prese'],
-      'avvocato': ['avvocat', 'legale', 'diritto', 'tribunale', 'causa'],
-      'commercialista': ['commercialist', 'contabilit', 'fiscale', 'dichiarazion', 'iva'],
-      'dentista': ['dentist', 'denti', 'odontoiatr', 'implant', 'ortodont'],
-      'veterinario': ['veterinari', 'animal', 'cane', 'gatto', 'pet'],
-      'palestra': ['palestra', 'fitness', 'allenamento', 'sport', 'gym'],
-      'farmacia': ['farmaci', 'medicinali', 'farmacia', 'salute'],
-      'bar': ['bar', 'caffè', 'bibite', 'aperitivo', 'cocktail'],
-      'gelateria': ['gelater', 'gelato', 'cono', 'coppetta'],
-      'panificio': ['panifici', 'pane', 'forno', 'pasticceri'],
-      'macelleria': ['maceller', 'carne', 'bistecca', 'affettati'],
-      'negozio': ['negozio', 'boutique', 'shop', 'vendita', 'prodotti']
-    };
+    try {
+      // 🧠 Apprendimento dinamico: analizza pattern esistenti nel database
+      const storage = new DatabaseStorage();
+      const existingPatterns = await storage.pool.query(`
+        SELECT DISTINCT business_type, semantic_analysis
+        FROM ai_design_patterns
+        WHERE quality_score > 6.0
+        ORDER BY quality_score DESC
+        LIMIT 50
+      `);
 
-    let businessType = 'servizio'; // default italiano
-    let confidence = 0.3;
+      // Costruisci mapping dinamico dai pattern esistenti
+      const dynamicMappings = {};
+      const keywordFrequency = {};
 
-    for (const [type, keywords] of Object.entries(typeMappings)) {
-      if (keywords.some(keyword => lowerInput.includes(keyword))) {
-        businessType = type;
-        confidence = 0.8;
-        break;
+      existingPatterns.rows.forEach(row => {
+        const businessType = row.business_type;
+        if (!dynamicMappings[businessType]) {
+          dynamicMappings[businessType] = [];
+        }
+
+        // Estrai keywords dal semantic_analysis
+        if (row.semantic_analysis) {
+          const semantic = row.semantic_analysis.toLowerCase();
+          const words = semantic.split(/[\s,.;!?]+/).filter(word =>
+            word.length > 3 && !['that', 'with', 'this', 'from', 'they', 'have'].includes(word)
+          );
+
+          words.forEach(word => {
+            if (!keywordFrequency[word]) keywordFrequency[word] = {};
+            keywordFrequency[word][businessType] = (keywordFrequency[word][businessType] || 0) + 1;
+          });
+        }
+      });
+
+      // Costruisci mapping basato su frequenza keywords
+      Object.entries(keywordFrequency).forEach(([keyword, typeCounts]) => {
+        const bestType = Object.entries(typeCounts).sort(([,a], [,b]) => b - a)[0];
+        if (bestType && bestType[1] >= 2) { // Almeno 2 occorrenze
+          if (!dynamicMappings[bestType[0]]) {
+            dynamicMappings[bestType[0]] = [];
+          }
+          if (!dynamicMappings[bestType[0]].includes(keyword)) {
+            dynamicMappings[bestType[0]].push(keyword);
+          }
+        }
+      });
+
+      console.log(`🧠 [Dynamic Learning] Learned ${Object.keys(dynamicMappings).length} business types from database`);
+
+      // Usa il mapping dinamico per riconoscere il business type
+      let businessType = 'servizio'; // default italiano
+      let confidence = 0.3;
+
+      for (const [type, keywords] of Object.entries(dynamicMappings)) {
+        if (keywords.some(keyword => lowerInput.includes(keyword))) {
+          businessType = type;
+          confidence = 0.8;
+          console.log(`🧠 [Dynamic Recognition] Matched "${type}" via keyword learning`);
+          break;
+        }
       }
-    }
 
-    // Estrazione nome business (cerca tra virgolette o dopo "sono" o simili)
-    let businessName = null;
-    const namePatterns = [
-      /"([^"]+)"/,  // tra virgolette
-      /'([^']+)'/,  // tra apici
-      /(?:sono|ho|gestisco)\s+([^,\.!?]+)/i,  // dopo "sono", "ho", "gestisco"
-      /([A-Z][^,\.!?]*)/  // parole che iniziano con maiuscola
-    ];
+      // Se non trova match dinamico, usa GPT-4 per classificazione intelligente
+      if (businessType === 'servizio' && confidence < 0.8) {
+        console.log('🧠 [Dynamic Fallback] Using GPT-4 for intelligent classification');
 
-    for (const pattern of namePatterns) {
-      const match = userInput.match(pattern);
-      if (match && match[1] && match[1].length > 3) {
-        businessName = match[1].trim();
-        break;
+        const classificationPrompt = `Classifica questo business italiano in una categoria specifica basata sul testo fornito.
+
+TESTO: "${userInput}"
+
+REGOLE:
+- Riconosci automaticamente il settore (es. ristorazione, servizi floreali, meccanica, parrucchieria, etc.)
+- NON usare categorie generiche come "servizio" o "business"
+- Mantieni sempre in italiano
+- Se ambiguo, scegli la categoria più probabile dal contesto
+
+Rispondi SOLO con la categoria specifica in italiano, senza spiegazioni aggiuntive.`;
+
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const response = await openai.chat.completions.create({
+          model: "gpt-4",
+          messages: [{ role: "user", content: classificationPrompt }],
+          max_tokens: 20,
+          temperature: 0.1
+        });
+
+        const aiClassification = response.choices[0].message.content.trim().toLowerCase();
+        if (aiClassification && aiClassification !== 'servizio' && aiClassification !== 'business') {
+          businessType = aiClassification;
+          confidence = 0.9;
+          console.log(`🧠 [AI Classification] GPT-4 classified as: "${businessType}"`);
+        }
       }
-    }
 
-    // Estrazione location italiana
-    let location = null;
-    const cities = ['roma', 'milano', 'napoli', 'torino', 'palermo', 'genova', 'bologna', 'firenze', 'bari', 'catania', 'venezia', 'verona', 'messina', 'padova', 'trieste', 'brescia', 'taranto', 'prato', 'modena', 'reggio calabria', 'reggio emilia', 'perugia', 'livorno', 'ravenna', 'cagliari', 'foggia', 'rimini', 'salerno', 'ferrara', 'sassari', 'latina', 'giugliano', 'monza', 'bergamo', 'pescara', 'vicenza', 'terni', 'forlì', 'trento', 'bolzano'];
-    for (const city of cities) {
-      if (lowerInput.includes(city)) {
-        location = city.charAt(0).toUpperCase() + city.slice(1);
-        break;
+      // Estrazione nome business dinamica
+      let businessName = null;
+      const namePatterns = [
+        /"([^"]+)"/,  // tra virgolette
+        /'([^']+)'/,  // tra apici
+        /(?:sono|ho|gestisco)\s+([^,\.!?]+)/i,  // dopo "sono", "ho", "gestisco"
+        /([A-Z][^,\.!?]*)/  // parole che iniziano con maiuscola
+      ];
+
+      for (const pattern of namePatterns) {
+        const match = userInput.match(pattern);
+        if (match && match[1] && match[1].length > 3) {
+          businessName = match[1].trim();
+          break;
+        }
       }
-    }
 
-    return {
-      businessType,
-      businessName,
-      location,
-      features: [],
-      industry: businessType,
-      language: 'italiano',
-      confidence
-    };
+      // Estrazione location italiana dinamica
+      let location = null;
+      const cities = ['roma', 'milano', 'napoli', 'torino', 'palermo', 'genova', 'bologna', 'firenze', 'bari', 'catania', 'venezia', 'verona', 'messina', 'padova', 'trieste', 'brescia', 'taranto', 'prato', 'modena', 'reggio calabria', 'reggio emilia', 'perugia', 'livorno', 'ravenna', 'cagliari', 'foggia', 'rimini', 'salerno', 'ferrara', 'sassari', 'latina', 'giugliano', 'monza', 'bergamo', 'pescara', 'vicenza', 'terni', 'forlì', 'trento', 'bolzano'];
+
+      for (const city of cities) {
+        if (lowerInput.includes(city)) {
+          location = city.charAt(0).toUpperCase() + city.slice(1);
+          break;
+        }
+      }
+
+      return {
+        businessType,
+        businessName,
+        location,
+        features: [],
+        industry: businessType,
+        language: 'italiano',
+        confidence
+      };
+
+    } catch (error) {
+      console.error('❌ [Dynamic Parser] Error:', error);
+      // Fallback finale se tutto fallisce
+      return {
+        businessType: 'servizio',
+        businessName: null,
+        location: null,
+        features: [],
+        industry: 'servizio',
+        language: 'italiano',
+        confidence: 0.1
+      };
+    }
   }
 
   /**
