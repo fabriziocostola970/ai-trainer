@@ -493,10 +493,9 @@ async function generateWebsiteWithClaude(businessName, businessType, businessDes
       hasPrompt: !!intelligentPrompt
     });
 
-    // 4. Simula risposta Claude (in attesa di implementazione API Claude)
-    // TODO: Sostituire con vera chiamata Claude API
-    console.log('🤖 [AI-TRAINER CLAUDE] SIMULATING CLAUDE RESPONSE (NOT REAL API CALL!)');
-    const claudeResponse = await simulateClaudeResponse(intelligentPrompt, businessName, businessType, businessDescription, complexity);
+    // 4. CHIAMATA VERA ALL'API CLAUDE (NON SIMULAZIONE!)
+    console.log('🤖 [AI-TRAINER CLAUDE] CALLING REAL CLAUDE API (NOT SIMULATION!)');
+    const claudeResponse = await callRealClaudeAPI(intelligentPrompt, businessName, businessType, businessDescription, complexity);
 
     console.log('✅ [AI-TRAINER CLAUDE] RESPONSE GENERATED:', {
       hasResponse: !!claudeResponse,
@@ -547,8 +546,522 @@ async function generateWebsiteWithClaude(businessName, businessType, businessDes
 }
 
 /**
- * 🎭 SIMULAZIONE RISPOSTA CLAUDE (PLACEHOLDER)
+ * 🚀 CHIAMATA VERA ALL'API CLAUDE (NON SIMULAZIONE)
  */
+async function callRealClaudeAPI(prompt, businessName, businessType, businessDescription, complexity) {
+  console.log('🚀 [REAL CLAUDE API] FUNCTION CALLED:', {
+    businessName,
+    businessType,
+    hasDescription: !!businessDescription,
+    descriptionLength: businessDescription?.length || 0,
+    complexity,
+    hasPrompt: !!prompt,
+    promptLength: prompt?.length || 0,
+    timestamp: new Date().toISOString()
+  });
+
+  try {
+    // Costruisci prompt ultra-specifico per Claude
+    const specificPrompt = buildUltraSpecificPrompt(businessName, businessType, businessDescription, complexity);
+
+    console.log('📝 [REAL CLAUDE API] Built ultra-specific prompt for Claude');
+
+    // CHIAMATA VERA ALL'API CLAUDE
+    const response = await axios.post('https://api.anthropic.com/v1/messages', {
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 4000,
+      temperature: 0.8, // Maggiore creatività per contenuti unici
+      system: `Sei Claude, un esperto copywriter e designer web specializzato nella creazione di contenuti web dinamici e personalizzati.
+
+La TUA MISSIONE: Generare contenuti SPECIFICI e REALISTICI basati sulla descrizione del business fornita.
+NON usare mai contenuti generici o template fissi.
+Ogni business deve avere contenuti UNICI e PERSONALIZZATI.
+
+REGOLE FERREE:
+- Analizza attentamente la descrizione del business
+- Crea prodotti/servizi SPECIFICI per quel tipo di business
+- Usa la location, i servizi specifici, i prodotti menzionati
+- I prezzi devono essere REALISTICI per il settore
+- Le descrizioni devono essere PERSUASIVE e SPECIFICHE
+- NON usare frasi come "Prodotto Classico" o "Servizio Premium"
+- Sii creativo ma REALISTICO`,
+      messages: [{
+        role: 'user',
+        content: specificPrompt
+      }]
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.CLAUDE_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      timeout: 30000 // 30 secondi timeout
+    });
+
+    console.log('✅ [REAL CLAUDE API] Claude API response received:', {
+      status: response.status,
+      hasContent: !!response.data?.content,
+      contentLength: response.data?.content?.[0]?.text?.length || 0
+    });
+
+    const claudeText = response.data.content[0].text;
+    console.log('📄 [REAL CLAUDE API] Claude generated content:', claudeText.substring(0, 200) + '...');
+
+    // Parse e valida la risposta JSON
+    const parsedResponse = parseClaudeResponse(claudeText, businessName, businessType);
+
+    console.log('✅ [REAL CLAUDE API] Successfully parsed Claude response:', {
+      hasSections: parsedResponse?.sections?.length || 0,
+      sections: parsedResponse?.sections?.map(s => s.type) || []
+    });
+
+    return parsedResponse;
+
+  } catch (error) {
+    console.error('❌ [REAL CLAUDE API] Error calling Claude:', error.message);
+
+    // Fallback intelligente
+    console.log('🔄 [REAL CLAUDE API] Using intelligent fallback');
+    return generateIntelligentFallback(businessName, businessType, businessDescription, complexity);
+  }
+}
+
+/**
+ * 🛠️ COSTRUISCI PROMPT ULTRA-SPECIFICO PER CLAUDE
+ */
+function buildUltraSpecificPrompt(businessName, businessType, businessDescription, complexity) {
+  const sectionCount = complexity >= 6 ? 5 : complexity >= 4 ? 4 : 3;
+
+  return `ANALIZZA QUESTO BUSINESS E GENERA CONTENUTI SPECIFICI:
+
+BUSINESS DETAILS:
+- Nome: "${businessName}"
+- Tipo: "${businessType}"
+- Descrizione completa: "${businessDescription}"
+
+ISTRUZIONI CRITICHE:
+1. Leggi attentamente la descrizione del business
+2. Identifica i SERVIZI SPECIFICI menzionati (es. "consegna fiori", "giardinaggio", "orchidee")
+3. Identifica i PRODOTTI SPECIFICI menzionati (es. "rose rosse", "orchidee esotiche", "piante")
+4. Identifica la LOCATION specifica (es. "Roma", "zona Balduina")
+5. Crea contenuti REALISTICI basati su questi dettagli
+
+GENERA ${sectionCount} SEZIONI per il sito web con contenuti SPECIFICI:
+
+SEZIONE 1: "Servizi Principali"
+- Crea 3 servizi SPECIFICI basati sulla descrizione
+- Esempio per fioraio: "Consegna Fiori a Domicilio", "Composizioni Floreali Personalizzate", "Consulenza per Eventi"
+
+SEZIONE 2: "Offerte Speciali"
+- Crea 3 offerte SPECIFICHE e TEMPORANEE
+- Esempio: "Bouquet di Rose Rosse -20%", "Orchidee Estive in Promozione"
+
+SEZIONE 3: "Informazioni"
+- Informazioni SPECIFICHE sul business
+- Orari, location, servizi unici
+
+SEZIONE 4: "Assistenza"
+- Servizi di assistenza SPECIFICI
+- Esempio: "Consulenza Floreale", "Manutenzione Giardini"
+
+SEZIONE 5: "Contatti" (se ${sectionCount} >= 5)
+- Contatti REALISTICI basati sulla location
+
+FORMATO JSON RICHIESTO:
+{
+  "businessProfile": {
+    "name": "${businessName}",
+    "businessType": "${businessType}",
+    "description": "${businessDescription}"
+  },
+  "sections": [
+    {
+      "type": "serviziprincipali",
+      "title": "Servizi Principali",
+      "content": {
+        "items": [
+          {
+            "name": "Nome Servizio SPECIFICO",
+            "description": "Descrizione dettagliata e persuasiva",
+            "price": "€XX"
+          }
+        ],
+        "subtitle": "Sottotitolo specifico per ${businessName}"
+      }
+    }
+  ]
+}
+
+REGOLE ASSOLUTE:
+- NON usare "Prodotto Classico/Premium" o simili
+- Ogni nome deve essere SPECIFICO e REALISTICO
+- Usa la descrizione del business come ispirazione
+- Sii creativo ma REALISTICO
+- I prezzi devono essere appropriati per il settore`;
+}
+
+/**
+ * 🔧 PARSE RISPOSTA CLAUDE
+ */
+function parseClaudeResponse(claudeText, businessName, businessType) {
+  try {
+    // Cerca JSON nella risposta
+    const jsonMatch = claudeText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON found in Claude response');
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    // Valida struttura minima
+    if (!parsed.sections || !Array.isArray(parsed.sections)) {
+      throw new Error('Invalid sections structure');
+    }
+
+    console.log('✅ [CLAUDE PARSER] Successfully parsed response with', parsed.sections.length, 'sections');
+    return parsed;
+
+  } catch (error) {
+    console.error('❌ [CLAUDE PARSER] Error parsing response:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * 🛟 FALLBACK INTELLIGENTE
+ */
+function generateIntelligentFallback(businessName, businessType, businessDescription, complexity) {
+  console.log('🛟 [INTELLIGENT FALLBACK] Generating fallback for:', businessType);
+
+  // Analizza descrizione per estrarre elementi specifici
+  const description = businessDescription || '';
+  const location = extractLocation(description);
+  const services = extractServices(description, businessType);
+  const products = extractProducts(description, businessType);
+
+  const sectionCount = complexity >= 6 ? 5 : complexity >= 4 ? 4 : 3;
+
+  return {
+    businessProfile: {
+      name: businessName,
+      businessType: businessType,
+      description: businessDescription,
+      location: location,
+      services: services,
+      products: products
+    },
+    sections: generateSpecificSections(businessName, businessType, services, products, location, sectionCount)
+  };
+}
+
+/**
+ * 📍 ESTRAI LOCATION DALLA DESCRIZIONE
+ */
+function extractLocation(description) {
+  const locationPatterns = [
+    /(?:a|in)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/gi,
+    /zona\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/gi,
+    /via\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/gi
+  ];
+
+  for (const pattern of locationPatterns) {
+    const match = description.match(pattern);
+    if (match) return match[1];
+  }
+  return 'Centro Città';
+}
+
+/**
+ * 🔧 ESTRAI SERVIZI DALLA DESCRIZIONE
+ */
+function extractServices(description, businessType) {
+  const serviceKeywords = {
+    'florist': ['consegna', 'composizioni', 'consulenza', 'manutenzione', 'decorazioni'],
+    'restaurant': ['cucina', 'servizio', 'prenotazioni', 'catering', 'eventi'],
+    'services': ['consulenza', 'assistenza', 'supporto', 'manutenzione']
+  };
+
+  const keywords = serviceKeywords[businessType] || serviceKeywords['services'];
+  return keywords.filter(keyword =>
+    description.toLowerCase().includes(keyword.toLowerCase())
+  );
+}
+
+/**
+ * 🛍️ ESTRAI PRODOTTI DALLA DESCRIZIONE
+ */
+function extractProducts(description, businessType) {
+  const productKeywords = {
+    'florist': ['fiori', 'rose', 'orchidee', 'piante', 'bouquet', 'composizioni'],
+    'restaurant': ['piatti', 'menu', 'cucina', 'specialità', 'vini'],
+    'retail': ['prodotti', 'articoli', 'servizi', 'offerte']
+  };
+
+  const keywords = productKeywords[businessType] || productKeywords['retail'];
+  return keywords.filter(keyword =>
+    description.toLowerCase().includes(keyword.toLowerCase())
+  );
+}
+
+/**
+ * 🎨 GENERA SEZIONI SPECIFICHE
+ */
+function generateSpecificSections(businessName, businessType, services, products, location, sectionCount) {
+  const sections = [];
+
+  // Sezione 1: Servizi Principali
+  sections.push({
+    type: 'serviziprincipali',
+    title: 'Servizi Principali',
+    content: {
+      items: generateServiceItems(businessType, services, location),
+      subtitle: `Servizi professionali di ${businessName}${location ? ` - ${location}` : ''}`
+    }
+  });
+
+  // Sezione 2: Offerte Speciali
+  if (sectionCount >= 2) {
+    sections.push({
+      type: 'offertespeciali',
+      title: 'Offerte Speciali',
+      content: {
+        items: generateOfferItems(businessType, products),
+        subtitle: `Promozioni speciali di ${businessName}`
+      }
+    });
+  }
+
+  // Sezione 3: Informazioni
+  if (sectionCount >= 3) {
+    sections.push({
+      type: 'informazioni',
+      title: 'Informazioni',
+      content: {
+        items: generateInfoItems(businessName, businessType, location),
+        subtitle: `Scopri di più su ${businessName}`
+      }
+    });
+  }
+
+  // Sezione 4: Assistenza
+  if (sectionCount >= 4) {
+    sections.push({
+      type: 'assistenza',
+      title: 'Assistenza',
+      content: {
+        items: generateSupportItems(businessType, services),
+        subtitle: `Supporto e assistenza di ${businessName}`
+      }
+    });
+  }
+
+  // Sezione 5: Contatti
+  if (sectionCount >= 5) {
+    sections.push({
+      type: 'contatti',
+      title: 'Contatti',
+      content: {
+        items: generateContactItems(location),
+        subtitle: `Contatta ${businessName} per informazioni`,
+        hasContacts: true
+      }
+    });
+  }
+
+  return sections;
+}
+
+/**
+ * 🛠️ GENERA ITEMS SERVIZI SPECIFICI
+ */
+function generateServiceItems(businessType, services, location) {
+  const templates = {
+    'florist': [
+      {
+        name: `Consegna Fiori a Domicilio${location ? ` - ${location}` : ''}`,
+        description: 'Servizio di consegna rapida e professionale direttamente a casa tua',
+        price: '€8'
+      },
+      {
+        name: 'Composizioni Floreali Personalizzate',
+        description: 'Creazioni uniche su misura per ogni occasione speciale',
+        price: '€45'
+      },
+      {
+        name: 'Consulenza Floreale',
+        description: 'Consigli esperti per scegliere i fiori perfetti per ogni momento',
+        price: '€15'
+      }
+    ],
+    'restaurant': [
+      {
+        name: 'Servizio di Catering',
+        description: 'Servizio completo per eventi e cerimonie con menù personalizzati',
+        price: '€25'
+      },
+      {
+        name: 'Prenotazioni Online',
+        description: 'Sistema di prenotazione digitale semplice e veloce',
+        price: '€0'
+      },
+      {
+        name: 'Menu Degustazione',
+        description: 'Esperienza culinaria completa con i nostri piatti signature',
+        price: '€65'
+      }
+    ]
+  };
+
+  return templates[businessType] || [
+    {
+      name: 'Servizio Personalizzato',
+      description: 'Soluzione su misura per le tue specifiche esigenze',
+      price: '€50'
+    },
+    {
+      name: 'Consulenza Specializzata',
+      description: 'Supporto esperto e consigli professionali',
+      price: '€75'
+    },
+    {
+      name: 'Assistenza Dedicata',
+      description: 'Servizio di supporto completo e personalizzato',
+      price: '€35'
+    }
+  ];
+}
+
+/**
+ * 🎁 GENERA ITEMS OFFERTE SPECIFICHE
+ */
+function generateOfferItems(businessType, products) {
+  const templates = {
+    'florist': [
+      {
+        name: 'Bouquet di Rose Rosse -20%',
+        description: 'Bouquet elegante di rose rosse fresche con sconto speciale',
+        price: '€32'
+      },
+      {
+        name: 'Orchidee Estive in Promozione',
+        description: 'Orchidee colorate stagionali a prezzo ridotto',
+        price: '€28'
+      },
+      {
+        name: 'Composizione Mista Scontata',
+        description: 'Miscela di fiori freschi con consegna gratuita',
+        price: '€38'
+      }
+    ]
+  };
+
+  return templates[businessType] || [
+    {
+      name: 'Offerta Speciale 1',
+      description: 'Promozione esclusiva con condizioni vantaggiose',
+      price: '€25'
+    },
+    {
+      name: 'Pacchetto Vantaggioso',
+      description: 'Combinazione ottimale di prodotti e servizi',
+      price: '€65'
+    },
+    {
+      name: 'Offerta Limitata',
+      description: 'Opportunità speciale valida per tempo limitato',
+      price: '€45'
+    }
+  ];
+}
+
+/**
+ * ℹ️ GENERA ITEMS INFORMAZIONI SPECIFICHE
+ */
+function generateInfoItems(businessName, businessType, location) {
+  return [
+    {
+      name: 'Orari di Apertura',
+      description: 'Lun-Ven 9:00-18:00, Sab 9:00-13:00, Dom chiuso',
+      price: ''
+    },
+    {
+      name: 'Location',
+      description: `${location || 'Centro città'} - Facilmente raggiungibile con tutti i mezzi`,
+      price: ''
+    },
+    {
+      name: 'Servizi Offerti',
+      description: `Specializzati in ${businessType} con attenzione ai dettagli e qualità`,
+      price: ''
+    }
+  ];
+}
+
+/**
+ * 🆘 GENERA ITEMS ASSISTENZA SPECIFICI
+ */
+function generateSupportItems(businessType, services) {
+  const templates = {
+    'florist': [
+      {
+        name: 'Consulenza Floreale Telefonica',
+        description: 'Consigli esperti via telefono per scegliere i fiori migliori',
+        price: '€10'
+      },
+      {
+        name: 'Manutenzione Piante',
+        description: 'Servizio di cura e manutenzione delle tue piante',
+        price: '€20'
+      },
+      {
+        name: 'Decorazione Eventi',
+        description: 'Servizio completo di decorazione floreale per eventi',
+        price: '€150'
+      }
+    ]
+  };
+
+  return templates[businessType] || [
+    {
+      name: 'Supporto Tecnico',
+      description: 'Assistenza tecnica specializzata e risoluzione problemi',
+      price: '€30'
+    },
+    {
+      name: 'Consulenza Personalizzata',
+      description: 'Consulenza dedicata per ottimizzare i tuoi risultati',
+      price: '€60'
+    },
+    {
+      name: 'Manutenzione Preventiva',
+      description: 'Servizio di controllo e manutenzione regolare',
+      price: '€40'
+    }
+  ];
+}
+
+/**
+ * 📞 GENERA ITEMS CONTATTI SPECIFICI
+ */
+function generateContactItems(location) {
+  return [
+    {
+      name: 'Telefono',
+      description: '+39 06 12345678',
+      price: ''
+    },
+    {
+      name: 'Email',
+      description: 'info@fioraioaroma.it',
+      price: ''
+    },
+    {
+      name: 'Indirizzo',
+      description: `${location || 'Via Roma 123, Roma'} - Parcheggio disponibile`,
+      price: ''
+    }
+  ];
+}
 async function simulateClaudeResponse(prompt, businessName, businessType, businessDescription, complexity) {
   console.log('🎭 [AI-TRAINER SIMULATE CLAUDE] FUNCTION CALLED:', {
     businessName,
