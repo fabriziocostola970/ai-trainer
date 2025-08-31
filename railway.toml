@@ -13,9 +13,17 @@ NODE_ENV = "production"
 PORT = "4000"
 AI_TRAINER_API_KEY = "your-api-key-here"
 
+# Database (Railway PostgreSQL)
+# DATABASE_URL will be provided by Railway PostgreSQL service
+
+# AI API Keys (configure in Railway dashboard)
+OPENAI_API_KEY = "your-openai-api-key-here"
+ANTHROPIC_API_KEY = "your-anthropic-api-key-here"
+UNSPLASH_ACCESS_KEY = "your-unsplash-access-key-here"
+
 # Frontend Configuration
 CORS_ORIGIN = "https://ai-trainer-production.up.railway.app"
 
-# Optional AI API Keys (for advanced features)
-# OPENAI_API_KEY = "configurata su Railway se necessaria"
-# CLAUDE_API_KEY = "configurata su Railway se necessaria"
+# Competitor Analysis System
+COMPETITOR_ANALYSIS_ENABLED = "true"
+MAX_COMPETITOR_SCRAPING = "30"

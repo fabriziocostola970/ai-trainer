@@ -1,6 +1,86 @@
 const express = require('express');
 const router = express.Router();
 const OpenAI = require('openai');
+const { CompetitorAnalysisSystem } = require('../lib/competitor-analysis-system');
+
+// POST /api/ai/analyze-competitors
+router.post('/analyze-competitors', async (req, res) => {
+  try {
+    const { businessType } = req.body;
+
+    if (!businessType) {
+      return res.status(400).json({
+        success: false,
+        error: 'MISSING_BUSINESS_TYPE',
+        message: 'businessType is required'
+      });
+    }
+
+    console.log(`🚀 Avvio analisi competitor per: ${businessType}`);
+
+    // 🚀 Avvio sistema di analisi competitor
+    const result = await CompetitorAnalysisSystem.analyzeAndStoreCompetitors(businessType);
+
+    if (result.success) {
+      return res.json({
+        success: true,
+        message: 'Analisi competitor completata',
+        data: {
+          businessType,
+          totalProcessed: result.totalProcessed || 0,
+          successCount: result.successCount || 0,
+          results: result.results || []
+        }
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        error: 'ANALYSIS_FAILED',
+        message: result.error || 'Errore durante l\'analisi'
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Errore API analyze-competitors:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'INTERNAL_ERROR',
+      message: 'Errore interno del server'
+    });
+  }
+});
+
+// POST /api/ai/check-competitor-count
+router.post('/check-competitor-count', async (req, res) => {
+  try {
+    const { businessType } = req.body;
+
+    if (!businessType) {
+      return res.status(400).json({
+        success: false,
+        error: 'MISSING_BUSINESS_TYPE',
+        message: 'businessType is required'
+      });
+    }
+
+    console.log(`🔍 Controllo competitor per: ${businessType}`);
+
+    const count = await CompetitorAnalysisSystem.checkCompetitorCount(businessType);
+
+    return res.json({
+      success: true,
+      count: count
+    });
+
+  } catch (error) {
+    console.error('❌ Errore API check-competitor-count:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'INTERNAL_ERROR',
+      message: 'Errore interno del server'
+    });
+  }
+});
 
 // POST /api/ai/competitors
 router.post('/', async (req, res) => {
