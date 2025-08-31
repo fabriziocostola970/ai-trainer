@@ -1132,6 +1132,8 @@ function extractServices(description, businessType) {
   const serviceKeywords = {
     'florist': ['consegna', 'composizioni', 'consulenza', 'manutenzione', 'decorazioni'],
     'restaurant': ['cucina', 'servizio', 'prenotazioni', 'catering', 'eventi'],
+    'automotive': ['riparazione', 'manutenzione', 'diagnostica', 'tagliando', 'assistenza'],
+    'allevamento animali da compagnia': ['consulenza', 'supporto', 'assistenza', 'adozione', 'veterinari', 'certificazioni'],
     'services': ['consulenza', 'assistenza', 'supporto', 'manutenzione']
   };
 
@@ -1148,6 +1150,8 @@ function extractProducts(description, businessType) {
   const productKeywords = {
     'florist': ['fiori', 'rose', 'orchidee', 'piante', 'bouquet', 'composizioni'],
     'restaurant': ['piatti', 'menu', 'cucina', 'specialità', 'vini'],
+    'automotive': ['auto', 'veicoli', 'riparazioni', 'manutenzione', 'diagnostica'],
+    'allevamento animali da compagnia': ['gatti', 'cani', 'cuccioli', 'pappagalli', 'animali', 'razza', 'pedigree', 'persiani', 'dalmata', 'guatemala'],
     'retail': ['prodotti', 'articoli', 'servizi', 'offerte']
   };
 
@@ -1215,7 +1219,7 @@ function generateSpecificSections(businessName, businessType, services, products
       type: 'contatti',
       title: 'Contatti',
       content: {
-        items: generateContactItems(location),
+        items: generateContactItems(location, businessName),
         subtitle: `Contatta ${businessName} per informazioni`,
         hasContacts: true
       }
@@ -1263,6 +1267,40 @@ function generateServiceItems(businessType, services, location) {
         description: 'Esperienza culinaria completa con i nostri piatti signature',
         price: '€65'
       }
+    ],
+    'automotive': [
+      {
+        name: 'Riparazione e Manutenzione Auto',
+        description: 'Servizio completo di riparazione e manutenzione per tutti i veicoli',
+        price: '€80'
+      },
+      {
+        name: 'Diagnostica Elettronica',
+        description: 'Controllo elettronico completo del veicolo con strumentazione professionale',
+        price: '€45'
+      },
+      {
+        name: 'Tagliando Ordinario',
+        description: 'Manutenzione programmata secondo le specifiche del costruttore',
+        price: '€120'
+      }
+    ],
+    'allevamento animali da compagnia': [
+      {
+        name: 'Gatti Persiani con Pedigree',
+        description: 'Gatti persiani di razza pura con pedigree FIFe e certificazioni complete',
+        price: '€900'
+      },
+      {
+        name: 'Cuccioli Dalmata Certificati',
+        description: 'Cuccioli dalmata con pedigree ENCI e test genetici completi',
+        price: '€1100'
+      },
+      {
+        name: 'Pappagalli Esotici',
+        description: 'Pappagalli del Guatemala con certificazione CITES e documenti di importazione',
+        price: '€1800'
+      }
     ]
   };
 
@@ -1306,6 +1344,57 @@ function generateOfferItems(businessType, products) {
         description: 'Miscela di fiori freschi con consegna gratuita',
         price: '€38'
       }
+    ],
+    'restaurant': [
+      {
+        name: 'Menu del Giorno -30%',
+        description: 'Piatto del giorno con bevanda inclusa a prezzo speciale',
+        price: '€12'
+      },
+      {
+        name: 'Cena per Due',
+        description: 'Menu completo per due persone con candela e servizio al tavolo',
+        price: '€45'
+      },
+      {
+        name: 'Brunch della Domenica',
+        description: 'Brunch completo con buffet di dolci e bevande analcoliche',
+        price: '€18'
+      }
+    ],
+    'automotive': [
+      {
+        name: 'Tagliando + Olio -15%',
+        description: 'Tagliando ordinario completo con cambio olio motore a prezzo ridotto',
+        price: '€102'
+      },
+      {
+        name: 'Controllo Pneumatici Gratis',
+        description: 'Verifica pressione e usura pneumatici inclusa in ogni riparazione',
+        price: '€0'
+      },
+      {
+        name: 'Pacchetto Estate',
+        description: 'Controllo impianto di condizionamento + pulizia interni esterna',
+        price: '€75'
+      }
+    ],
+    'allevamento animali da compagnia': [
+      {
+        name: 'Pacchetto Benvenuto Gatto',
+        description: 'Gatto persiano + trasportino + cibo premium per 1 mese + visita veterinaria',
+        price: '€1050'
+      },
+      {
+        name: 'Offerta Cuccioli Dalmata',
+        description: 'Cucciolo dalmata + kit completo (cuccia, giochi, cibo) + corso addestramento base',
+        price: '€1250'
+      },
+      {
+        name: 'Pappagallo + Voliera',
+        description: 'Pappagallo del Guatemala + voliera professionale + accessori completi',
+        price: '€2100'
+      }
     ]
   };
 
@@ -1332,7 +1421,27 @@ function generateOfferItems(businessType, products) {
  * ℹ️ GENERA ITEMS INFORMAZIONI SPECIFICHE
  */
 function generateInfoItems(businessName, businessType, location) {
-  return [
+  const templates = {
+    'allevamento animali da compagnia': [
+      {
+        name: 'Orari di Apertura',
+        description: 'Lunedì-Sabato: 9:00-19:00 | Domenica: 10:00-18:00',
+        price: ''
+      },
+      {
+        name: 'Certificazioni e Sicurezza',
+        description: 'Tutti gli animali con pedigree ufficiale, microchip e certificazioni sanitarie complete',
+        price: ''
+      },
+      {
+        name: 'Servizi Inclusi',
+        description: 'Consulenza gratuita, supporto post-adozione, rete veterinari convenzionati',
+        price: ''
+      }
+    ]
+  };
+
+  return templates[businessType] || [
     {
       name: 'Orari di Apertura',
       description: 'Lun-Ven 9:00-18:00, Sab 9:00-13:00, Dom chiuso',
@@ -1372,6 +1481,57 @@ function generateSupportItems(businessType, services) {
         description: 'Servizio completo di decorazione floreale per eventi',
         price: '€150'
       }
+    ],
+    'restaurant': [
+      {
+        name: 'Consegna a Domicilio',
+        description: 'Servizio di consegna rapida per ordini d\'asporto',
+        price: '€5'
+      },
+      {
+        name: 'Organizzazione Eventi',
+        description: 'Servizio completo per organizzare eventi privati',
+        price: '€200'
+      },
+      {
+        name: 'Corsi di Cucina',
+        description: 'Lezioni pratiche di cucina con i nostri chef',
+        price: '€80'
+      }
+    ],
+    'automotive': [
+      {
+        name: 'Servizio di Traino',
+        description: 'Recupero veicoli in panne 24/7 in tutta la città',
+        price: '€60'
+      },
+      {
+        name: 'Assistenza Stradale',
+        description: 'Supporto immediato per guasti e problemi su strada',
+        price: '€40'
+      },
+      {
+        name: 'Noleggio Auto Sostitutiva',
+        description: 'Auto sostitutiva durante le riparazioni di lunga durata',
+        price: '€35/giorno'
+      }
+    ],
+    'allevamento animali da compagnia': [
+      {
+        name: 'Consulenza Pre-Adozione',
+        description: 'Colloquio gratuito per scegliere l\'animale più adatto alle tue esigenze',
+        price: '€0'
+      },
+      {
+        name: 'Supporto Post-Adozione 6 Mesi',
+        description: 'Assistenza telefonica e consigli per i primi mesi con il nuovo animale',
+        price: 'Incluso'
+      },
+      {
+        name: 'Rete Veterinari Convenzionati',
+        description: 'Accesso prioritario ai nostri veterinari partner con tariffe agevolate',
+        price: '€25/visita'
+      }
     ]
   };
 
@@ -1397,7 +1557,12 @@ function generateSupportItems(businessType, services) {
 /**
  * 📞 GENERA ITEMS CONTATTI SPECIFICI
  */
-function generateContactItems(location) {
+function generateContactItems(location, businessName) {
+  // Genera email dinamica basata sul nome del business
+  const businessSlug = businessName.toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .replace(/\s+/g, '');
+
   return [
     {
       name: 'Telefono',
@@ -1406,12 +1571,12 @@ function generateContactItems(location) {
     },
     {
       name: 'Email',
-      description: 'info@fioraioaroma.it',
+      description: `info@${businessSlug}italia.it`,
       price: ''
     },
     {
       name: 'Indirizzo',
-      description: `${location || 'Via Roma 123, Roma'} - Parcheggio disponibile`,
+      description: `${location || 'Via dei Colli Portuensi 156, Roma'} - Parcheggio disponibile`,
       price: ''
     }
   ];
