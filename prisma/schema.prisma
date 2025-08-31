@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model ai_design_patterns {
+  id                    String   @id @default(cuid())
+  business_type         String
+  source_url            String
+  html_content          String?
+  css_content           String?
+  design_analysis       Json?
+  color_palette         Json?
+  font_families         Json?
+  layout_structure      Json?
+  semantic_analysis     Json?
+  performance_metrics   Json?
+  accessibility_score   Int?
+  design_score          Int?
+  mobile_responsive     Boolean  @default(false)
+  business_images       Json?
+  css_themes            Json?
+  quality_score         Int?
+  tags                  String[]
+  confidence_score      Float?
+  training_priority     Int?
+  status                String   @default("active")
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  @@map("ai_design_patterns")
+}

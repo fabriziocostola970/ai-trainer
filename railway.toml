@@ -27,3 +27,7 @@ CORS_ORIGIN = "https://ai-trainer-production.up.railway.app"
 # Competitor Analysis System
 COMPETITOR_ANALYSIS_ENABLED = "true"
 MAX_COMPETITOR_SCRAPING = "30"
+
+# Prisma Configuration
+PRISMA_GENERATE_DATAPROXY = "true"
+PRISMA_GENERATE_SKIP_DOWNLOAD = "true"
