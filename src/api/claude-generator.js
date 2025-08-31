@@ -611,7 +611,7 @@ async function callRealClaudeAPI(prompt, businessName, businessType, businessDes
     // CHIAMATA VERA ALL'API CLAUDE
     console.log('📤 [CLAUDE REQUEST] Sending request to Claude API...');
     const response = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 4000,
       temperature: 0.8, // Maggiore creatività per contenuti unici
       system: `Sei Claude, un esperto copywriter e designer web specializzato nella creazione di contenuti web dinamici e personalizzati.
@@ -1368,7 +1368,7 @@ Esempio per fioraio:
 [{"name": "Bouquet di Rose Rosse Classiche", "description": "Elegante composizione di 12 rose rosse fresche, perfette per anniversari e dichiarazioni d'amore", "price": "€35"}, ...]`;
 
       const response = await axios.post('https://api.anthropic.com/v1/messages', {
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
         temperature: 0.7,
         system: 'Sei un esperto copywriter e marketer specializzato nella creazione di contenuti persuasivi per siti web business.',
