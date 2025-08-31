@@ -409,6 +409,13 @@ STRUCTURE REQUIREMENTS:
 - Include relevant call-to-action buttons
 ${businessDescription ? `- Reflect the specific business focus: ${businessDescription}` : ''}
 
+🎨 CRITICAL: Generate COMPLETE CSS STYLES for the entire website
+- Create modern, professional CSS that matches the business type
+- Include responsive design, gradients, animations, and business-specific colors
+- Use CSS custom properties for consistent theming
+- Ensure mobile-first responsive design
+- Include hover effects and smooth transitions
+
 Generate a JSON response with this exact structure:
 {
   "businessName": "${businessName}",
@@ -421,7 +428,7 @@ Generate a JSON response with this exact structure:
       "id": "section-1",
       "type": "section-name-ai-dynamic",
       "title": "Section Title",
-      "description": "Section description", 
+      "description": "Section description",
       "items": [
         {
           "name": "Item name",
@@ -434,10 +441,11 @@ Generate a JSON response with this exact structure:
   ],
   "design": {
     "primaryColor": "#HEX",
-    "secondaryColor": "#HEX", 
+    "secondaryColor": "#HEX",
     "accentColor": "#HEX",
     "style": "modern|elegant|minimal",
-    "businessPersonality": "Description of design approach reflecting the business description"
+    "businessPersonality": "Description of design approach reflecting the business description",
+    "dynamicCSS": ".website-container { /* Complete CSS styles for entire website */ }"
   },
   "metadata": {
     "generatedBy": "claude-sonnet",
@@ -449,7 +457,17 @@ Generate a JSON response with this exact structure:
 }
 
 ENSURE: Only the last/contact section has "hasContacts": true, all others have "hasContacts": false.
-${businessDescription ? `PERSONALIZATION: Make sure all content specifically reflects and incorporates: ${businessDescription}` : ''}`;
+${businessDescription ? `PERSONALIZATION: Make sure all content specifically reflects and incorporates: ${businessDescription}` : ''}
+
+🎨 CSS REQUIREMENTS:
+- Generate complete, production-ready CSS in the "dynamicCSS" field
+- Include responsive breakpoints (@media queries)
+- Use CSS Grid and Flexbox for modern layouts
+- Add smooth animations and transitions
+- Create business-specific color schemes
+- Ensure accessibility (good contrast, readable fonts)
+- Include hover states and interactive elements
+- Make it mobile-first responsive design`;
 
   console.log(`✅ [Claude Prompt] Generated intelligent prompt: ${optimalSections} sections, complexity ${complexity}${businessDescription ? ', with business description' : ''}`);
   
@@ -712,6 +730,16 @@ SEZIONE 4: "Assistenza"
 SEZIONE 5: "Contatti" (se ${sectionCount} >= 5)
 - Contatti REALISTICI basati sulla location
 
+🎨 CRITICO: GENERA CSS COMPLETO E PROFESSIONALE
+Devi generare CSS dinamico completo per l'intero sito web che includa:
+- Layout responsive moderno con CSS Grid e Flexbox
+- Color scheme professionale basato sul tipo di business (${businessType})
+- Animazioni fluide e transizioni
+- Design mobile-first
+- Effetti hover e stati interattivi
+- Tipografia elegante e leggibile
+- Spaziature e padding appropriati
+
 FORMATO JSON RICHIESTO:
 {
   "businessProfile": {
@@ -734,7 +762,15 @@ FORMATO JSON RICHIESTO:
         "subtitle": "Sottotitolo specifico per ${businessName}"
       }
     }
-  ]
+  ],
+  "design": {
+    "primaryColor": "#HEX",
+    "secondaryColor": "#HEX",
+    "accentColor": "#HEX",
+    "style": "modern",
+    "businessPersonality": "Design professionale per ${businessType}",
+    "dynamicCSS": ".website-container { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; } .hero-section { padding: 4rem 2rem; text-align: center; background: rgba(255,255,255,0.1); border-radius: 20px; margin: 2rem; backdrop-filter: blur(10px); } .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; padding: 2rem; } .service-card { background: rgba(255,255,255,0.95); padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: transform 0.3s ease; } .service-card:hover { transform: translateY(-5px); } @media (max-width: 768px) { .services-grid { grid-template-columns: 1fr; } }"
+  }
 }
 
 REGOLE ASSOLUTE:
@@ -742,7 +778,8 @@ REGOLE ASSOLUTE:
 - Ogni nome deve essere SPECIFICO e REALISTICO
 - Usa la descrizione del business come ispirazione
 - Sii creativo ma REALISTICO
-- I prezzi devono essere appropriati per il settore`;
+- I prezzi devono essere appropriati per il settore
+- IL CSS deve essere completo e production-ready`;
 }
 
 /**
