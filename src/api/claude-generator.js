@@ -526,9 +526,13 @@ async function generateWebsiteWithClaude(businessName, businessType, businessDes
 
     console.log(`✅ [AI-TRAINER CLAUDE GENERATOR] Website generated successfully for ${businessName}${businessDescription ? ' (personalized)' : ''}`);
 
+    // Estrai il campo design dalla risposta di Claude se presente
+    const designData = claudeResponse?.design || null;
+
     const result = {
       success: true,
       website: claudeResponse,
+      design: designData, // ✅ AGGIUNTO: Estrai il design con dynamicCSS da Claude
       metadata: {
         generatedBy: 'claude-sonnet',
         basedOnPatterns: patterns?.totalPatterns || 0,
@@ -536,14 +540,16 @@ async function generateWebsiteWithClaude(businessName, businessType, businessDes
         timestamp: new Date().toISOString(),
         businessType: businessType,
         hasCustomDescription: !!businessDescription,
-        personalized: !!businessDescription
+        personalized: !!businessDescription,
+        hasDynamicCSS: designData?.dynamicCSS ? true : false // ✅ AGGIUNTO: Flag per verificare presenza CSS dinamico
       }
     };
 
     console.log('📤 [AI-TRAINER CLAUDE] RETURNING RESULT:', {
       success: result.success,
       hasWebsite: !!result.website,
-      hasMetadata: !!result.metadata,
+      hasDesign: !!result.design,
+      hasDynamicCSS: result.metadata.hasDynamicCSS,
       timestamp: new Date().toISOString()
     });
 
@@ -1600,7 +1606,8 @@ router.post('/generate', async (req, res) => {
     console.log('✅ [AI-TRAINER CLAUDE] GENERATION COMPLETED:', {
       success: result.success,
       hasWebsite: !!result.website,
-      hasSections: result.website?.sections ? true : false,
+      hasDesign: !!result.design,
+      hasDynamicCSS: result.metadata?.hasDynamicCSS || false,
       sectionsCount: result.website?.sections?.length || 0,
       processingTime: `${processingTime}ms`,
       timestamp: new Date().toISOString()
