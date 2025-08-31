@@ -638,7 +638,7 @@ REGOLE FERREE:
         'x-api-key': process.env.CLAUDE_API_KEY,
         'anthropic-version': '2023-06-01'
       },
-      timeout: 30000 // 30 secondi timeout
+      timeout: 90000 // 90 secondi timeout per Claude Sonnet 4 (più intelligente ma più lento)
     });
 
     console.log('✅ [CLAUDE RESPONSE] API call completed:', {
@@ -870,8 +870,242 @@ function generateIntelligentFallback(businessName, businessType, businessDescrip
       services: services,
       products: products
     },
-    sections: generateSpecificSections(businessName, businessType, services, products, location, sectionCount)
+    sections: generateSpecificSections(businessName, businessType, services, products, location, sectionCount),
+    dynamicCSS: generateDynamicFallbackCSS(businessType, businessName)
   };
+}
+
+/**
+ * 🎨 GENERA CSS DINAMICO PER FALLBACK
+ */
+function generateDynamicFallbackCSS(businessType, businessName) {
+  console.log('🎨 [DYNAMIC FALLBACK CSS] Generating CSS for:', businessType);
+
+  // Schema colori basato sul tipo di business
+  const colorSchemes = {
+    'florist': {
+      primary: '#4CAF50',    // Verde natura
+      secondary: '#FF9800',  // Arancione caldo
+      accent: '#E91E63',     // Rosa fiori
+      background: '#F8F9FA',
+      text: '#2E3440'
+    },
+    'restaurant': {
+      primary: '#FF5722',    // Rosso/arancione cibo
+      secondary: '#795548',  // Marrone cibo
+      accent: '#FFC107',     // Giallo appetitoso
+      background: '#FAFAFA',
+      text: '#212121'
+    },
+    'services': {
+      primary: '#2196F3',    // Blu professionale
+      secondary: '#00BCD4',  // Azzurro
+      accent: '#9C27B0',     // Viola
+      background: '#F5F5F5',
+      text: '#424242'
+    },
+    'retail': {
+      primary: '#3F51B5',    // Blu retail
+      secondary: '#FF4081',  // Rosa retail
+      accent: '#4CAF50',     // Verde successo
+      background: '#FFFFFF',
+      text: '#212121'
+    }
+  };
+
+  const colors = colorSchemes[businessType] || colorSchemes['services'];
+
+  return `
+/* 🎨 CSS DINAMICO GENERATO PER FALLBACK - ${businessName} (${businessType}) */
+:root {
+  --primary-color: ${colors.primary};
+  --secondary-color: ${colors.secondary};
+  --accent-color: ${colors.accent};
+  --background-color: ${colors.background};
+  --text-color: ${colors.text};
+  --shadow: 0 2px 10px rgba(0,0,0,0.1);
+  --border-radius: 8px;
+  --transition: all 0.3s ease;
+}
+
+/* Layout principale */
+.business-website {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  min-height: 100vh;
+}
+
+/* Header professionale */
+.business-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  padding: 2rem 0;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.business-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.business-header p {
+  margin: 0.5rem 0 0 0;
+  font-size: 1.2rem;
+  opacity: 0.9;
+}
+
+/* Sezioni */
+.business-section {
+  padding: 3rem 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.business-section h2 {
+  color: var(--primary-color);
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  position: relative;
+}
+
+.business-section h2::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: var(--accent-color);
+  border-radius: 2px;
+}
+
+/* Cards */
+.service-card, .offer-card, .info-card {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  margin: 1rem 0;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  border: 1px solid #e0e0e0;
+}
+
+.service-card:hover, .offer-card:hover, .info-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Pulsanti */
+.business-button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: var(--transition);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.business-button:hover {
+  background: var(--secondary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* Prezzi */
+.price {
+  color: var(--accent-color);
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+}
+
+.price::before {
+  content: '€';
+  font-size: 1rem;
+  margin-right: 2px;
+}
+
+/* Footer */
+.business-footer {
+  background: var(--text-color);
+  color: white;
+  text-align: center;
+  padding: 2rem 0;
+  margin-top: 3rem;
+}
+
+.business-footer p {
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .business-header h1 {
+    font-size: 2rem;
+  }
+
+  .business-section {
+    padding: 2rem 1rem;
+  }
+
+  .service-card, .offer-card, .info-card {
+    padding: 1.5rem;
+  }
+}
+
+/* Animazioni */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.business-section {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Business-specific styling */
+.business-${businessType} .business-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+}
+
+.business-${businessType} .service-card {
+  border-left: 4px solid var(--primary-color);
+}
+
+.business-${businessType} .offer-card {
+  border-left: 4px solid var(--accent-color);
+}
+
+/* Special effects for ${businessType} */
+.business-${businessType} .business-button {
+  background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+}
+
+.business-${businessType} .business-button:hover {
+  background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+}
+  `.trim();
 }
 
 /**
