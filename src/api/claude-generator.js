@@ -460,25 +460,56 @@ ${businessDescription ? `PERSONALIZATION: Make sure all content specifically ref
  * 🎨 GENERAZIONE SITO CON CLAUDE SONNET 
  */
 async function generateWebsiteWithClaude(businessName, businessType, businessDescription = '') {
+  console.log('🎨 [AI-TRAINER CLAUDE GENERATOR] FUNCTION CALLED:', {
+    businessName,
+    businessType,
+    hasDescription: !!businessDescription,
+    descriptionLength: businessDescription?.length || 0,
+    timestamp: new Date().toISOString()
+  });
+
   try {
-    console.log(`🎨 [Claude Generator] Starting website generation for: ${businessName}${businessDescription ? ' with custom description' : ''}`);
-    
+    console.log(`🎨 [AI-TRAINER CLAUDE GENERATOR] Starting website generation for: ${businessName}${businessDescription ? ' with custom description' : ''}`);
+
     // 1. Analizza pattern esistenti dal database
+    console.log('🔍 [AI-TRAINER CLAUDE] Analyzing business patterns...');
     const patterns = await analyzeBusinessPatterns(businessType);
-    
+    console.log('✅ [AI-TRAINER CLAUDE] Patterns analyzed:', {
+      hasPatterns: !!patterns,
+      totalPatterns: patterns?.totalPatterns || 0,
+      businessType: businessType
+    });
+
     // 2. Rileva complessità business (considera anche la descrizione)
+    console.log('🧠 [AI-TRAINER CLAUDE] Detecting business complexity...');
     const complexity = detectBusinessComplexity(businessName, businessType, patterns, businessDescription);
-    
+    console.log('✅ [AI-TRAINER CLAUDE] Complexity detected:', complexity);
+
     // 3. Genera prompt intelligente con descrizione
+    console.log('📝 [AI-TRAINER CLAUDE] Generating intelligent prompt...');
     const intelligentPrompt = await generateIntelligentPrompt(businessName, businessType, businessDescription, patterns, complexity);
-    
+    console.log('✅ [AI-TRAINER CLAUDE] Prompt generated:', {
+      promptLength: intelligentPrompt?.length || 0,
+      hasPrompt: !!intelligentPrompt
+    });
+
     // 4. Simula risposta Claude (in attesa di implementazione API Claude)
     // TODO: Sostituire con vera chiamata Claude API
+    console.log('🤖 [AI-TRAINER CLAUDE] SIMULATING CLAUDE RESPONSE (NOT REAL API CALL!)');
     const claudeResponse = await simulateClaudeResponse(intelligentPrompt, businessName, businessType, businessDescription, complexity);
-    
-    console.log(`✅ [Claude Generator] Website generated successfully for ${businessName}${businessDescription ? ' (personalized)' : ''}`);
-    
-    return {
+
+    console.log('✅ [AI-TRAINER CLAUDE] RESPONSE GENERATED:', {
+      hasResponse: !!claudeResponse,
+      responseType: typeof claudeResponse,
+      hasSections: claudeResponse?.sections ? true : false,
+      sectionsCount: claudeResponse?.sections?.length || 0,
+      sections: claudeResponse?.sections?.map(s => s.type) || [],
+      timestamp: new Date().toISOString()
+    });
+
+    console.log(`✅ [AI-TRAINER CLAUDE GENERATOR] Website generated successfully for ${businessName}${businessDescription ? ' (personalized)' : ''}`);
+
+    const result = {
       success: true,
       website: claudeResponse,
       metadata: {
@@ -491,9 +522,22 @@ async function generateWebsiteWithClaude(businessName, businessType, businessDes
         personalized: !!businessDescription
       }
     };
-    
+
+    console.log('📤 [AI-TRAINER CLAUDE] RETURNING RESULT:', {
+      success: result.success,
+      hasWebsite: !!result.website,
+      hasMetadata: !!result.metadata,
+      timestamp: new Date().toISOString()
+    });
+
+    return result;
+
   } catch (error) {
-    console.log(`❌ [Claude Generator] Error: ${error.message}`);
+    console.log(`❌ [AI-TRAINER CLAUDE GENERATOR] ERROR:`, {
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
     return {
       success: false,
       error: error.message,
@@ -506,8 +550,19 @@ async function generateWebsiteWithClaude(businessName, businessType, businessDes
  * 🎭 SIMULAZIONE RISPOSTA CLAUDE (PLACEHOLDER)
  */
 async function simulateClaudeResponse(prompt, businessName, businessType, businessDescription, complexity) {
+  console.log('🎭 [AI-TRAINER SIMULATE CLAUDE] FUNCTION CALLED:', {
+    businessName,
+    businessType,
+    hasDescription: !!businessDescription,
+    descriptionLength: businessDescription?.length || 0,
+    complexity,
+    hasPrompt: !!prompt,
+    promptLength: prompt?.length || 0,
+    timestamp: new Date().toISOString()
+  });
+
   // Questa è una simulazione - sarà sostituita con vera API Claude
-  console.log(`🎭 [Claude Simulation] Simulating intelligent Claude response for: ${businessName} (${businessType})`);
+  console.log(`🎭 [AI-TRAINER SIMULATE CLAUDE] Simulating intelligent Claude response for: ${businessName} (${businessType})`);
   
   const sectionCount = complexity >= 6 ? 5 : complexity >= 4 ? 4 : 3;
   
@@ -731,7 +786,7 @@ Mantieni tutto in italiano e realistico per il settore.`;
     }));
   }
   
-  return {
+  const result = {
     businessName,
     businessType,
     businessDescription: businessDescription || '',
@@ -740,12 +795,12 @@ Mantieni tutto in italiano e realistico per il settore.`;
     sections: await Promise.all(selectedSections.map(async (sectionName, index) => {
       const sectionContent = contentData[sectionName] || await createDynamicContent(businessType, sectionName);
       const isContactSection = index === selectedSections.length - 1;
-      
+
       return {
         id: `${sectionName.toLowerCase().replace(/\s+/g, '-')}-${index + 1}`,
         type: `${sectionName.replace(/\s+/g, '')}-ai-dynamic`,
         title: sectionName,
-        description: isContactSection ? 
+        description: isContactSection ?
           `Contatta ${businessName} per informazioni e prenotazioni` :
           `${sectionName} professionali di ${businessName}`,
         items: isContactSection ? [
@@ -772,6 +827,25 @@ Mantieni tutto in italiano e realistico per il settore.`;
       intelligenceLevel: intelligence ? 'specific' : 'dynamic'
     }
   };
+
+  console.log('🎭 [AI-TRAINER SIMULATE CLAUDE] FINAL RESULT:', {
+    hasResult: !!result,
+    businessName: result.businessName,
+    businessType: result.businessType,
+    totalSections: result.totalSections,
+    sections: result.sections.map(s => ({
+      id: s.id,
+      type: s.type,
+      title: s.title,
+      itemsCount: s.items?.length || 0,
+      hasContacts: s.hasContacts
+    })),
+    design: result.design,
+    metadata: result.metadata,
+    timestamp: new Date().toISOString()
+  });
+
+  return result;
 }
 
 /**
@@ -779,34 +853,62 @@ Mantieni tutto in italiano e realistico per il settore.`;
  */
 router.post('/generate', async (req, res) => {
   const startTime = Date.now();
-  
+
   try {
     const { businessName, businessType, businessDescription } = req.body;
-    
+
+    console.log('🔧 [AI-TRAINER CLAUDE] REQUEST RECEIVED:', {
+      endpoint: 'POST /api/claude/generate',
+      businessName,
+      businessType,
+      hasDescription: !!businessDescription,
+      descriptionLength: businessDescription?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+
     if (!businessName || !businessType) {
+      console.error('❌ [AI-TRAINER CLAUDE] MISSING REQUIRED FIELDS:', {
+        hasBusinessName: !!businessName,
+        hasBusinessType: !!businessType,
+        timestamp: new Date().toISOString()
+      });
       return res.status(400).json({
         success: false,
         error: 'Missing required fields: businessName, businessType'
       });
     }
-    
-    console.log(`🚀 [Claude Route] Starting generation for: ${businessName} (${businessType})${businessDescription ? ' with description' : ''}`);
-    
+
+    console.log(`🚀 [AI-TRAINER CLAUDE] Starting generation for: ${businessName} (${businessType})${businessDescription ? ' with description' : ''}`);
+
     // Genera sito con Claude Sonnet
     const result = await generateWebsiteWithClaude(businessName, businessType, businessDescription);
-    
+
     const processingTime = Date.now() - startTime;
-    
+
+    console.log('✅ [AI-TRAINER CLAUDE] GENERATION COMPLETED:', {
+      success: result.success,
+      hasWebsite: !!result.website,
+      hasSections: result.website?.sections ? true : false,
+      sectionsCount: result.website?.sections?.length || 0,
+      processingTime: `${processingTime}ms`,
+      timestamp: new Date().toISOString()
+    });
+
     res.json({
       ...result,
       processingTime: `${processingTime}ms`,
       timestamp: new Date().toISOString(),
       version: 'claude-v1.0'
     });
-    
+
   } catch (error) {
-    console.log(`❌ [Claude Route] Error: ${error.message}`);
-    
+    console.log(`❌ [AI-TRAINER CLAUDE] ERROR:`, {
+      error: error.message,
+      stack: error.stack,
+      processingTime: `${Date.now() - startTime}ms`,
+      timestamp: new Date().toISOString()
+    });
+
     res.status(500).json({
       success: false,
       error: error.message,
