@@ -705,6 +705,26 @@ Mantieni tutto in italiano e realistico per il settore.`;
   // 🎯 FALLBACK INTELLIGENTE per business types non definiti
   const createDynamicContent = async (businessType, sectionName) => {
     const templates = {
+      'florist': [
+        {
+          name: `Bouquet di Rose Rosse`,
+          description: `Elegante composizione di rose rosse fresche, perfette per occasioni speciali`,
+          price: '€35',
+          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Bouquet di rose rosse fresche`)
+        },
+        {
+          name: `Orchidee Esotiche`,
+          description: `Belle orchidee colorate disponibili tutto l'anno, ideali per decorazioni`,
+          price: '€45',
+          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Orchidee esotiche colorate`)
+        },
+        {
+          name: `Composizione Floreale Personalizzata`,
+          description: `Creazione unica su misura per eventi speciali e cerimonie`,
+          price: '€75',
+          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Composizione floreale personalizzata`)
+        }
+      ],
       'services': [
         {
           name: `Servizio ${sectionName} Base`,
@@ -747,6 +767,12 @@ Mantieni tutto in italiano e realistico per il settore.`;
       ]
     };
     
+    // Prima controlla se abbiamo un template specifico per il businessType
+    if (templates[businessType]) {
+      return templates[businessType];
+    }
+    
+    // Fallback basato sulla categoria
     const category = businessType.includes('service') ? 'services' : 'retail';
     return templates[category] || templates['services'];
   };
