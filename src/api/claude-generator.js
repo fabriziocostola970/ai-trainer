@@ -702,79 +702,138 @@ Mantieni tutto in italiano e realistico per il settore.`;
     return content;
   }
   
-  // 🎯 FALLBACK INTELLIGENTE per business types non definiti
-  const createDynamicContent = async (businessType, sectionName) => {
-    const templates = {
-      'florist': [
-        {
-          name: `Bouquet di Rose Rosse`,
-          description: `Elegante composizione di rose rosse fresche, perfette per occasioni speciali`,
-          price: '€35',
-          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Bouquet di rose rosse fresche`)
-        },
-        {
-          name: `Orchidee Esotiche`,
-          description: `Belle orchidee colorate disponibili tutto l'anno, ideali per decorazioni`,
-          price: '€45',
-          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Orchidee esotiche colorate`)
-        },
-        {
-          name: `Composizione Floreale Personalizzata`,
-          description: `Creazione unica su misura per eventi speciali e cerimonie`,
-          price: '€75',
-          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Composizione floreale personalizzata`)
+  // 🎯 GENERAZIONE DINAMICA INTELLIGENTE basata su AI
+  const createDynamicContent = async (businessType, sectionName, businessProfile) => {
+    try {
+      console.log(`🤖 [AI Generation] Generating dynamic content for ${businessType} - ${sectionName}`);
+
+      const businessName = businessProfile?.name || businessProfile?.businessName || 'Business';
+      const businessDesc = businessProfile?.description || '';
+
+      // Prompt intelligente per generare contenuti specifici
+      const prompt = `Sei un esperto di marketing per ${businessType}. Genera 3 prodotti/servizi specifici e realistici per la sezione "${sectionName}" di questo business:
+
+BUSINESS INFO:
+- Nome: ${businessName}
+- Tipo: ${businessType}
+- Descrizione: ${businessDesc}
+
+ISTRUZIONI:
+- Crea 3 prodotti/servizi REALISTICI e SPECIFICI per questo tipo di business
+- Usa la descrizione del business per ispirarti (es. se vende fiori, crea bouquet specifici)
+- Ogni prodotto deve avere: nome specifico, descrizione dettagliata, prezzo realistico
+- I prezzi devono essere appropriati per il settore
+- Le descrizioni devono essere persuasive e professionali
+- NON usare nomi generici come "Prodotto Classico" o "Servizio Base"
+
+RISPONDI con un JSON valido contenente un array di 3 oggetti con queste proprietà:
+- name: nome specifico del prodotto/servizio
+- description: descrizione dettagliata e persuasiva
+- price: prezzo in formato "€XX"
+
+Esempio per fioraio:
+[{"name": "Bouquet di Rose Rosse Classiche", "description": "Elegante composizione di 12 rose rosse fresche, perfette per anniversari e dichiarazioni d'amore", "price": "€35"}, ...]`;
+
+      const response = await axios.post('https://api.anthropic.com/v1/messages', {
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 1000,
+        temperature: 0.7,
+        system: 'Sei un esperto copywriter e marketer specializzato nella creazione di contenuti persuasivi per siti web business.',
+        messages: [{
+          role: 'user',
+          content: prompt
+        }]
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.CLAUDE_API_KEY,
+          'anthropic-version': '2023-06-01'
         }
-      ],
-      'services': [
+      });
+
+      const content = response.data.content[0].text;
+      console.log(`🤖 [AI Generation] Claude response:`, content);
+
+      // Parse JSON response
+      const products = JSON.parse(content);
+
+      // Aggiungi immagini generate dinamicamente
+      const productsWithImages = await Promise.all(products.map(async (product, index) => ({
+        ...product,
+        image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `${product.name} - ${product.description.substring(0, 50)}...`)
+      })));
+
+      console.log(`✅ [AI Generation] Generated ${productsWithImages.length} dynamic products for ${businessType}`);
+      return productsWithImages;
+
+    } catch (error) {
+      console.error(`❌ [AI Generation] Error:`, error.message);
+
+      // Fallback intelligente basato sul business type
+      const fallbacks = {
+        'florist': [
+          {
+            name: `Bouquet Personalizzato`,
+            description: `Composizione floreale unica creata su misura per le tue esigenze`,
+            price: '€45',
+            image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Bouquet floreale personalizzato`)
+          },
+          {
+            name: `Orchidee da Interno`,
+            description: `Belle orchidee colorate che durano mesi in casa tua`,
+            price: '€35',
+            image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Orchidee decorative`)
+          },
+          {
+            name: `Servizio Consegna`,
+            description: `Consegna a domicilio rapida e professionale`,
+            price: '€10',
+            image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Servizio consegna fiori`)
+          }
+        ],
+        'restaurant': [
+          {
+            name: `Menu Degustazione`,
+            description: `Esperienza culinaria completa con i nostri piatti signature`,
+            price: '€65',
+            image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Menu degustazione ristorante`)
+          },
+          {
+            name: `Cena Romantica`,
+            description: `Menu speciale per coppie con candele e atmosfera romantica`,
+            price: '€120',
+            image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Cena romantica ristorante`)
+          },
+          {
+            name: `Brunch della Domenica`,
+            description: `Brunch completo con prodotti freschi locali`,
+            price: '€25',
+            image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Brunch domenicale`)
+          }
+        ]
+      };
+
+      return fallbacks[businessType] || [
         {
-          name: `Servizio ${sectionName} Base`,
-          description: `Soluzione professionale per ${businessType}`,
+          name: `Servizio ${sectionName}`,
+          description: `Servizio professionale personalizzato per le tue esigenze`,
           price: '€50',
-          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Servizio base per ${businessType}`)
+          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Servizio professionale`)
         },
         {
-          name: `Servizio ${sectionName} Premium`,
-          description: `Opzione avanzata con supporto dedicato`,
+          name: `Pacchetto Premium`,
+          description: `Soluzione completa con supporto dedicato`,
           price: '€100',
-          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Servizio premium per ${businessType}`)
+          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Pacchetto premium`)
         },
         {
-          name: `Pacchetto ${sectionName} Completo`,
-          description: `Soluzione all-inclusive per ogni esigenza`,
-          price: '€150',
-          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Pacchetto completo per ${businessType}`)
+          name: `Consulenza Personalizzata`,
+          description: `Analisi dettagliata e raccomandazioni su misura`,
+          price: '€75',
+          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Consulenza personalizzata`)
         }
-      ],
-      'retail': [
-        {
-          name: `Prodotto ${sectionName} Classico`,
-          description: `Qualità garantita e prezzo conveniente`,
-          price: '€25',
-          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Prodotto classico per ${businessType}`)
-        },
-        {
-          name: `Prodotto ${sectionName} Premium`,
-          description: `Materiali di alta qualità e design curato`,
-          price: '€65',
-          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Prodotto premium per ${businessType}`)
-        },
-        {
-          name: `Edizione ${sectionName} Limitata`,
-          description: `Pezzo unico per veri intenditori`,
-          price: '€120',
-          image: await generateAIBasedImageClaude(sectionName.toLowerCase(), businessType, `Edizione limitata per ${businessType}`)
-        }
-      ]
-    };
-    
-    // Prima controlla se abbiamo un template specifico per il businessType
-    if (templates[businessType]) {
-      return templates[businessType];
+      ];
     }
-    
-    // Fallback basato sulla categoria
-    const category = businessType.includes('service') ? 'services' : 'retail';
-    return templates[category] || templates['services'];
   };
   
   const intelligence = businessIntelligence[businessType];
@@ -808,7 +867,7 @@ Mantieni tutto in italiano e realistico per il settore.`;
     
     // Usa Promise.all per gestire async operations
     await Promise.all(selectedSections.map(async (section) => {
-      contentData[section] = await createDynamicContent(businessType, section);
+      contentData[section] = await createDynamicContent(businessType, section, businessProfile);
     }));
   }
   
@@ -819,7 +878,7 @@ Mantieni tutto in italiano e realistico per il settore.`;
     complexity,
     totalSections: selectedSections.length,
     sections: await Promise.all(selectedSections.map(async (sectionName, index) => {
-      const sectionContent = contentData[sectionName] || await createDynamicContent(businessType, sectionName);
+      const sectionContent = contentData[sectionName] || await createDynamicContent(businessType, sectionName, businessProfile);
       const isContactSection = index === selectedSections.length - 1;
 
       return {
