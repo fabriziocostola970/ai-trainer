@@ -23,7 +23,7 @@
 const { PrismaClient } = require('@prisma/client');
 const OpenAI = require('openai');
 const puppeteer = require('puppeteer');
-const fetch = require('node-fetch');
+// const fetch = require('node-fetch'); // Rimosso - usiamo fetch nativo di Node.js
 
 const prisma = new PrismaClient();
 const openai = new OpenAI({
