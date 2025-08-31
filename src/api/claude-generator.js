@@ -566,7 +566,26 @@ async function callRealClaudeAPI(prompt, businessName, businessType, businessDes
 
     console.log('📝 [REAL CLAUDE API] Built ultra-specific prompt for Claude');
 
+    // Log completo del prompt per debug
+    console.log('🔍 [CLAUDE PROMPT FULL] Complete prompt being sent to Claude:');
+    console.log('--- PROMPT START ---');
+    console.log(specificPrompt);
+    console.log('--- PROMPT END ---');
+
+    // Verifica API key
+    const apiKey = process.env.CLAUDE_API_KEY;
+    console.log('🔑 [CLAUDE API] API Key status:', {
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0,
+      apiKeyPrefix: apiKey?.substring(0, 10) + '...' || 'NO KEY'
+    });
+
+    if (!apiKey) {
+      throw new Error('CLAUDE_API_KEY environment variable is not set');
+    }
+
     // CHIAMATA VERA ALL'API CLAUDE
+    console.log('📤 [CLAUDE REQUEST] Sending request to Claude API...');
     const response = await axios.post('https://api.anthropic.com/v1/messages', {
       model: 'claude-3-haiku-20240307',
       max_tokens: 4000,
@@ -598,14 +617,25 @@ REGOLE FERREE:
       timeout: 30000 // 30 secondi timeout
     });
 
-    console.log('✅ [REAL CLAUDE API] Claude API response received:', {
+    console.log('✅ [CLAUDE RESPONSE] API call completed:', {
       status: response.status,
-      hasContent: !!response.data?.content,
+      statusText: response.statusText,
+      hasData: !!response.data,
+      dataKeys: response.data ? Object.keys(response.data) : [],
       contentLength: response.data?.content?.[0]?.text?.length || 0
     });
 
+    // Log completo della risposta
+    console.log('📄 [CLAUDE RESPONSE FULL] Complete response from Claude:');
+    console.log('--- RESPONSE START ---');
+    console.log(JSON.stringify(response.data, null, 2));
+    console.log('--- RESPONSE END ---');
+
     const claudeText = response.data.content[0].text;
-    console.log('📄 [REAL CLAUDE API] Claude generated content:', claudeText.substring(0, 200) + '...');
+    console.log('🤖 [CLAUDE TEXT] Claude generated text:', {
+      textLength: claudeText.length,
+      textPreview: claudeText.substring(0, 500) + (claudeText.length > 500 ? '...' : '')
+    });
 
     // Parse e valida la risposta JSON
     const parsedResponse = parseClaudeResponse(claudeText, businessName, businessType);
@@ -618,10 +648,25 @@ REGOLE FERREE:
     return parsedResponse;
 
   } catch (error) {
-    console.error('❌ [REAL CLAUDE API] Error calling Claude:', error.message);
+    console.error('❌ [CLAUDE API ERROR] Error calling Claude API:', {
+      errorType: error.constructor.name,
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      hasResponse: !!error.response,
+      responseData: error.response?.data ? JSON.stringify(error.response.data, null, 2) : 'No response data'
+    });
+
+    // Log completo dell'errore
+    if (error.response) {
+      console.error('🔍 [CLAUDE ERROR DETAILS] Full error response:');
+      console.error('--- ERROR RESPONSE START ---');
+      console.error(JSON.stringify(error.response.data, null, 2));
+      console.error('--- ERROR RESPONSE END ---');
+    }
 
     // Fallback intelligente
-    console.log('🔄 [REAL CLAUDE API] Using intelligent fallback');
+    console.log('🔄 [CLAUDE FALLBACK] Using intelligent fallback due to API error');
     return generateIntelligentFallback(businessName, businessType, businessDescription, complexity);
   }
 }
@@ -704,17 +749,45 @@ REGOLE ASSOLUTE:
  * 🔧 PARSE RISPOSTA CLAUDE
  */
 function parseClaudeResponse(claudeText, businessName, businessType) {
+  console.log('🔧 [CLAUDE PARSER] Starting to parse Claude response:', {
+    textLength: claudeText.length,
+    businessName: businessName,
+    businessType: businessType,
+    textPreview: claudeText.substring(0, 300) + (claudeText.length > 300 ? '...' : '')
+  });
+
   try {
     // Cerca JSON nella risposta
     const jsonMatch = claudeText.match(/\{[\s\S]*\}/);
+    console.log('🔍 [CLAUDE PARSER] JSON match result:', {
+      hasMatch: !!jsonMatch,
+      matchLength: jsonMatch?.[0]?.length || 0,
+      matchPreview: jsonMatch?.[0]?.substring(0, 200) + (jsonMatch?.[0]?.length > 200 ? '...' : '') || 'No match'
+    });
+
     if (!jsonMatch) {
+      console.error('❌ [CLAUDE PARSER] No JSON found in Claude response. Full text:');
+      console.error('--- CLAUDE TEXT START ---');
+      console.error(claudeText);
+      console.error('--- CLAUDE TEXT END ---');
       throw new Error('No JSON found in Claude response');
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
+    console.log('✅ [CLAUDE PARSER] Successfully parsed JSON:', {
+      hasSections: !!parsed.sections,
+      sectionsType: typeof parsed.sections,
+      sectionsLength: parsed.sections?.length || 0,
+      parsedKeys: Object.keys(parsed)
+    });
 
     // Valida struttura minima
     if (!parsed.sections || !Array.isArray(parsed.sections)) {
+      console.error('❌ [CLAUDE PARSER] Invalid sections structure:', {
+        hasSections: !!parsed.sections,
+        sectionsType: typeof parsed.sections,
+        parsedStructure: JSON.stringify(parsed, null, 2)
+      });
       throw new Error('Invalid sections structure');
     }
 
@@ -722,7 +795,11 @@ function parseClaudeResponse(claudeText, businessName, businessType) {
     return parsed;
 
   } catch (error) {
-    console.error('❌ [CLAUDE PARSER] Error parsing response:', error.message);
+    console.error('❌ [CLAUDE PARSER] Error parsing response:', {
+      errorType: error.constructor.name,
+      message: error.message,
+      stack: error.stack
+    });
     throw error;
   }
 }
