@@ -3,7 +3,7 @@ nixPkgs = ["nodejs-18_x", "npm-9_x"]
 
 [phases.install]
 # Force clean install without any caching
-cmd = "rm -rf node_modules package-lock.json && npm install --production --no-audit --no-fund --no-cache --prefer-offline --no-optional"
+cmd = "rm -rf node_modules package-lock.json .npm && npm install --production --no-audit --no-fund --no-cache --no-optional --no-package-lock --no-save"
 
 [phases.build]
 cmd = "echo 'Build phase completed - no additional build steps required'"
