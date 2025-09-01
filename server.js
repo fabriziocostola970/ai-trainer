@@ -411,16 +411,32 @@ app.get('*', (req, res) => {
 });
 
 // Start server with error handling
+console.log('🚀 Starting AI-Trainer server...');
+console.log('📊 Process Info:', {
+  pid: process.pid,
+  platform: process.platform,
+  nodeVersion: process.version,
+  memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
+});
+
 try {
   // Check critical environment variables before starting
   const criticalVars = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY'];
   const missingVars = criticalVars.filter(varName => !process.env[varName]);
 
+  console.log('🔍 Checking critical environment variables...');
+  criticalVars.forEach(varName => {
+    console.log(`- ${varName}: ${process.env[varName] ? '✅ Set' : '❌ NOT SET'}`);
+  });
+
   if (missingVars.length > 0) {
     console.error('❌ Missing critical environment variables:', missingVars.join(', '));
     console.error('🔧 Please configure these in Railway dashboard under Variables');
+    console.error('💡 Railway URL: https://railway.app/project/YOUR_PROJECT/variables');
     process.exit(1);
   }
+
+  console.log('✅ All critical variables are set, proceeding with server startup...');
 
   app.listen(PORT, () => {
     console.log(`🤖 AI-Trainer server running on port ${PORT}`);
@@ -429,6 +445,7 @@ try {
     console.log(`📊 Training API: http://localhost:${PORT}/training/`);
     console.log(`🛠️  API Status: http://localhost:${PORT}/status`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log('🎉 Server startup completed successfully!');
     
     // Check if training system is available
     try {
@@ -449,9 +466,15 @@ try {
     // ✅ AI Design Patterns schema ready (supports multiple competitors per business_type)
     console.log('✅ AI Design Patterns schema ready (supports multiple competitors per business_type)');
   });
+
+  console.log('⏳ Attempting to bind to port', PORT);
 } catch (error) {
   console.error('❌ Failed to start server:', error.message);
   console.error('🔍 Stack trace:', error.stack);
+  console.error('💡 This usually means:');
+  console.error('   - Port', PORT, 'is already in use');
+  console.error('   - Missing environment variables');
+  console.error('   - Application code error');
   process.exit(1);
 }
 
