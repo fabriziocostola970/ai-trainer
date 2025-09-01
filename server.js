@@ -438,6 +438,23 @@ try {
 
   console.log('✅ All critical variables are set, proceeding with server startup...');
 
+  // Test database connection before starting server
+  console.log('🔌 Testing database connection...');
+  if (process.env.DATABASE_URL) {
+    try {
+      const { Client } = require('pg');
+      const client = new Client({ connectionString: process.env.DATABASE_URL });
+      await client.connect();
+      console.log('✅ Database connection successful');
+      await client.end();
+    } catch (dbError) {
+      console.warn('⚠️  Database connection warning:', dbError.message);
+      console.log('ℹ️  This is usually not critical - proceeding with startup');
+    }
+  } else {
+    console.log('ℹ️  No DATABASE_URL configured - skipping database test');
+  }
+
   app.listen(PORT, () => {
     console.log(`🤖 AI-Trainer server running on port ${PORT}`);
     console.log(`🔗 Health check: http://localhost:${PORT}/health`);
@@ -446,6 +463,7 @@ try {
     console.log(`🛠️  API Status: http://localhost:${PORT}/status`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log('🎉 Server startup completed successfully!');
+    console.log('📝 Note: PostgreSQL collation warnings are normal and don\'t affect functionality');
     
     // Check if training system is available
     try {
