@@ -1,4 +1,17 @@
-# Use Node.js# Copy application code
+# Use Node.js 18 Alpine for smaller image
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Clean install without cache
+RUN rm -rf node_modules package-lock.json .npm && \
+    npm install --production --no-audit --no-fund --no-cache --no-optional --no-package-lock --no-save
+
+# Copy application code
 COPY . .
 
 # Create a simple startup script
