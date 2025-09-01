@@ -12,6 +12,16 @@ const LIGHTWEIGHT_MODE = process.env.LIGHTWEIGHT_MODE === 'true';
 const DISABLE_TRAINING_SYSTEM = process.env.DISABLE_TRAINING_SYSTEM === 'true';
 const DISABLE_DATA_COLLECTION = process.env.DISABLE_DATA_COLLECTION === 'true';
 
+console.log('🔧 Environment Variables Check:');
+console.log('- PORT:', PORT);
+console.log('- NODE_ENV:', process.env.NODE_ENV);
+console.log('- DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'NOT SET');
+console.log('- OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'Set' : 'NOT SET');
+console.log('- ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? 'Set' : 'NOT SET');
+console.log('- LIGHTWEIGHT_MODE:', LIGHTWEIGHT_MODE);
+console.log('- DISABLE_TRAINING_SYSTEM:', DISABLE_TRAINING_SYSTEM);
+console.log('- DISABLE_DATA_COLLECTION:', DISABLE_DATA_COLLECTION);
+
 if (LIGHTWEIGHT_MODE) {
   console.log('🚀 [LIGHTWEIGHT MODE] Enabled - Heavy features disabled for faster deployment');
 }
@@ -83,21 +93,44 @@ const authenticateAPI = (req, res, next) => {
   next();
 };
 
-// Health check endpoint
+// Health check endpoint with detailed diagnostics
 app.get('/health', (req, res) => {
-  res.json({
+  const healthCheck = {
     status: 'OK',
     service: 'AI-Trainer',
     version: '1.2.0',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    environment_variables: {
+      PORT: !!process.env.PORT,
+      NODE_ENV: !!process.env.NODE_ENV,
+      DATABASE_URL: !!process.env.DATABASE_URL,
+      OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+      ANTHROPIC_API_KEY: !!process.env.ANTHROPIC_API_KEY,
+      LIGHTWEIGHT_MODE: process.env.LIGHTWEIGHT_MODE === 'true'
+    },
     features: {
       webInterface: true,
-      trainingSystem: true,
-      dataCollection: true,
-      aiAnalysis: !!process.env.OPENAI_API_KEY
+      trainingSystem: !DISABLE_TRAINING_SYSTEM,
+      dataCollection: !DISABLE_DATA_COLLECTION,
+      aiAnalysis: !!(process.env.OPENAI_API_KEY && process.env.ANTHROPIC_API_KEY)
     }
-  });
+  };
+
+  // Check if critical services are missing
+  const criticalMissing = [];
+  if (!process.env.OPENAI_API_KEY) criticalMissing.push('OPENAI_API_KEY');
+  if (!process.env.ANTHROPIC_API_KEY) criticalMissing.push('ANTHROPIC_API_KEY');
+
+  if (criticalMissing.length > 0) {
+    healthCheck.status = 'DEGRADED';
+    healthCheck.critical_missing = criticalMissing;
+    res.status(503);
+  }
+
+  res.json(healthCheck);
 });
 
 // 🔧 DEBUG: Database connection test endpoint
@@ -377,33 +410,49 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🤖 AI-Trainer server running on port ${PORT}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`🌐 Web Interface: http://localhost:${PORT}/`);
-  console.log(`📊 Training API: http://localhost:${PORT}/training/`);
-  console.log(`🛠️  API Status: http://localhost:${PORT}/status`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  
-  // Check if training system is available
-  try {
-    require('./src/training/training-interface');
-    console.log(`✅ Training system loaded successfully`);
-  } catch (error) {
-    console.warn(`⚠️  Training system not available:`, error.message);
-  }
-  
-  // Check if data collector is available
-  try {
-    require('./src/training/data-collector');
-    console.log(`✅ Data collector loaded successfully`);
-  } catch (error) {
-    console.warn(`⚠️  Data collector not available:`, error.message);
+// Start server with error handling
+try {
+  // Check critical environment variables before starting
+  const criticalVars = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY'];
+  const missingVars = criticalVars.filter(varName => !process.env[varName]);
+
+  if (missingVars.length > 0) {
+    console.error('❌ Missing critical environment variables:', missingVars.join(', '));
+    console.error('🔧 Please configure these in Railway dashboard under Variables');
+    process.exit(1);
   }
 
-  // ✅ AI Design Patterns schema ready (supports multiple competitors per business_type)
-  console.log('✅ AI Design Patterns schema ready (supports multiple competitors per business_type)');
-});
+  app.listen(PORT, () => {
+    console.log(`🤖 AI-Trainer server running on port ${PORT}`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    console.log(`🌐 Web Interface: http://localhost:${PORT}/`);
+    console.log(`📊 Training API: http://localhost:${PORT}/training/`);
+    console.log(`🛠️  API Status: http://localhost:${PORT}/status`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Check if training system is available
+    try {
+      require('./src/training/training-interface');
+      console.log(`✅ Training system loaded successfully`);
+    } catch (error) {
+      console.warn(`⚠️  Training system not available:`, error.message);
+    }
+    
+    // Check if data collector is available
+    try {
+      require('./src/training/data-collector');
+      console.log(`✅ Data collector loaded successfully`);
+    } catch (error) {
+      console.warn(`⚠️  Data collector not available:`, error.message);
+    }
+
+    // ✅ AI Design Patterns schema ready (supports multiple competitors per business_type)
+    console.log('✅ AI Design Patterns schema ready (supports multiple competitors per business_type)');
+  });
+} catch (error) {
+  console.error('❌ Failed to start server:', error.message);
+  console.error('🔍 Stack trace:', error.stack);
+  process.exit(1);
+}
 
 module.exports = app;
