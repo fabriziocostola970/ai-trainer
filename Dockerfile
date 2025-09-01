@@ -1,4 +1,33 @@
-# Use Node.js 18 Alpine for smaller image
+# Use Node.js# Copy application code
+COPY . .
+
+# Create a simple startup script
+RUN echo '#!/bin/sh' > /start.sh && \
+    echo 'set -e' >> /start.sh && \
+    echo 'echo "=== AI-TRAINER STARTUP ==="' >> /start.sh && \
+    echo 'echo "Node version: $(node --version)"' >> /start.sh && \
+    echo 'echo "Working directory: $(pwd)"' >> /start.sh && \
+    echo 'echo "Files in directory:"' >> /start.sh && \
+    echo 'ls -la' >> /start.sh && \
+    echo 'echo "=== CHECKING SERVER.JS ==="' >> /start.sh && \
+    echo 'if [ ! -f "server.js" ]; then' >> /start.sh && \
+    echo '  echo "ERROR: server.js not found!"' >> /start.sh && \
+    echo '  exit 1' >> /start.sh && \
+    echo 'fi' >> /start.sh && \
+    echo 'echo "server.js found, starting application..."' >> /start.sh && \
+    echo 'echo "=== STARTING NODE APPLICATION ==="' >> /start.sh && \
+    echo 'exec node server.js' >> /start.sh && \
+    chmod +x /start.sh
+
+# Expose port
+EXPOSE 4000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:4000/health || exit 1
+
+# Start with the simple script
+CMD ["/start.sh"]or smaller image
 FROM node:18-alpine
 
 # Set working directory
