@@ -53,7 +53,6 @@ CI = "true"
 DISABLE_CACHE_MOUNTS = "true"
 NIXPACKS_NO_CACHE = "true"
 NIXPACKS_FORCE_NO_CACHE = "true"
-NIXPACKS_NO_CACHE = "true"
 
 # Disable heavy features in production
 DISABLE_TRAINING_SYSTEM = "true"
