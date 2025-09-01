@@ -40,7 +40,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:4000/health || exit 1
 
 # Start with the simple script
-CMD ["/start.sh"]or smaller image
+CMD ["sh", "-c", "echo '🚀 DIRECT STARTUP - AI-TRAINER 🚀' && echo 'Node: $(node --version)' && echo 'NPM: $(npm --version)' && echo 'PWD: $(pwd)' && ls -la server.js && echo '🎯 EXECUTING: node server.js' && node server.js"]or smaller image
 FROM node:18-alpine
 
 # Set working directory
