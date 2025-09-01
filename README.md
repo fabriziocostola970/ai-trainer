@@ -5,6 +5,7 @@
 ![Version](https://img.shields.io/badge/version-1.0.0--alpha-blue)
 ![Node.js](https://img.shields.io/badge/node.js-18+-green)
 ![Status](https://img.shields.io/badge/status-🚀%20OPERATIVO-brightgreen)
+<!-- Deploy trigger: Consolidated commit optimizations applied -->
 
 ## 🎯 **Obiettivo Principale**
 
