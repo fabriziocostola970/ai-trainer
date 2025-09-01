@@ -1,10 +1,11 @@
 [build]
 builder = "nixpacks"
+buildCommand = "rm -rf node_modules .npm && npm install --production --no-cache"
 
 [deploy]
 startCommand = "npm start"
 healthcheckPath = "/health"
-healthcheckTimeout = 60
+healthcheckTimeout = 600
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 
@@ -28,6 +29,33 @@ CORS_ORIGIN = "https://ai-trainer-production.up.railway.app"
 COMPETITOR_ANALYSIS_ENABLED = "true"
 MAX_COMPETITOR_SCRAPING = "30"
 
-# Prisma Configuration
+# Prisma Configuration - Optimized for Railway
 PRISMA_GENERATE_DATAPROXY = "true"
 PRISMA_GENERATE_SKIP_DOWNLOAD = "true"
+PRISMA_CLI_BINARY_TARGETS_SKIP_DOWNLOAD = "true"
+
+# Puppeteer optimization for Railway
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium-browser"
+SKIP_PUPPETEER = "true"
+
+# Build optimization
+NPM_CONFIG_PRODUCTION = "true"
+NPM_CONFIG_FUND = "false"
+NPM_CONFIG_AUDIT = "false"
+NPM_CONFIG_CACHE = "false"
+NPM_CONFIG_NO_CACHE = "true"
+NPM_CONFIG_PREFER_OFFLINE = "true"
+NPM_CONFIG_PACKAGE_LOCK = "false"
+CI = "true"
+
+# Disable Railway cache mounts that can cause issues
+DISABLE_CACHE_MOUNTS = "true"
+NIXPACKS_NO_CACHE = "true"
+NIXPACKS_FORCE_NO_CACHE = "true"
+NIXPACKS_NO_CACHE = "true"
+
+# Disable heavy features in production
+DISABLE_TRAINING_SYSTEM = "true"
+DISABLE_DATA_COLLECTION = "true"
+LIGHTWEIGHT_MODE = "true"

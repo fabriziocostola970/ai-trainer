@@ -7,6 +7,21 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// 🚀 LIGHTWEIGHT MODE: Disable heavy features for faster Railway deployment
+const LIGHTWEIGHT_MODE = process.env.LIGHTWEIGHT_MODE === 'true';
+const DISABLE_TRAINING_SYSTEM = process.env.DISABLE_TRAINING_SYSTEM === 'true';
+const DISABLE_DATA_COLLECTION = process.env.DISABLE_DATA_COLLECTION === 'true';
+
+if (LIGHTWEIGHT_MODE) {
+  console.log('🚀 [LIGHTWEIGHT MODE] Enabled - Heavy features disabled for faster deployment');
+}
+if (DISABLE_TRAINING_SYSTEM) {
+  console.log('🚫 [TRAINING SYSTEM] Disabled for production optimization');
+}
+if (DISABLE_DATA_COLLECTION) {
+  console.log('🚫 [DATA COLLECTION] Disabled for production optimization');
+}
+
 // Security & CORS
 app.use(helmet({
   contentSecurityPolicy: {
@@ -17,7 +32,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://ai-trainer-production-8fd9.up.railway.app", "https://vendionline-eu-production.up.railway.app"]
+      connectSrc: ["'self'", "https://ai-trainer-production-8fd9.up.railway.app"]
     }
   }
 }));
@@ -27,7 +42,6 @@ app.use(cors({
     'http://localhost:3000',  // VendiOnline.EU dev
     'http://localhost:4000',  // AI-Trainer dev (for testing)
     'https://vendionline-eu.railway.app',  // VendiOnline.EU prod
-    'https://vendionline-eu-production.up.railway.app',  // VendiOnline.EU prod Railway (CORRETTO)
     'https://ai-trainer-production.up.railway.app',  // AI-Trainer prod Railway
     'https://ai-trainer-production-*.up.railway.app',  // Railway auto-generated URLs
     process.env.CORS_ORIGIN  // Railway environment variable
@@ -46,9 +60,10 @@ app.use(express.static(path.join(__dirname, 'frontend'), {
   lastModified: true
 }));
 
-// API Authentication middleware for external services (like VendiOnline.EU)
-const authenticateExternalAPI = (req, res, next) => {
+// API Authentication middleware
+const authenticateAPI = (req, res, next) => {
   const authHeader = req.headers.authorization;
+  const expectedKey = process.env.AI_TRAINER_API_KEY || 'your-api-key-here';
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
@@ -58,73 +73,15 @@ const authenticateExternalAPI = (req, res, next) => {
   }
   
   const token = authHeader.substring(7);
-  
-  // Check if it's an API key (for direct AI-Trainer usage)
-  const expectedKey = process.env.AI_TRAINER_API_KEY || 'your-api-key-here';
-  if (token === expectedKey) {
-    return next();
+  if (token !== expectedKey) {
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid API key'
+    });
   }
   
-  // Check if it's a JWT token from VendiOnline.EU
-  try {
-    const jwt = require('jsonwebtoken');
-    const jwtSecret = process.env.JWT_SECRET || process.env.VENDI_ONLINE_JWT_SECRET;
-    
-    if (jwtSecret) {
-      const decoded = jwt.verify(token, jwtSecret);
-      console.log('✅ JWT token validated from VendiOnline.EU:', decoded.id || decoded.userId);
-      return next();
-    }
-  } catch (jwtError) {
-    console.log('❌ JWT validation failed:', jwtError.message);
-  }
-  
-  return res.status(401).json({
-    success: false,
-    error: 'Invalid API key or JWT token'
-  });
+  next();
 };
-
-// 🔍 Debug endpoint to check JWT_SECRET configuration
-app.get('/debug/jwt-secret', (req, res) => {
-  const jwtSecret = process.env.JWT_SECRET;
-  const vendiOnlineJwtSecret = process.env.VENDI_ONLINE_JWT_SECRET;
-  const aiTrainerApiKey = process.env.AI_TRAINER_API_KEY;
-  
-  res.json({
-    status: 'JWT_SECRET Configuration Check',
-    timestamp: new Date().toISOString(),
-    jwt_secret: {
-      configured: !!jwtSecret,
-      length: jwtSecret?.length || 0,
-      source: jwtSecret ? 'JWT_SECRET' : null
-    },
-    vendi_online_jwt_secret: {
-      configured: !!vendiOnlineJwtSecret,
-      length: vendiOnlineJwtSecret?.length || 0,
-      source: vendiOnlineJwtSecret ? 'VENDI_ONLINE_JWT_SECRET' : null
-    },
-    ai_trainer_api_key: {
-      configured: !!aiTrainerApiKey,
-      length: aiTrainerApiKey?.length || 0
-    },
-    authentication_status: {
-      jwt_available: !!(jwtSecret || vendiOnlineJwtSecret),
-      api_key_available: !!aiTrainerApiKey,
-      hybrid_auth_supported: !!(jwtSecret || vendiOnlineJwtSecret) && !!aiTrainerApiKey
-    }
-  });
-});
-
-// 🔐 Debug endpoint to test JWT authentication
-app.get('/debug/test-jwt', authenticateExternalAPI, (req, res) => {
-  res.json({
-    status: 'JWT Authentication Test Successful',
-    timestamp: new Date().toISOString(),
-    message: 'Token validated successfully',
-    auth_type: 'JWT or API Key accepted'
-  });
-});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -202,44 +159,53 @@ app.get('/debug/business-types', async (req, res) => {
   }
 });
 
-// Training Interface Routes (with authentication)
-app.use('/training', authenticateExternalAPI, require('./src/training/training-interface'));
+// Training Interface Routes (with authentication) - DISABLED in lightweight mode
+if (!DISABLE_TRAINING_SYSTEM && !LIGHTWEIGHT_MODE) {
+  app.use('/training', authenticateAPI, require('./src/training/training-interface'));
+  console.log('✅ [TRAINING SYSTEM] Enabled');
+} else {
+  console.log('🚫 [TRAINING SYSTEM] Disabled (lightweight mode)');
+  // Fallback route for disabled training system
+  app.use('/training', (req, res) => {
+    res.status(503).json({
+      error: 'Training system disabled in lightweight mode',
+      message: 'This feature is not available in the current deployment configuration'
+    });
+  });
+}
 
-// Public API Routes (with authentication) 
-// 🎨 AI Layout Generation Routes - V6.0 Compatible
-app.use('/api/generate-layout', authenticateExternalAPI, require('./src/api/generate-layout'));  // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
-app.use('/api/generate', authenticateExternalAPI, require('./src/api/generate-layout'));  // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
-app.use('/api/generate', authenticateExternalAPI, require('./src/api/generate-design')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
-app.use('/api/optimize', authenticateExternalAPI, require('./src/api/optimize-blocks')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
-app.use('/api/validate', authenticateExternalAPI, require('./src/api/validate-template')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
-app.use('/api/training', authenticateExternalAPI, require('./src/api/training')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
-app.use('/api/design', authenticateExternalAPI, require('./src/api/design-routes')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
-app.use('/api', authenticateExternalAPI, require('./src/api/setup-database')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
+// Data collection routes - DISABLED in lightweight mode
+if (!DISABLE_DATA_COLLECTION && !LIGHTWEIGHT_MODE) {
+  app.use('/api/ai/competitors', authenticateAPI, require('./src/api/competitors'));
+  app.use('/api/training', authenticateAPI, require('./src/api/auto-classify'));
+  console.log('✅ [DATA COLLECTION] Enabled');
+} else {
+  console.log('🚫 [DATA COLLECTION] Disabled (lightweight mode)');
+}
 
-// 🤖 NEW: Claude Sonnet Website Generator - Parallel System V1.0
-app.use('/api/claude', authenticateExternalAPI, require('./src/api/claude-generator')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
-app.use('/api/ai-trainer', authenticateExternalAPI, require('./src/api/generate-layout')); // ✅ MODIFICATO: accetta JWT da VendiOnline.EU
-
-// DB Admin API Route (deve essere dichiarata prima dei catch-all e dei 404 handler)
-const dbAdminRoute = require('./src/api/db-admin');
-app.use('/api/db-admin', dbAdminRoute);
-
-app.use('/api/ai/competitors', authenticateExternalAPI, require('./src/api/competitors'));
-
-// 🧠 Auto-classification API
-app.use('/api/training', authenticateExternalAPI, require('./src/api/auto-classify'));
+// Public API Routes (with authentication)
 
 /* // 🔧 Admin API (schema management)
 app.use('/api/admin', require('./src/api/admin')); */
 
-// 🔧 DEBUG: Training endpoint WITHOUT authentication for testing
-app.use('/debug/training', require('./src/api/training'));
+// 🔧 DEBUG: Training endpoint WITHOUT authentication for testing - DISABLED in lightweight mode
+if (!LIGHTWEIGHT_MODE) {
+  app.use('/debug/training', require('./src/api/training'));
+  console.log('✅ [DEBUG ENDPOINTS] Enabled');
+} else {
+  console.log('🚫 [DEBUG ENDPOINTS] Disabled (lightweight mode)');
+}
 
-// 🔧 DEBUG: Database analysis endpoints (NO AUTH for testing)
-app.use('/api/debug', require('./src/api/debug'));
+// 🔧 DEBUG: Database analysis endpoints (NO AUTH for testing) - DISABLED in lightweight mode
+if (!LIGHTWEIGHT_MODE) {
+  app.use('/api/debug', require('./src/api/debug'));
+  console.log('✅ [DATABASE DEBUG] Enabled');
+} else {
+  console.log('🚫 [DATABASE DEBUG] Disabled (lightweight mode)');
+}
 
 // API Status endpoint (with authentication)
-app.get('/api/status', authenticateExternalAPI, (req, res) => {
+app.get('/api/status', authenticateAPI, (req, res) => {
   res.json({
     status: 'online',
     service: 'AI-Trainer API',

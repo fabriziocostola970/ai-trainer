@@ -1,0 +1,87 @@
+# Dependencies (should be installed during build)
+node_modules/
+
+# Development files
+.env.local
+.env.development
+.env.test
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+ROADMAP.md
+PROJECT-OVERVIEW.md
+
+# Test files and examples
+test/
+tests/
+examples/
+*.test.js
+*.spec.js
+test-*.js
+debug-*.js
+analyze-*.js
+check-*.js
+
+# Build artifacts
+dist/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Cache
+.cache/
+.npm/
+.yarn/
+node_modules/.cache/
+
+# Temporary files
+tmp/
+temp/
+uploads/
+
+# Database files
+*.db
+*.sqlite
+
+# Runtime data
+pids/
+*.pid
+*.seed
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Backup files
+*.bak
+*.backup
+
+# Prisma cache and engines (will be regenerated)
+node_modules/.prisma/
+node_modules/@prisma/engines/
+node_modules/.cache/prisma/
+**/query-engine-*
+**/schema-engine-*
+
+# Chromium and browser dependencies
+node_modules/chromium-bidi/
+node_modules/devtools-protocol/
+node_modules/puppeteer*/

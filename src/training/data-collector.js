@@ -4,8 +4,14 @@
 // Safe Puppeteer loading with fallback
 let puppeteer = null;
 try {
-  puppeteer = require('puppeteer');
-  console.log('✅ Puppeteer loaded in data-collector');
+  // In production, skip Puppeteer to reduce build time and dependencies
+  if (process.env.NODE_ENV === 'production' && process.env.SKIP_PUPPETEER === 'true') {
+    console.log('⏭️ Puppeteer skipped in production mode');
+    puppeteer = null;
+  } else {
+    puppeteer = require('puppeteer');
+    console.log('✅ Puppeteer loaded in data-collector');
+  }
 } catch (error) {
   console.log('⚠️ Puppeteer not available in data-collector, using fallback mode');
 }
@@ -77,8 +83,23 @@ class TrainingDataCollector {
 
   // 📸 SCREENSHOT COLLECTION
   async collectScreenshots(url, sampleDir) {
+    // Fallback when Puppeteer is not available
+    if (!puppeteer) {
+      console.log('📸 [Screenshot] Puppeteer not available, using placeholder screenshots');
+      const screenshotDir = path.join(sampleDir, 'screenshots');
+      await fs.mkdir(screenshotDir, { recursive: true });
+      await fs.mkdir(path.join(screenshotDir, 'sections'), { recursive: true });
+
+      return {
+        desktop: '/placeholder-screenshot.jpg',
+        mobile: '/placeholder-screenshot.jpg',
+        tablet: '/placeholder-screenshot.jpg',
+        sections: {}
+      };
+    }
+
     if (!this.browser) {
-      this.browser = await puppeteer.launch({ 
+      this.browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       });
@@ -292,10 +313,28 @@ class TrainingDataCollector {
   }
 
   async collectHTML(url) {
+    // Fallback when Puppeteer is not available
+    if (!puppeteer) {
+      console.log('📄 [HTML Collection] Puppeteer not available, using axios fallback');
+      try {
+        const axios = require('axios');
+        const response = await axios.get(url, {
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+        return response.data;
+      } catch (error) {
+        console.warn('⚠️ [HTML Collection] Axios fallback failed:', error.message);
+        return `<html><head><title>Fallback for ${url}</title></head><body><h1>Sample Website</h1><p>This is a fallback HTML for training purposes.</p></body></html>`;
+      }
+    }
+
     if (!this.browser) {
       this.browser = await puppeteer.launch({ headless: true });
     }
-    
+
     const page = await this.browser.newPage();
     try {
       await page.goto(url, { waitUntil: 'networkidle2' });

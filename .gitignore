@@ -125,3 +125,23 @@ Thumbs.db
 data/training-cache/
 logs/
 temp/
+
+# Prisma binaries (large files that cause Railway deployment issues)
+libquery-engine
+query_engine-*.dll.node
+schema-engine
+schema-engine-*.exe
+prisma/
+**/prisma/
+*.db
+*.wasm
+*query_engine*
+*prisma*
+
+# Source maps and large build artifacts
+*.map
+*.js.map
+*.css.map
+
+# Browser protocol files
+browser_protocol.json

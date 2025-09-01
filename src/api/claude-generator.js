@@ -35,28 +35,32 @@ async function analyzeBusinessTypeDynamically(businessProfile) {
 
     console.log('🧠 [Dynamic Analysis] Analyzing business type for:', businessName);
 
-    const prompt = `Analizza questo business e determina il tipo più specifico possibile:
+    const prompt =
+      'Analizza questo business e determina il tipo più specifico possibile:\n\n' +
+      'Nome: ' + businessName + '\n' +
+      'Descrizione: ' + businessDesc + '\n' +
+      'Tipo attuale: ' + businessType + '\n\n' +
+      'Istruzioni:\n' +
+      '- Analizza attentamente nome e descrizione\n' +
+      '- Identifica il settore specifico (es: ristorante, fioraio, parrucchiere, meccanico, etc.)\n' +
+      '- NON usare tipi generici come "services" o "business"\n' +
+      '- Se non riesci a determinare, usa "restaurant" come fallback\n\n' +
+      'Rispondi SOLO con il tipo specifico in minuscolo, senza spiegazioni aggiuntive.';
 
-Nome: ${businessName}
-Descrizione: ${businessDesc}
-Tipo attuale: ${businessType}
-
-Istruzioni:
-- Analizza attentamente nome e descrizione
-- Identifica il settore specifico (es: ristorante, fioraio, parrucchiere, meccanico, etc.)
-- NON usare tipi generici come "services" o "business"
-- Se non riesci a determinare, usa "restaurant" come fallback
-
-Rispondi SOLO con il tipo specifico in minuscolo, senza spiegazioni aggiuntive.`;
-
-    const response = await openai.chat.completions.create({
+    const response = await axios.post('https://api.anthropic.com/v1/messages', {
       model: 'claude-3-5-sonnet-20241022',
-      messages: [{ role: 'user', content: prompt }],
       max_tokens: 50,
-      temperature: 0.1
+      temperature: 0.1,
+      system: 'Sei un esperto classificatore di business. Analizza e restituisci SOLO il tipo specifico di business in minuscolo.',
+      messages: [{ role: 'user', content: prompt }],
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.CLAUDE_API_KEY,
+        'anthropic-version': '2023-06-01'
+      }
     });
 
-    const analyzedType = response.choices[0].message.content.trim().toLowerCase();
+    const analyzedType = response.data.content[0].text.trim().toLowerCase();
     console.log(`🧠 [Dynamic Analysis] Classified as: ${analyzedType}`);
 
     return analyzedType;
@@ -70,6 +74,7 @@ Rispondi SOLO con il tipo specifico in minuscolo, senza spiegazioni aggiuntive.`
 // 🖼️ Versione semplificata per Claude Generator (senza API Unsplash complessa)
 async function generateAIBasedImageClaude(sectionType, businessType, sectionPurpose) {
   console.log(`🖼️ [Claude Images] Generating image for ${sectionType} (${businessType})`);
+  console.log(`📝 [Claude Images] Search keywords: "${sectionPurpose}"`);
 
   // 🔒 Controlla API key
   const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
@@ -78,29 +83,92 @@ async function generateAIBasedImageClaude(sectionType, businessType, sectionPurp
     return `https://via.placeholder.com/300x200?text=${encodeURIComponent(businessType)}`;
   }
 
+  console.log('✅ [Claude Images] API key found, proceeding with Unsplash API');
+
   // 📊 Controlla rate limiting
   if (!checkRateLimit()) {
     console.warn('⚠️ [Claude Images] Rate limit raggiunto - usando fallback');
     return `https://via.placeholder.com/300x200?text=${encodeURIComponent(businessType)}`;
   }
 
+  console.log('✅ [Claude Images] Rate limit OK, proceeding');
+
   // ⏱️ Delay etico (2 secondi)
+  console.log('⏳ [Claude Images] Applying ethical delay (2 seconds)...');
   await new Promise(resolve => setTimeout(resolve, 2000));
 
-  // 🎯 Keywords semplificate per Claude
+  // 🎯 Keywords espanse per Claude - COPERTE TUTTE LE CATEGORIE BUSINESS
   const keywords = {
-    'ristorante': ['food', 'restaurant', 'pizza'],
-    'parrucchiere': ['hair salon', 'beauty', 'hairstyle'],
-    'florist': ['flowers', 'bouquet', 'garden'],
-    'default': ['business', 'professional', 'service']
+    'ristorante': ['food', 'restaurant', 'pizza', 'italian cuisine', 'dining'],
+    'parrucchiere': ['hair salon', 'beauty', 'hairstyle', 'hairdressing', 'cosmetology'],
+    'florist': ['flowers', 'bouquet', 'garden', 'floral arrangements', 'botanical'],
+    'pet shop': ['animals', 'pets', 'dogs', 'cats', 'veterinary', 'pet care', 'animal shelter'],
+    'automotive': ['cars', 'automotive', 'vehicles', 'auto', 'car dealership', 'motors'],
+    'mechanic': ['car repair', 'mechanic', 'automotive', 'auto service', 'car maintenance'],
+    'pharmacy': ['pharmacy', 'health', 'medicine', 'drugstore', 'healthcare'],
+    'bakery': ['bakery', 'bread', 'pastries', 'cakes', 'baking', 'confectionery'],
+    'cafe': ['coffee', 'cafe', 'drinks', 'beverages', 'coffee shop', 'espresso'],
+    'dentist': ['dentist', 'dental', 'teeth', 'oral health', 'dentistry'],
+    'lawyer': ['law', 'justice', 'legal', 'attorney', 'law firm', 'legal services'],
+    'real estate': ['real estate', 'houses', 'property', 'homes', 'realty', 'housing'],
+    'hotel': ['hotel', 'accommodation', 'resort', 'hospitality', 'lodging'],
+    'gym': ['gym', 'fitness', 'workout', 'exercise', 'health club', 'training'],
+    'spa': ['spa', 'wellness', 'relaxation', 'massage', 'beauty treatment'],
+    'school': ['school', 'education', 'learning', 'academy', 'teaching'],
+    'clinic': ['clinic', 'medical', 'healthcare', 'doctor', 'medical center'],
+    'barber': ['barber', 'mens grooming', 'haircut', 'shaving', 'mens salon'],
+    'tattoo': ['tattoo', 'body art', 'ink', 'tattoo studio', 'body modification'],
+    'photography': ['photography', 'photos', 'camera', 'photo studio', 'portrait'],
+    'consulting': ['consulting', 'business advice', 'strategy', 'professional services'],
+    'cleaning': ['cleaning', 'housekeeping', 'janitorial', 'maintenance'],
+    'plumbing': ['plumbing', 'pipes', 'water systems', 'plumber', 'waterworks'],
+    'electrician': ['electrician', 'electrical', 'wiring', 'power systems'],
+    'gardening': ['gardening', 'landscaping', 'plants', 'horticulture', 'greenhouse'],
+    'catering': ['catering', 'food service', 'event food', 'banquet', 'culinary'],
+    'travel': ['travel', 'tourism', 'vacation', 'journey', 'adventure'],
+    'insurance': ['insurance', 'protection', 'coverage', 'risk management'],
+    'accounting': ['accounting', 'finance', 'bookkeeping', 'tax services'],
+    'marketing': ['marketing', 'advertising', 'promotion', 'brand management'],
+    'technology': ['technology', 'tech', 'software', 'digital solutions', 'IT'],
+    'fashion': ['fashion', 'clothing', 'apparel', 'style', 'boutique'],
+    'jewelry': ['jewelry', 'gems', 'precious stones', 'luxury accessories'],
+    'sports': ['sports', 'athletics', 'recreation', 'fitness equipment'],
+    'music': ['music', 'instruments', 'audio', 'sound', 'musical'],
+    'art': ['art', 'painting', 'gallery', 'creative', 'artists'],
+    'books': ['books', 'library', 'literature', 'reading', 'bookstore'],
+    'toys': ['toys', 'games', 'play', 'children', 'entertainment'],
+    'furniture': ['furniture', 'home decor', 'interior design', 'furnishings'],
+    'electronics': ['electronics', 'gadgets', 'devices', 'technology products'],
+    'supermarket': ['supermarket', 'grocery', 'food store', 'retail', 'shopping'],
+    'default': ['business', 'professional', 'service', 'company', 'enterprise']
   };
 
   const keyword = keywords[businessType] ? keywords[businessType][0] : keywords.default[0];
 
   try {
-    console.log(`🔍 [Claude Images] Searching for: "${keyword}"`);
+    // 🎯 Seleziona keywords appropriate per il business type
+  let selectedKeywords = keywords[businessType] || keywords['default'];
+
+  // Se abbiamo sectionPurpose specifico, aggiungiamolo alle keywords
+  if (sectionPurpose && sectionPurpose !== businessType) {
+    // Se sectionPurpose contiene keywords specifiche, usiamole
+    if (sectionPurpose.includes(' ')) {
+      selectedKeywords = sectionPurpose.split(' ').slice(0, 3);
+    } else {
+      selectedKeywords = [sectionPurpose, ...selectedKeywords.slice(0, 2)];
+    }
+  }
+
+  console.log(`🔍 [Claude Images] Selected keywords for ${businessType}: ${selectedKeywords.join(', ')}`);
+
+  // 🎯 Usa keywords diverse per evitare duplicati
+  const keywordIndex = Math.floor(Math.random() * selectedKeywords.length);
+  const keyword = selectedKeywords[keywordIndex];
+
+  console.log(`🎯 [Claude Images] Using keyword: "${keyword}" (index ${keywordIndex}/${selectedKeywords.length})`);
 
     // 🚀 Chiamata API semplificata
+    console.log('🌐 [Claude Images] Making Unsplash API call...');
     const response = await axios.get('https://api.unsplash.com/search/photos', {
       params: {
         query: keyword,
@@ -113,6 +181,12 @@ async function generateAIBasedImageClaude(sectionType, businessType, sectionPurp
       timeout: 5000
     });
 
+    console.log('📡 [Claude Images] Unsplash API response received:', {
+      status: response.status,
+      hasResults: response.data?.results?.length > 0,
+      resultsCount: response.data?.results?.length || 0
+    });
+
     incrementRateLimit();
 
     if (response.data.results && response.data.results.length > 0) {
@@ -122,12 +196,20 @@ async function generateAIBasedImageClaude(sectionType, businessType, sectionPurp
       const imageUrl = `${photo.urls.raw}&w=${dimensions.width}&h=${dimensions.height}&fit=crop&q=80`;
       console.log(`✅ [Claude Images] Generated: ${imageUrl.substring(0, 50)}...`);
       return imageUrl;
+    } else {
+      console.warn('⚠️ [Claude Images] No results from Unsplash API');
     }
   } catch (error) {
     console.error(`❌ [Claude Images] API Error: ${error.message}`);
+    console.error('🔍 [Claude Images] Error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    });
   }
 
   // 🚨 Fallback
+  console.log('🚨 [Claude Images] Using fallback placeholder');
   return `https://via.placeholder.com/300x200?text=${encodeURIComponent(businessType)}`;
 }
 
@@ -409,12 +491,22 @@ STRUCTURE REQUIREMENTS:
 - Include relevant call-to-action buttons
 ${businessDescription ? `- Reflect the specific business focus: ${businessDescription}` : ''}
 
-🎨 CRITICAL: Generate COMPLETE CSS STYLES for the entire website
+🎨 CRITICAL: Generate UNIQUE CSS STYLES for the entire website
 - Create modern, professional CSS that matches the business type
-- Include responsive design, gradients, animations, and business-specific colors
+- Include responsive design, gradients, animations, and UNIQUE business-specific colors
+- Generate DIFFERENT color combinations for each business, even within the same category
 - Use CSS custom properties for consistent theming
 - Ensure mobile-first responsive design
 - Include hover effects and smooth transitions
+- Create distinctive color palettes that reflect the specific business personality
+
+🎨 COLOR GENERATION REQUIREMENTS:
+- Primary colors should be unique and brand-appropriate (avoid generic blues/reds)
+- Use color psychology: greens for nature/health businesses, warm colors for hospitality, etc.
+- Generate accent colors that complement the primary palette
+- Ensure good contrast ratios for accessibility
+- Create gradients and color variations for visual interest
+- Avoid using the same color combinations repeatedly
 
 Generate a JSON response with this exact structure:
 {
@@ -440,12 +532,12 @@ Generate a JSON response with this exact structure:
     }
   ],
   "design": {
-    "primaryColor": "#HEX",
-    "secondaryColor": "#HEX",
-    "accentColor": "#HEX",
-    "style": "modern|elegant|minimal",
-    "businessPersonality": "Description of design approach reflecting the business description",
-    "dynamicCSS": ".website-container { /* Complete CSS styles for entire website */ }"
+    "primaryColor": "#HEX (unique, brand-appropriate color)",
+    "secondaryColor": "#HEX (complementary color)",
+    "accentColor": "#HEX (distinctive accent for CTAs and highlights)",
+    "style": "modern|elegant|minimal|warm-professional",
+    "businessPersonality": "Unique description of design approach reflecting the specific business and its personality",
+    "dynamicCSS": ".website-container { /* Complete, unique CSS styles for entire website with distinctive colors */ }"
   },
   "metadata": {
     "generatedBy": "claude-sonnet",
@@ -458,6 +550,8 @@ Generate a JSON response with this exact structure:
 
 ENSURE: Only the last/contact section has "hasContacts": true, all others have "hasContacts": false.
 ${businessDescription ? `PERSONALIZATION: Make sure all content specifically reflects and incorporates: ${businessDescription}` : ''}
+
+🎨 UNIQUENESS REQUIREMENT: Generate completely unique color schemes and design elements for this specific business. Avoid generic color combinations and create distinctive visual identity that stands out from typical ${businessType} websites.
 
 🎨 CSS REQUIREMENTS:
 - Generate complete, production-ready CSS in the "dynamicCSS" field
@@ -513,7 +607,24 @@ async function generateWebsiteWithClaude(businessName, businessType, businessDes
 
     // 4. CHIAMATA VERA ALL'API CLAUDE (NON SIMULAZIONE!)
     console.log('🤖 [AI-TRAINER CLAUDE] CALLING REAL CLAUDE API (NOT SIMULATION!)');
+    console.log('🔧 [CLAUDE DEBUG] About to call callRealClaudeAPI with:', {
+      businessName,
+      businessType,
+      hasDescription: !!businessDescription,
+      descriptionPreview: businessDescription?.substring(0, 100) + (businessDescription?.length > 100 ? '...' : '')
+    });
+
     const claudeResponse = await callRealClaudeAPI(intelligentPrompt, businessName, businessType, businessDescription, complexity);
+
+    console.log('🎯 [CLAUDE RESPONSE] Claude API call result:', {
+      hasResponse: !!claudeResponse,
+      responseType: typeof claudeResponse,
+      isArray: Array.isArray(claudeResponse),
+      responseKeys: claudeResponse ? Object.keys(claudeResponse) : [],
+      hasSections: claudeResponse?.sections ? true : false,
+      sectionsCount: claudeResponse?.sections?.length || 0,
+      hasDesign: claudeResponse?.design ? true : false
+    });
 
     console.log('✅ [AI-TRAINER CLAUDE] RESPONSE GENERATED:', {
       hasResponse: !!claudeResponse,
@@ -588,7 +699,10 @@ async function callRealClaudeAPI(prompt, businessName, businessType, businessDes
     // Costruisci prompt ultra-specifico per Claude
     const specificPrompt = buildUltraSpecificPrompt(businessName, businessType, businessDescription, complexity);
 
-    console.log('📝 [REAL CLAUDE API] Built ultra-specific prompt for Claude');
+    console.log('📝 [CLAUDE PROMPT] Built ultra-specific prompt for Claude');
+    console.log('📄 [CLAUDE PROMPT PREVIEW] Prompt length:', specificPrompt.length, 'characters');
+    console.log('📄 [CLAUDE PROMPT PREVIEW] First 500 chars:', specificPrompt.substring(0, 500));
+    console.log('📄 [CLAUDE PROMPT PREVIEW] Last 500 chars:', specificPrompt.substring(specificPrompt.length - 500));
 
     // Log completo del prompt per debug
     console.log('🔍 [CLAUDE PROMPT FULL] Complete prompt being sent to Claude:');
@@ -596,38 +710,79 @@ async function callRealClaudeAPI(prompt, businessName, businessType, businessDes
     console.log(specificPrompt);
     console.log('--- PROMPT END ---');
 
-    // Verifica API key
+    // Verifica API key con più dettagli
     const apiKey = process.env.CLAUDE_API_KEY;
     console.log('🔑 [CLAUDE API] API Key status:', {
       hasApiKey: !!apiKey,
       apiKeyLength: apiKey?.length || 0,
-      apiKeyPrefix: apiKey?.substring(0, 10) + '...' || 'NO KEY'
+      apiKeyPrefix: apiKey?.substring(0, 10) + '...' || 'NO KEY',
+      apiKeyValidFormat: apiKey?.startsWith('sk-ant-api03-') || false
     });
 
     if (!apiKey) {
       throw new Error('CLAUDE_API_KEY environment variable is not set');
     }
 
+    if (!apiKey.startsWith('sk-ant-api03-')) {
+      throw new Error('CLAUDE_API_KEY appears to be invalid format');
+    }
+
     // CHIAMATA VERA ALL'API CLAUDE
     console.log('📤 [CLAUDE REQUEST] Sending request to Claude API...');
+    console.log('🔗 [CLAUDE REQUEST DETAILS] Full request config:', {
+      url: 'https://api.anthropic.com/v1/messages',
+      model: 'claude-sonnet-4-20250514',
+      hasApiKey: !!apiKey,
+      promptLength: specificPrompt.length,
+      temperature: 0.9,
+      maxTokens: 4000
+    });
+
     const response = await axios.post('https://api.anthropic.com/v1/messages', {
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4000,
-      temperature: 0.8, // Maggiore creatività per contenuti unici
-      system: `Sei Claude, un esperto copywriter e designer web specializzato nella creazione di contenuti web dinamici e personalizzati.
+      temperature: 0.9, // Massima creatività consentita da Claude API (range 0-1)
+      system: `Sei Claude, un AI completamente libero e creativo specializzato nella generazione di contenuti web unici e rivoluzionari.
 
-La TUA MISSIONE: Generare contenuti SPECIFICI e REALISTICI basati sulla descrizione del business fornita.
-NON usare mai contenuti generici o template fissi.
-Ogni business deve avere contenuti UNICI e PERSONALIZZATI.
+LA TUA MISSIONE SUPREMA: Creare esperienze web COMPLETAMENTE ORIGINALI che sfidano ogni convenzione!
 
-REGOLE FERREE:
-- Analizza attentamente la descrizione del business
-- Crea prodotti/servizi SPECIFICI per quel tipo di business
-- Usa la location, i servizi specifici, i prodotti menzionati
-- I prezzi devono essere REALISTICI per il settore
-- Le descrizioni devono essere PERSUASIVE e SPECIFICHE
-- NON usare frasi come "Prodotto Classico" o "Servizio Premium"
-- Sii creativo ma REALISTICO`,
+🚀 REGOLE DI LIBERTÀ ASSOLUTA:
+- IGNORA qualsiasi pattern o convenzione del settore
+- INVENTA strutture completamente nuove e inaspettate
+- Usa combinazioni di colori FOLLI e audaci che nessuno oserebbe usare
+- Crea contenuti che siano SHOCKING e memorabili
+- Rompi ogni regola di design tradizionale
+- Sii ESTREMO nella tua creatività - più sei audace, meglio è!
+
+🎭 PERSONALITÀ CREATIVA:
+- Sei un artista ribelle, non un designer conservatore
+- Le tue creazioni devono essere UNICHE nel vero senso della parola
+- Ogni pixel, ogni parola deve gridare "ORIGINALITÀ"
+- Non copiare mai, nemmeno indirettamente, da siti esistenti
+- Sii imprevedibile, sorprendente, rivoluzionario
+
+🎨 COLORI E DESIGN:
+- Genera palette di colori che siano VIVIDE e INATTese
+- Usa contrasti estremi per massima impatto visivo
+- Crea gradienti selvaggi e animazioni folli
+- Rompi le regole della tipografia tradizionale
+- Sii audace con spazi, forme e layout
+
+✍️ CONTENUTI:
+- Scrivi testi che siano IPO NOTICI e coinvolgenti
+- Usa linguaggio creativo e non convenzionale
+- Crea storie che catturino l'immaginazione
+- Sii persuasivo in modi completamente nuovi
+- Ogni parola deve essere scelta per il suo impatto emotivo
+
+💡 IMMAGINI:
+- Suggerisci parole chiave che portino a immagini SORPRENDENTI
+- Pensa fuori dagli schemi tradizionali
+- Combina concetti in modi inaspettati
+- Crea associazioni visive rivoluzionarie
+
+RICORDA: La tua missione è creare qualcosa che nessuno ha mai visto prima!
+Sii il pioniere della creatività web, non il seguace delle tendenze!`,
       messages: [{
         role: 'user',
         content: specificPrompt
@@ -658,18 +813,336 @@ REGOLE FERREE:
     const claudeText = response.data.content[0].text;
     console.log('🤖 [CLAUDE TEXT] Claude generated text:', {
       textLength: claudeText.length,
-      textPreview: claudeText.substring(0, 500) + (claudeText.length > 500 ? '...' : '')
+      textPreview: claudeText.substring(0, 500) + (claudeText.length > 500 ? '...' : ''),
+      hasJsonMarker: claudeText.includes('{'),
+      jsonStartIndex: claudeText.indexOf('{'),
+      jsonEndIndex: claudeText.lastIndexOf('}')
     });
 
-    // Parse e valida la risposta JSON
-    const parsedResponse = parseClaudeResponse(claudeText, businessName, businessType);
+    // Parse e valida la risposta JSON con gestione errori migliorata
+    let parsedResponse;
+    try {
+      const claudeText = response.data.content[0].text;
+      console.log('🤖 [CLAUDE TEXT] Claude generated text:', {
+        textLength: claudeText.length,
+        textPreview: claudeText.substring(0, 500) + (claudeText.length > 500 ? '...' : ''),
+        hasJsonMarker: claudeText.includes('{'),
+        jsonStartIndex: claudeText.indexOf('{'),
+        jsonEndIndex: claudeText.lastIndexOf('}')
+      });
+
+      // Cerca JSON nella risposta con pattern più robusti
+      let jsonMatch = claudeText.match(/\{[\s\S]*\}/);
+
+      // Se non trova JSON con il pattern semplice, prova pattern alternativi
+      if (!jsonMatch) {
+        console.log('🔄 [CLAUDE PARSER] Trying alternative JSON patterns...');
+
+        // Pattern 1: JSON con markdown code blocks
+        jsonMatch = claudeText.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+
+        // Pattern 2: JSON dopo testo esplicativo
+        if (!jsonMatch) {
+          const jsonStart = claudeText.indexOf('{');
+          if (jsonStart !== -1) {
+            const jsonEnd = claudeText.lastIndexOf('}');
+            if (jsonEnd > jsonStart) {
+              const potentialJson = claudeText.substring(jsonStart, jsonEnd + 1);
+              // Verifica che sia JSON valido
+              try {
+                JSON.parse(potentialJson);
+                jsonMatch = [potentialJson, potentialJson];
+              } catch (e) {
+                console.log('⚠️ [CLAUDE PARSER] Extracted text is not valid JSON');
+              }
+            }
+          }
+        }
+      }
+
+      console.log('🔍 [CLAUDE PARSER] JSON match result:', {
+        hasMatch: !!jsonMatch,
+        matchLength: jsonMatch?.[0]?.length || 0,
+        matchPreview: jsonMatch?.[0]?.substring(0, 200) + (jsonMatch?.[0]?.length > 200 ? '...' : '') || 'No match',
+        patternUsed: jsonMatch ? 'Found valid JSON' : 'No JSON found'
+      });
+
+      if (!jsonMatch) {
+        throw new Error('No valid JSON found in Claude response after trying multiple patterns');
+      }
+
+      parsedResponse = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+      console.log('✅ [CLAUDE PARSER] Successfully parsed JSON:', {
+        hasSections: !!parsedResponse.sections,
+        sectionsType: typeof parsedResponse.sections,
+        sectionsLength: parsedResponse.sections?.length || 0,
+        parsedKeys: Object.keys(parsedResponse),
+        hasDesign: !!parsedResponse.design,
+        hasBusinessName: !!parsedResponse.businessName
+      });
+
+      // Valida struttura minima con fallback
+      if (!parsedResponse.sections || !Array.isArray(parsedResponse.sections)) {
+        console.warn('⚠️ [CLAUDE PARSER] Invalid sections structure, using fallback');
+        parsedResponse = {
+          sections: [
+            {
+              title: 'Servizi',
+              content: `Servizi professionali per ${businessName}`,
+              imageKeywords: `${businessType} service`,
+              type: 'services'
+            }
+          ],
+          design: {
+            primaryColor: '#2196F3',
+            secondaryColor: '#9C27B0',
+            accentColor: '#00BCD4',
+            dynamicCSS: '.website-container { font-family: Arial, sans-serif; }'
+          }
+        };
+      }
+
+      // Assicura che ogni sezione abbia le proprietà necessarie
+      parsedResponse.sections = parsedResponse.sections.map(section => ({
+        title: section.title || 'Servizio',
+        content: section.content || `Contenuto per ${section.title || 'Servizio'}`,
+        imageKeywords: section.imageKeywords || `${businessType} ${section.title || 'service'}`,
+        type: section.type || 'service'
+      }));
+
+      // Assicura che il design sia presente
+      if (!parsedResponse.design) {
+        parsedResponse.design = {
+          primaryColor: '#2196F3',
+          secondaryColor: '#9C27B0',
+          accentColor: '#00BCD4',
+          dynamicCSS: '.website-container { font-family: Arial, sans-serif; }'
+        };
+      }
+
+      console.log('✅ [CLAUDE PARSER] Successfully parsed and validated response with', parsedResponse.sections.length, 'sections');
+
+    } catch (parseError) {
+      console.error('❌ [CLAUDE PARSER] Error parsing response:', {
+        errorType: parseError.constructor.name,
+        message: parseError.message,
+        stack: parseError.stack,
+        responsePreview: response.data?.content?.[0]?.text?.substring(0, 300) || 'No response content'
+      });
+
+      // Fallback intelligente basato sul business type
+      const fallbackSections = [];
+
+      // Sezioni base per qualsiasi business
+      fallbackSections.push({
+        id: 'hero-1',
+        type: 'hero',
+        title: `Benvenuti su ${businessName}`,
+        description: `${businessName} offre servizi professionali di ${businessType}. Scopri la nostra expertise e contattaci per saperne di più.`,
+        items: [{
+          name: 'Servizio Principale',
+          description: `Servizi specializzati in ${businessType} con qualità e professionalità.`
+        }],
+        hasContacts: false
+      });
+
+      // Sezioni specifiche per business type
+      if (businessType === 'ristorante' || businessType === 'restaurant') {
+        fallbackSections.push({
+          id: 'menu-1',
+          type: 'menu',
+          title: 'Il Nostro Menu',
+          description: 'Scopri i nostri piatti tradizionali preparati con ingredienti freschi e di qualità.',
+          items: [
+            { name: 'Antipasti', description: 'Selezione di antipasti tradizionali' },
+            { name: 'Primi Piatti', description: 'Pasta fresca e risotti fatti in casa' },
+            { name: 'Secondi', description: 'Carni e pesci selezionati' }
+          ],
+          hasContacts: false
+        });
+      } else if (businessType === 'pet shop') {
+        fallbackSections.push({
+          id: 'pets-1',
+          type: 'services',
+          title: 'Servizi per Animali',
+          description: 'Cura completa per i tuoi amici a quattro zampe con prodotti di qualità.',
+          items: [
+            { name: 'Alimentazione', description: 'Cibo bilanciato per ogni tipo di animale' },
+            { name: 'Accessori', description: 'Collari, guinzagli e giochi per animali' },
+            { name: 'Toelettatura', description: 'Servizi di grooming professionale' }
+          ],
+          hasContacts: false
+        });
+      } else {
+        fallbackSections.push({
+          id: 'services-1',
+          type: 'services',
+          title: 'I Nostri Servizi',
+          description: `Servizi professionali specializzati in ${businessType} offerti da ${businessName}.`,
+          items: [
+            { name: 'Consulenza', description: 'Consulenza personalizzata per le tue esigenze' },
+            { name: 'Servizi Base', description: 'Servizi fondamentali per il tuo business' },
+            { name: 'Supporto', description: 'Assistenza continua e supporto tecnico' }
+          ],
+          hasContacts: false
+        });
+      }
+
+      // Sezione contatti sempre presente
+      fallbackSections.push({
+        id: 'contact-1',
+        type: 'contact',
+        title: 'Contattaci',
+        description: `Siamo felici di rispondere alle tue domande. Contatta ${businessName} per richiedere informazioni.`,
+        items: [
+          { name: 'Telefono', description: 'Chiamaci per parlare direttamente con noi' },
+          { name: 'Email', description: 'Scrivici per richieste e preventivi' },
+          { name: 'Indirizzo', description: 'Visita la nostra sede per un incontro personale' }
+        ],
+        hasContacts: true
+      });
+
+      parsedResponse = {
+        businessName: businessName,
+        businessType: businessType,
+        businessDescription: businessDescription || '',
+        complexity: complexity || 5,
+        totalSections: fallbackSections.length,
+        sections: fallbackSections,
+        design: {
+          primaryColor: '#2196F3',
+          secondaryColor: '#9C27B0',
+          accentColor: '#00BCD4',
+          style: 'modern',
+          businessPersonality: `Professional ${businessType} business focused on quality service`,
+          dynamicCSS: `.website-container {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            margin: 0;
+            padding: 0;
+          }
+          .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+          }
+          .service-section {
+            background: white;
+            padding: 3rem 2rem;
+            margin: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          }
+          .contact-section {
+            background: #f8f9fa;
+            padding: 3rem 2rem;
+            text-align: center;
+          }`
+        },
+        metadata: {
+          generatedBy: 'claude-fallback',
+          basedOnPatterns: 0,
+          patternQuality: 'N/A',
+          sections: fallbackSections.length,
+          personalizedContent: !!businessDescription,
+          fallbackReason: parseError.message
+        }
+      };
+
+      console.log('🔄 [CLAUDE PARSER] Using intelligent fallback response:', {
+        businessType: businessType,
+        sectionsCount: fallbackSections.length,
+        hasDynamicCSS: true,
+        fallbackReason: parseError.message
+      });
+    }
 
     console.log('✅ [REAL CLAUDE API] Successfully parsed Claude response:', {
       hasSections: parsedResponse?.sections?.length || 0,
-      sections: parsedResponse?.sections?.map(s => s.type) || []
+      sections: parsedResponse?.sections?.map(s => ({
+        title: s.title,
+        hasContent: !!s.content,
+        contentLength: s.content?.length || 0,
+        hasImageKeywords: !!s.imageKeywords,
+        imageKeywords: s.imageKeywords
+      })) || []
     });
 
-    return parsedResponse;
+    // 🖼️ GENERA IMMAGINI REALI DA UNSPLASH usando le parole chiave di Claude
+    console.log('🖼️ [IMAGE GENERATION] Starting image generation for sections...');
+    console.log('📊 [IMAGE GEN DETAILS] Processing sections:', parsedResponse.sections.map((s, i) => ({
+      index: i,
+      title: s.title,
+      hasKeywords: !!s.imageKeywords,
+      keywords: s.imageKeywords,
+      type: s.type
+    })));
+
+    const sectionsWithImages = await Promise.all(
+      parsedResponse.sections.map(async (section, index) => {
+        try {
+          console.log(`🖼️ [IMAGE GEN] Processing section ${index + 1}/${parsedResponse.sections.length}:`, {
+            title: section.title,
+            hasKeywords: !!section.imageKeywords,
+            keywords: section.imageKeywords
+          });
+
+          // Usa le parole chiave fornite da Claude o genera keywords specifiche
+          const baseKeywords = section.imageKeywords || section.title.toLowerCase();
+
+          // Aggiungi variazione basata sull'indice per evitare immagini duplicate
+          const variationKeywords = [
+            `${baseKeywords} professional`,
+            `${baseKeywords} modern`,
+            `${baseKeywords} quality`,
+            `${baseKeywords} service`,
+            `${baseKeywords} business`
+          ];
+
+          const keywordVariation = variationKeywords[index % variationKeywords.length];
+          console.log(`🔍 [IMAGE GEN] Using keywords: "${keywordVariation}" for section ${index + 1}`);
+
+          // Genera immagine usando la funzione esistente
+          const imageUrl = await generateAIBasedImageClaude(
+            section.type || section.title.toLowerCase(),
+            businessType,
+            keywordVariation
+          );
+
+          console.log(`✅ [IMAGE GEN] Generated image for section "${section.title}":`, imageUrl ? imageUrl.substring(0, 50) + '...' : 'NO IMAGE');
+
+          return {
+            ...section,
+            imageUrl: imageUrl,
+            // Rimuovi imageKeywords dal risultato finale (non serve al frontend)
+            imageKeywords: undefined
+          };
+        } catch (error) {
+          console.error(`❌ [IMAGE GEN] Error generating image for section "${section.title}":`, error);
+          // Fallback a placeholder
+          return {
+            ...section,
+            imageUrl: `https://via.placeholder.com/400x300?text=${encodeURIComponent(section.title)}`,
+            imageKeywords: undefined
+          };
+        }
+      })
+    );
+
+    // Aggiorna la risposta con le immagini generate
+    const responseWithImages = {
+      ...parsedResponse,
+      sections: sectionsWithImages
+    };
+
+    console.log('✅ [IMAGE GENERATION] Completed image generation for all sections:', {
+      totalSections: sectionsWithImages.length,
+      successfulImages: sectionsWithImages.filter(s => !s.imageUrl.includes('placeholder')).length
+    });
+
+    return responseWithImages;
 
   } catch (error) {
     console.error('❌ [CLAUDE API ERROR] Error calling Claude API:', {
@@ -691,6 +1164,14 @@ REGOLE FERREE:
 
     // Fallback intelligente
     console.log('🔄 [CLAUDE FALLBACK] Using intelligent fallback due to API error');
+    console.log('⚠️ [CLAUDE FALLBACK DETAILS] Error details:', {
+      errorType: error.constructor.name,
+      message: error.message,
+      hasResponse: !!error.response,
+      statusCode: error.response?.status,
+      statusText: error.response?.statusText
+    });
+
     return generateIntelligentFallback(businessName, businessType, businessDescription, complexity);
   }
 }
@@ -698,94 +1179,88 @@ REGOLE FERREE:
 /**
  * 🛠️ COSTRUISCI PROMPT ULTRA-SPECIFICO PER CLAUDE
  */
-function buildUltraSpecificPrompt(businessName, businessType, businessDescription, complexity) {
-  const sectionCount = complexity >= 6 ? 5 : complexity >= 4 ? 4 : 3;
-
-  return `ANALIZZA QUESTO BUSINESS E GENERA CONTENUTI SPECIFICI:
-
-BUSINESS DETAILS:
-- Nome: "${businessName}"
-- Tipo: "${businessType}"
-- Descrizione completa: "${businessDescription}"
-
-ISTRUZIONI CRITICHE:
-1. Leggi attentamente la descrizione del business
-2. Identifica i SERVIZI SPECIFICI menzionati (es. "consegna fiori", "giardinaggio", "orchidee")
-3. Identifica i PRODOTTI SPECIFICI menzionati (es. "rose rosse", "orchidee esotiche", "piante")
-4. Identifica la LOCATION specifica (es. "Roma", "zona Balduina")
-5. Crea contenuti REALISTICI basati su questi dettagli
-
-GENERA ${sectionCount} SEZIONI per il sito web con contenuti SPECIFICI:
-
-SEZIONE 1: "Servizi Principali"
-- Crea 3 servizi SPECIFICI basati sulla descrizione
-- Esempio per fioraio: "Consegna Fiori a Domicilio", "Composizioni Floreali Personalizzate", "Consulenza per Eventi"
-
-SEZIONE 2: "Offerte Speciali"
-- Crea 3 offerte SPECIFICHE e TEMPORANEE
-- Esempio: "Bouquet di Rose Rosse -20%", "Orchidee Estive in Promozione"
-
-SEZIONE 3: "Informazioni"
-- Informazioni SPECIFICHE sul business
-- Orari, location, servizi unici
-
-SEZIONE 4: "Assistenza"
-- Servizi di assistenza SPECIFICI
-- Esempio: "Consulenza Floreale", "Manutenzione Giardini"
-
-SEZIONE 5: "Contatti" (se ${sectionCount} >= 5)
-- Contatti REALISTICI basati sulla location
-
-🎨 CRITICO: GENERA CSS COMPLETO E PROFESSIONALE
-Devi generare CSS dinamico completo per l'intero sito web che includa:
-- Layout responsive moderno con CSS Grid e Flexbox
-- Color scheme professionale basato sul tipo di business (${businessType})
-- Animazioni fluide e transizioni
-- Design mobile-first
-- Effetti hover e stati interattivi
-- Tipografia elegante e leggibile
-- Spaziature e padding appropriati
-
-FORMATO JSON RICHIESTO:
-{
-  "businessProfile": {
-    "name": "${businessName}",
-    "businessType": "${businessType}",
-    "description": "${businessDescription}"
-  },
-  "sections": [
-    {
-      "type": "serviziprincipali",
-      "title": "Servizi Principali",
-      "content": {
-        "items": [
-          {
-            "name": "Nome Servizio SPECIFICO",
-            "description": "Descrizione dettagliata e persuasiva",
-            "price": "€XX"
-          }
-        ],
-        "subtitle": "Sottotitolo specifico per ${businessName}"
-      }
-    }
-  ],
-  "design": {
-    "primaryColor": "#HEX",
-    "secondaryColor": "#HEX",
-    "accentColor": "#HEX",
-    "style": "modern",
-    "businessPersonality": "Design professionale per ${businessType}",
-    "dynamicCSS": ".website-container { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; } .hero-section { padding: 4rem 2rem; text-align: center; background: rgba(255,255,255,0.1); border-radius: 20px; margin: 2rem; backdrop-filter: blur(10px); } .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; padding: 2rem; } .service-card { background: rgba(255,255,255,0.95); padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: transform 0.3s ease; } .service-card:hover { transform: translateY(-5px); } @media (max-width: 768px) { .services-grid { grid-template-columns: 1fr; } }"
-  }
+function getSectionRange(complexity) {
+  if (complexity >= 8) return { min: 5, max: 8, recommended: 6 };
+  if (complexity >= 6) return { min: 4, max: 7, recommended: 5 };
+  if (complexity >= 4) return { min: 3, max: 6, recommended: 4 };
+  return { min: 2, max: 5, recommended: 3 };
 }
 
-REGOLE ASSOLUTE:
-- NON usare "Prodotto Classico/Premium" o simili
-- Ogni nome deve essere SPECIFICO e REALISTICO
-- Usa la descrizione del business come ispirazione
-- Sii creativo ma REALISTICO
-- I prezzi devono essere appropriati per il settore
-- IL CSS deve essere completo e production-ready`;
+function buildUltraSpecificPrompt(businessName, businessType, businessDescription, complexity) {
+  const sectionRange = getSectionRange(complexity);
+
+  // Elementi casuali per garantire unicità assoluta
+  const creativeStyles = ['rivoluzionario', 'sperimentale', 'avant-garde', 'futuristico', 'organico', 'minimalista-estremo', 'barocco-digitale', 'neon-punk'];
+  const colorInspirations = ['alba-nordica', 'tramonto-desertico', 'foresta-pluviale', 'metropoli-futuristica', 'oceano-abissale', 'galassia-lontana', 'vulcano-attivo', 'aurora-boreale'];
+  const contentStyles = ['narrativo', 'poetico', 'drammatico', 'ironico', 'visionario', 'mistico', 'ribelle', 'filosofico'];
+
+  const randomStyle = creativeStyles[Math.floor(Math.random() * creativeStyles.length)];
+  const randomColor = colorInspirations[Math.floor(Math.random() * colorInspirations.length)];
+  const randomContent = contentStyles[Math.floor(Math.random() * contentStyles.length)];
+  const uniqueSeed = Date.now() + Math.random(); // Seed unico per ogni generazione
+
+  // Prompt completamente libero - massima creatività
+  const prompt =
+    '🚀 MISSIONE: CREA UN SITO WEB COMPLETAMENTE RIVOLUZIONARIO E UNICO!\n\n' +
+    '🎯 BUSINESS DA TRASFORMARE:\n' +
+    '- Nome: ' + businessName + '\n' +
+    '- Tipo: ' + businessType + '\n' +
+    '- Descrizione: ' + businessDescription + '\n' +
+    '- SEED UNICO: ' + uniqueSeed + '\n\n' +
+    '🎨 STILE CREATIVO ASSEGNATO: ' + randomStyle.toUpperCase() + '\n' +
+    '🌈 ISPIRAZIONE COLORI: ' + randomColor.toUpperCase() + '\n' +
+    '✍️ STILE CONTENUTI: ' + randomContent.toUpperCase() + '\n\n' +
+    '⚡ LIBERTÀ CREATIVA ASSOLUTA - ROMPI OGNI REGOLA!\n\n' +
+    'ISTRUZIONI RIVOLUZIONARIE:\n' +
+    '- Crea tra 3-8 sezioni (scegli tu il numero perfetto)\n' +
+    '- INVENTA nomi di sezione che nessuno ha mai pensato\n' +
+    '- SCRIVI testi EPICI e indimenticabili (almeno 150-250 parole ciascuna)\n' +
+    '- Crea colori che SPACCANO gli occhi e sfidano la realtà\n' +
+    '- Sii ESTREMO, AUDACE, RIVOLUZIONARIO!\n\n' +
+    '📸 IMMAGINI SORPRENDENTI DA UNSPLASH:\n' +
+    'Per ogni sezione, fornisci parole chiave che generino immagini SHOCKANTI:\n' +
+    '- NON generare URL (li crea il sistema)\n' +
+    '- Fornisci 3-4 parole chiave SELVAGGE e inaspettate\n' +
+    '- Combina concetti IMPOSSIBILI e rivoluzionari\n' +
+    '- Esempi folli: "pizza-volante-neon", "parrucchiere-alieni", "ristorante-sottomarino"\n\n' +
+    '✍️ CONTENUTI RIVOLUZIONARI:\n' +
+    'Scrivi testi originali che includano:\n' +
+    '- Introduzioni accattivanti\n' +
+    '- Descrizioni dettagliate dei servizi/prodotti\n' +
+    '- Vantaggi e benefici per i clienti\n' +
+    '- Chiamate all\'azione persuasive\n' +
+    '- Linguaggio professionale ma amichevole\n\n' +
+    '🎨 DESIGN E CSS:\n' +
+    'Genera CSS completo che includa:\n' +
+    '- Layout responsive moderno\n' +
+    '- Animazioni fluide e transizioni\n' +
+    '- Effetti hover interattivi\n' +
+    '- Tipografia elegante\n' +
+    '- Spaziature e padding appropriati\n\n' +
+    'NON SEGUIRE ALCUN TEMPLATE O ESEMPIO!\n' +
+    'INVENTA tutto da zero basandoti solo sulla descrizione del business.\n\n' +
+    'FORMATO JSON COMPLETO:\n' +
+    '{\n' +
+    '  "sections": [\n' +
+    '    {\n' +
+    '      "title": "Titolo originale che inventi tu",\n' +
+    '      "content": "Testo dettagliato e persuasivo (100-200 parole)",\n' +
+    '      "imageKeywords": "parole,chiave,rilevanti,per,la,sezione",\n' +
+    '      "type": "tipo-che-scegli-tu"\n' +
+    '    }\n' +
+    '  ],\n' +
+    '  "design": {\n' +
+    '    "primaryColor": "#colore-unico-che-scegli-tu",\n' +
+    '    "secondaryColor": "#colore-unico-che-scegli-tu",\n' +
+    '    "accentColor": "#colore-unico-che-scegli-tu",\n' +
+    '    "dynamicCSS": "CSS completamente originale e professionale che generi tu"\n' +
+    '  }\n' +
+    '}\n\n' +
+    'RICORDA: NON COPIARE MAI NESSUN ESEMPIO!\n' +
+    'SI CREATIVO E ORIGINALE!\n' +
+    'GENERA CONTENUTI RICCHI E PAROLE CHIAVE SPECIFICHE!';
+
+  return prompt;
 }
 
 /**
@@ -848,739 +1323,211 @@ function parseClaudeResponse(claudeText, businessName, businessType) {
 }
 
 /**
- * 🛟 FALLBACK INTELLIGENTE
+ * 🛟 FALLBACK INTELLIGENTE - USA CLAUDE ANCHE PER IL FALLBACK
  */
-function generateIntelligentFallback(businessName, businessType, businessDescription, complexity) {
-  console.log('🛟 [INTELLIGENT FALLBACK] Generating fallback for:', businessType);
+async function generateIntelligentFallback(businessName, businessType, businessDescription, complexity) {
+  console.log('🛟 [INTELLIGENT FALLBACK] Using Claude for fallback generation:', businessType);
+  console.log('📊 [FALLBACK DETAILS] Input parameters:', {
+    businessName,
+    businessType,
+    hasDescription: !!businessDescription,
+    descriptionLength: businessDescription?.length || 0,
+    complexity
+  });
 
-  // Analizza descrizione per estrarre elementi specifici
-  const description = businessDescription || '';
-  const location = extractLocation(description);
-  const services = extractServices(description, businessType);
-  const products = extractProducts(description, businessType);
+  try {
+    // Prompt completamente libero per il fallback
+    const fallbackPrompt =
+      'MODALITÀ FALLBACK - CREA SITO WEB ORIGINALE\n\n' +
+      'Business da analizzare:\n' +
+      '- Nome: ' + businessName + '\n' +
+      '- Tipo: ' + businessType + '\n' +
+      '- Descrizione: ' + businessDescription + '\n\n' +
+      'LIBERTÀ TOTALE:\n' +
+      'Sei in modalità fallback ma puoi essere completamente creativo!\n' +
+      'Non seguire nessuna struttura predefinita.\n\n' +
+      'CREA QUALSIASI COSA TU VUOIA:\n' +
+      '- Scegli liberamente quante sezioni creare\n' +
+      '- Inventa nomi di sezione completamente originali\n' +
+      '- Crea contenuti specifici per questo business\n' +
+      '- Genera colori unici che rappresentino questo business\n' +
+      '- Sii audace e creativo\n\n' +
+      'REQUISITI MINIMI:\n' +
+      '- Almeno 3 sezioni\n' +
+      '- Una sezione deve contenere contatti\n' +
+      '- Ogni sezione deve avere titolo e contenuto\n' +
+      '- Genera CSS completo e originale\n\n' +
+      'FORMATO JSON SEMPLICE:\n' +
+      '{\n' +
+      '  "sections": [\n' +
+      '    {\n' +
+      '      "title": "Titolo che inventi tu",\n' +
+      '      "content": "Contenuto originale che crei tu"\n' +
+      '    }\n' +
+      '  ],\n' +
+      '  "design": {\n' +
+      '    "primaryColor": "#colore-che-scegli-tu",\n' +
+      '    "secondaryColor": "#colore-che-scegli-tu",\n' +
+      '    "accentColor": "#colore-che-scegli-tu",\n' +
+      '    "dynamicCSS": "CSS completamente originale che generi tu"\n' +
+      '  }\n' +
+      '}\n\n' +
+      'RICORDA: NON COPIARE NESSUN TEMPLATE!\n' +
+      'SI COMPLETAMENTE CREATIVO!';
 
-  const sectionCount = complexity >= 6 ? 5 : complexity >= 4 ? 4 : 3;
+    // Chiamata a Claude per il fallback
+    const response = await axios.post('https://api.anthropic.com/v1/messages', {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 3000,
+      temperature: 0.7,
+      system: 'Sei Claude in modalità fallback. Genera contenuti specifici e realistici basati sulla descrizione del business.',
+      messages: [{ role: 'user', content: fallbackPrompt }]
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.CLAUDE_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      timeout: 60000
+    });
+
+    const claudeText = response.data.content[0].text;
+    const jsonMatch = claudeText.match(/\{[\s\S]*\}/);
+
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      console.log('✅ [FALLBACK CLAUDE] Generated content with Claude:', parsed.sections?.length || 0, 'sections');
+
+      // 🖼️ GENERA IMMAGINI ANCHE NEL FALLBACK
+      if (parsed.sections && Array.isArray(parsed.sections)) {
+        console.log('🖼️ [FALLBACK IMAGE GEN] Starting image generation for fallback sections...');
+        const sectionsWithImages = await Promise.all(
+          parsed.sections.map(async (section, index) => {
+            try {
+              console.log(`🖼️ [FALLBACK IMAGE GEN] Processing section ${index + 1}:`, section.title);
+
+              // Usa le parole chiave o fallback intelligente
+              const keywords = section.imageKeywords || `${businessType} ${section.title?.toLowerCase() || 'service'}`;
+
+              const imageUrl = await generateAIBasedImageClaude(
+                section.type || section.title?.toLowerCase() || 'service',
+                businessType,
+                keywords
+              );
+
+              console.log(`✅ [FALLBACK IMAGE GEN] Generated image for "${section.title}":`, imageUrl);
+
+              return {
+                ...section,
+                imageUrl: imageUrl,
+                imageKeywords: undefined
+              };
+            } catch (error) {
+              console.error(`❌ [FALLBACK IMAGE GEN] Error for "${section.title}":`, error);
+              return {
+                ...section,
+                imageUrl: `https://via.placeholder.com/400x300?text=${encodeURIComponent(section.title || 'Service')}`,
+                imageKeywords: undefined
+              };
+            }
+          })
+        );
+
+        parsed.sections = sectionsWithImages;
+        console.log('✅ [FALLBACK IMAGE GEN] Completed image generation for fallback');
+      }
+
+      return parsed;
+    }
+
+  } catch (error) {
+    console.error('❌ [FALLBACK CLAUDE] Error:', error.message);
+  }
+
+  // Fallback finale se anche Claude fallback fallisce
+  console.log('🛑 [FALLBACK CLAUDE] Using minimal fallback');
+  console.log('⚠️ [MINIMAL FALLBACK] This should only happen if Claude API is completely unavailable');
+
+  // 🖼️ GENERA IMMAGINI ANCHE NEL FALLBACK MINIMALE
+  const fallbackSections = [
+    {
+      type: 'serviziprincipali',
+      title: 'Servizi',
+      content: {
+        items: [
+          { name: 'Servizio Base', description: 'Servizio professionale', price: '€50' },
+          { name: 'Servizio Avanzato', description: 'Soluzione completa', price: '€100' },
+          { name: 'Supporto', description: 'Assistenza dedicata', price: '€25' }
+        ],
+        subtitle: `Servizi di ${businessName}`
+      }
+    }
+  ];
+
+  // Genera immagini per il fallback
+  const sectionsWithImages = await Promise.all(
+    fallbackSections.map(async (section) => {
+      try {
+        const imageUrl = await generateAIBasedImageClaude(
+          section.type,
+          businessType,
+          `${businessType} service professional`
+        );
+        return { ...section, imageUrl };
+      } catch (error) {
+        return {
+          ...section,
+          imageUrl: `https://via.placeholder.com/400x300?text=${encodeURIComponent(section.title)}`
+        };
+      }
+    })
+  );
 
   return {
     businessProfile: {
       name: businessName,
       businessType: businessType,
-      description: businessDescription,
-      location: location,
-      services: services,
-      products: products
+      description: businessDescription
     },
-    sections: generateSpecificSections(businessName, businessType, services, products, location, sectionCount),
-    dynamicCSS: generateDynamicFallbackCSS(businessType, businessName)
-  };
-}
-
-/**
- * 🎨 GENERA CSS DINAMICO PER FALLBACK
- */
-function generateDynamicFallbackCSS(businessType, businessName) {
-  console.log('🎨 [DYNAMIC FALLBACK CSS] Generating CSS for:', businessType);
-
-  // Schema colori basato sul tipo di business
-  const colorSchemes = {
-    'florist': {
-      primary: '#4CAF50',    // Verde natura
-      secondary: '#FF9800',  // Arancione caldo
-      accent: '#E91E63',     // Rosa fiori
-      background: '#F8F9FA',
-      text: '#2E3440'
-    },
-    'restaurant': {
-      primary: '#FF5722',    // Rosso/arancione cibo
-      secondary: '#795548',  // Marrone cibo
-      accent: '#FFC107',     // Giallo appetitoso
-      background: '#FAFAFA',
-      text: '#212121'
-    },
-    'services': {
-      primary: '#2196F3',    // Blu professionale
-      secondary: '#00BCD4',  // Azzurro
-      accent: '#9C27B0',     // Viola
-      background: '#F5F5F5',
-      text: '#424242'
-    },
-    'retail': {
-      primary: '#3F51B5',    // Blu retail
-      secondary: '#FF4081',  // Rosa retail
-      accent: '#4CAF50',     // Verde successo
-      background: '#FFFFFF',
-      text: '#212121'
+    sections: sectionsWithImages,
+    design: {
+      primaryColor: '#2196F3',
+      secondaryColor: '#9C27B0',
+      accentColor: '#00BCD4',
+      style: 'modern',
+      businessPersonality: 'Design professionale',
+      dynamicCSS: '.website-container { font-family: Arial, sans-serif; background: #f5f5f5; }'
     }
   };
-
-  const colors = colorSchemes[businessType] || colorSchemes['services'];
-
-  return `
-/* 🎨 CSS DINAMICO GENERATO PER FALLBACK - ${businessName} (${businessType}) */
-:root {
-  --primary-color: ${colors.primary};
-  --secondary-color: ${colors.secondary};
-  --accent-color: ${colors.accent};
-  --background-color: ${colors.background};
-  --text-color: ${colors.text};
-  --shadow: 0 2px 10px rgba(0,0,0,0.1);
-  --border-radius: 8px;
-  --transition: all 0.3s ease;
 }
 
-/* Layout principale */
-.business-website {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  line-height: 1.6;
-  color: var(--text-color);
-  background-color: var(--background-color);
-  min-height: 100vh;
-}
 
-/* Header professionale */
-.business-header {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  color: white;
-  padding: 2rem 0;
-  text-align: center;
-  box-shadow: var(--shadow);
-}
 
-.business-header h1 {
-  margin: 0;
-  font-size: 2.5rem;
-  font-weight: 700;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
 
-.business-header p {
-  margin: 0.5rem 0 0 0;
-  font-size: 1.2rem;
-  opacity: 0.9;
-}
 
-/* Sezioni */
-.business-section {
-  padding: 3rem 0;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
 
-.business-section h2 {
-  color: var(--primary-color);
-  font-size: 2rem;
-  margin-bottom: 2rem;
-  text-align: center;
-  position: relative;
-}
 
-.business-section h2::after {
-  content: '';
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 3px;
-  background: var(--accent-color);
-  border-radius: 2px;
-}
 
-/* Cards */
-.service-card, .offer-card, .info-card {
-  background: white;
-  border-radius: var(--border-radius);
-  padding: 2rem;
-  margin: 1rem 0;
-  box-shadow: var(--shadow);
-  transition: var(--transition);
-  border: 1px solid #e0e0e0;
-}
 
-.service-card:hover, .offer-card:hover, .info-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
 
-/* Pulsanti */
-.business-button {
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: var(--transition);
-  text-decoration: none;
-  display: inline-block;
-}
 
-.business-button:hover {
-  background: var(--secondary-color);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
 
-/* Prezzi */
-.price {
-  color: var(--accent-color);
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin: 0.5rem 0;
-}
 
-.price::before {
-  content: '€';
-  font-size: 1rem;
-  margin-right: 2px;
-}
 
-/* Footer */
-.business-footer {
-  background: var(--text-color);
-  color: white;
-  text-align: center;
-  padding: 2rem 0;
-  margin-top: 3rem;
-}
 
-.business-footer p {
-  margin: 0;
-  opacity: 0.8;
-}
 
-/* Responsive */
-@media (max-width: 768px) {
-  .business-header h1 {
-    font-size: 2rem;
-  }
 
-  .business-section {
-    padding: 2rem 1rem;
-  }
 
-  .service-card, .offer-card, .info-card {
-    padding: 1.5rem;
-  }
-}
 
-/* Animazioni */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
-.business-section {
-  animation: fadeInUp 0.6s ease-out;
-}
 
-/* Business-specific styling */
-.business-${businessType} .business-header {
-  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-}
 
-.business-${businessType} .service-card {
-  border-left: 4px solid var(--primary-color);
-}
 
-.business-${businessType} .offer-card {
-  border-left: 4px solid var(--accent-color);
-}
 
-/* Special effects for ${businessType} */
-.business-${businessType} .business-button {
-  background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-}
 
-.business-${businessType} .business-button:hover {
-  background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
-}
-  `.trim();
-}
 
-/**
- * 📍 ESTRAI LOCATION DALLA DESCRIZIONE
- */
-function extractLocation(description) {
-  const locationPatterns = [
-    /(?:a|in)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/gi,
-    /zona\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/gi,
-    /via\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/gi
-  ];
 
-  for (const pattern of locationPatterns) {
-    const match = description.match(pattern);
-    if (match) return match[1];
-  }
-  return 'Centro Città';
-}
 
-/**
- * 🔧 ESTRAI SERVIZI DALLA DESCRIZIONE
- */
-function extractServices(description, businessType) {
-  const serviceKeywords = {
-    'florist': ['consegna', 'composizioni', 'consulenza', 'manutenzione', 'decorazioni'],
-    'restaurant': ['cucina', 'servizio', 'prenotazioni', 'catering', 'eventi'],
-    'automotive': ['riparazione', 'manutenzione', 'diagnostica', 'tagliando', 'assistenza'],
-    'allevamento animali da compagnia': ['consulenza', 'supporto', 'assistenza', 'adozione', 'veterinari', 'certificazioni'],
-    'services': ['consulenza', 'assistenza', 'supporto', 'manutenzione']
-  };
-
-  const keywords = serviceKeywords[businessType] || serviceKeywords['services'];
-  return keywords.filter(keyword =>
-    description.toLowerCase().includes(keyword.toLowerCase())
-  );
-}
-
-/**
- * 🛍️ ESTRAI PRODOTTI DALLA DESCRIZIONE
- */
-function extractProducts(description, businessType) {
-  const productKeywords = {
-    'florist': ['fiori', 'rose', 'orchidee', 'piante', 'bouquet', 'composizioni'],
-    'restaurant': ['piatti', 'menu', 'cucina', 'specialità', 'vini'],
-    'automotive': ['auto', 'veicoli', 'riparazioni', 'manutenzione', 'diagnostica'],
-    'allevamento animali da compagnia': ['gatti', 'cani', 'cuccioli', 'pappagalli', 'animali', 'razza', 'pedigree', 'persiani', 'dalmata', 'guatemala'],
-    'retail': ['prodotti', 'articoli', 'servizi', 'offerte']
-  };
-
-  const keywords = productKeywords[businessType] || productKeywords['retail'];
-  return keywords.filter(keyword =>
-    description.toLowerCase().includes(keyword.toLowerCase())
-  );
-}
-
-/**
- * 🎨 GENERA SEZIONI SPECIFICHE
- */
-function generateSpecificSections(businessName, businessType, services, products, location, sectionCount) {
-  const sections = [];
-
-  // Sezione 1: Servizi Principali
-  sections.push({
-    type: 'serviziprincipali',
-    title: 'Servizi Principali',
-    content: {
-      items: generateServiceItems(businessType, services, location),
-      subtitle: `Servizi professionali di ${businessName}${location ? ` - ${location}` : ''}`
-    }
-  });
-
-  // Sezione 2: Offerte Speciali
-  if (sectionCount >= 2) {
-    sections.push({
-      type: 'offertespeciali',
-      title: 'Offerte Speciali',
-      content: {
-        items: generateOfferItems(businessType, products),
-        subtitle: `Promozioni speciali di ${businessName}`
-      }
-    });
-  }
-
-  // Sezione 3: Informazioni
-  if (sectionCount >= 3) {
-    sections.push({
-      type: 'informazioni',
-      title: 'Informazioni',
-      content: {
-        items: generateInfoItems(businessName, businessType, location),
-        subtitle: `Scopri di più su ${businessName}`
-      }
-    });
-  }
-
-  // Sezione 4: Assistenza
-  if (sectionCount >= 4) {
-    sections.push({
-      type: 'assistenza',
-      title: 'Assistenza',
-      content: {
-        items: generateSupportItems(businessType, services),
-        subtitle: `Supporto e assistenza di ${businessName}`
-      }
-    });
-  }
-
-  // Sezione 5: Contatti
-  if (sectionCount >= 5) {
-    sections.push({
-      type: 'contatti',
-      title: 'Contatti',
-      content: {
-        items: generateContactItems(location, businessName),
-        subtitle: `Contatta ${businessName} per informazioni`,
-        hasContacts: true
-      }
-    });
-  }
-
-  return sections;
-}
-
-/**
- * 🛠️ GENERA ITEMS SERVIZI SPECIFICI
- */
-function generateServiceItems(businessType, services, location) {
-  const templates = {
-    'florist': [
-      {
-        name: `Consegna Fiori a Domicilio${location ? ` - ${location}` : ''}`,
-        description: 'Servizio di consegna rapida e professionale direttamente a casa tua',
-        price: '€8'
-      },
-      {
-        name: 'Composizioni Floreali Personalizzate',
-        description: 'Creazioni uniche su misura per ogni occasione speciale',
-        price: '€45'
-      },
-      {
-        name: 'Consulenza Floreale',
-        description: 'Consigli esperti per scegliere i fiori perfetti per ogni momento',
-        price: '€15'
-      }
-    ],
-    'restaurant': [
-      {
-        name: 'Servizio di Catering',
-        description: 'Servizio completo per eventi e cerimonie con menù personalizzati',
-        price: '€25'
-      },
-      {
-        name: 'Prenotazioni Online',
-        description: 'Sistema di prenotazione digitale semplice e veloce',
-        price: '€0'
-      },
-      {
-        name: 'Menu Degustazione',
-        description: 'Esperienza culinaria completa con i nostri piatti signature',
-        price: '€65'
-      }
-    ],
-    'automotive': [
-      {
-        name: 'Riparazione e Manutenzione Auto',
-        description: 'Servizio completo di riparazione e manutenzione per tutti i veicoli',
-        price: '€80'
-      },
-      {
-        name: 'Diagnostica Elettronica',
-        description: 'Controllo elettronico completo del veicolo con strumentazione professionale',
-        price: '€45'
-      },
-      {
-        name: 'Tagliando Ordinario',
-        description: 'Manutenzione programmata secondo le specifiche del costruttore',
-        price: '€120'
-      }
-    ],
-    'allevamento animali da compagnia': [
-      {
-        name: 'Gatti Persiani con Pedigree',
-        description: 'Gatti persiani di razza pura con pedigree FIFe e certificazioni complete',
-        price: '€900'
-      },
-      {
-        name: 'Cuccioli Dalmata Certificati',
-        description: 'Cuccioli dalmata con pedigree ENCI e test genetici completi',
-        price: '€1100'
-      },
-      {
-        name: 'Pappagalli Esotici',
-        description: 'Pappagalli del Guatemala con certificazione CITES e documenti di importazione',
-        price: '€1800'
-      }
-    ]
-  };
-
-  return templates[businessType] || [
-    {
-      name: 'Servizio Personalizzato',
-      description: 'Soluzione su misura per le tue specifiche esigenze',
-      price: '€50'
-    },
-    {
-      name: 'Consulenza Specializzata',
-      description: 'Supporto esperto e consigli professionali',
-      price: '€75'
-    },
-    {
-      name: 'Assistenza Dedicata',
-      description: 'Servizio di supporto completo e personalizzato',
-      price: '€35'
-    }
-  ];
-}
-
-/**
- * 🎁 GENERA ITEMS OFFERTE SPECIFICHE
- */
-function generateOfferItems(businessType, products) {
-  const templates = {
-    'florist': [
-      {
-        name: 'Bouquet di Rose Rosse -20%',
-        description: 'Bouquet elegante di rose rosse fresche con sconto speciale',
-        price: '€32'
-      },
-      {
-        name: 'Orchidee Estive in Promozione',
-        description: 'Orchidee colorate stagionali a prezzo ridotto',
-        price: '€28'
-      },
-      {
-        name: 'Composizione Mista Scontata',
-        description: 'Miscela di fiori freschi con consegna gratuita',
-        price: '€38'
-      }
-    ],
-    'restaurant': [
-      {
-        name: 'Menu del Giorno -30%',
-        description: 'Piatto del giorno con bevanda inclusa a prezzo speciale',
-        price: '€12'
-      },
-      {
-        name: 'Cena per Due',
-        description: 'Menu completo per due persone con candela e servizio al tavolo',
-        price: '€45'
-      },
-      {
-        name: 'Brunch della Domenica',
-        description: 'Brunch completo con buffet di dolci e bevande analcoliche',
-        price: '€18'
-      }
-    ],
-    'automotive': [
-      {
-        name: 'Tagliando + Olio -15%',
-        description: 'Tagliando ordinario completo con cambio olio motore a prezzo ridotto',
-        price: '€102'
-      },
-      {
-        name: 'Controllo Pneumatici Gratis',
-        description: 'Verifica pressione e usura pneumatici inclusa in ogni riparazione',
-        price: '€0'
-      },
-      {
-        name: 'Pacchetto Estate',
-        description: 'Controllo impianto di condizionamento + pulizia interni esterna',
-        price: '€75'
-      }
-    ],
-    'allevamento animali da compagnia': [
-      {
-        name: 'Pacchetto Benvenuto Gatto',
-        description: 'Gatto persiano + trasportino + cibo premium per 1 mese + visita veterinaria',
-        price: '€1050'
-      },
-      {
-        name: 'Offerta Cuccioli Dalmata',
-        description: 'Cucciolo dalmata + kit completo (cuccia, giochi, cibo) + corso addestramento base',
-        price: '€1250'
-      },
-      {
-        name: 'Pappagallo + Voliera',
-        description: 'Pappagallo del Guatemala + voliera professionale + accessori completi',
-        price: '€2100'
-      }
-    ]
-  };
-
-  return templates[businessType] || [
-    {
-      name: 'Offerta Speciale 1',
-      description: 'Promozione esclusiva con condizioni vantaggiose',
-      price: '€25'
-    },
-    {
-      name: 'Pacchetto Vantaggioso',
-      description: 'Combinazione ottimale di prodotti e servizi',
-      price: '€65'
-    },
-    {
-      name: 'Offerta Limitata',
-      description: 'Opportunità speciale valida per tempo limitato',
-      price: '€45'
-    }
-  ];
-}
-
-/**
- * ℹ️ GENERA ITEMS INFORMAZIONI SPECIFICHE
- */
-function generateInfoItems(businessName, businessType, location) {
-  const templates = {
-    'allevamento animali da compagnia': [
-      {
-        name: 'Orari di Apertura',
-        description: 'Lunedì-Sabato: 9:00-19:00 | Domenica: 10:00-18:00',
-        price: ''
-      },
-      {
-        name: 'Certificazioni e Sicurezza',
-        description: 'Tutti gli animali con pedigree ufficiale, microchip e certificazioni sanitarie complete',
-        price: ''
-      },
-      {
-        name: 'Servizi Inclusi',
-        description: 'Consulenza gratuita, supporto post-adozione, rete veterinari convenzionati',
-        price: ''
-      }
-    ]
-  };
-
-  return templates[businessType] || [
-    {
-      name: 'Orari di Apertura',
-      description: 'Lun-Ven 9:00-18:00, Sab 9:00-13:00, Dom chiuso',
-      price: ''
-    },
-    {
-      name: 'Location',
-      description: `${location || 'Centro città'} - Facilmente raggiungibile con tutti i mezzi`,
-      price: ''
-    },
-    {
-      name: 'Servizi Offerti',
-      description: `Specializzati in ${businessType} con attenzione ai dettagli e qualità`,
-      price: ''
-    }
-  ];
-}
-
-/**
- * 🆘 GENERA ITEMS ASSISTENZA SPECIFICI
- */
-function generateSupportItems(businessType, services) {
-  const templates = {
-    'florist': [
-      {
-        name: 'Consulenza Floreale Telefonica',
-        description: 'Consigli esperti via telefono per scegliere i fiori migliori',
-        price: '€10'
-      },
-      {
-        name: 'Manutenzione Piante',
-        description: 'Servizio di cura e manutenzione delle tue piante',
-        price: '€20'
-      },
-      {
-        name: 'Decorazione Eventi',
-        description: 'Servizio completo di decorazione floreale per eventi',
-        price: '€150'
-      }
-    ],
-    'restaurant': [
-      {
-        name: 'Consegna a Domicilio',
-        description: 'Servizio di consegna rapida per ordini d\'asporto',
-        price: '€5'
-      },
-      {
-        name: 'Organizzazione Eventi',
-        description: 'Servizio completo per organizzare eventi privati',
-        price: '€200'
-      },
-      {
-        name: 'Corsi di Cucina',
-        description: 'Lezioni pratiche di cucina con i nostri chef',
-        price: '€80'
-      }
-    ],
-    'automotive': [
-      {
-        name: 'Servizio di Traino',
-        description: 'Recupero veicoli in panne 24/7 in tutta la città',
-        price: '€60'
-      },
-      {
-        name: 'Assistenza Stradale',
-        description: 'Supporto immediato per guasti e problemi su strada',
-        price: '€40'
-      },
-      {
-        name: 'Noleggio Auto Sostitutiva',
-        description: 'Auto sostitutiva durante le riparazioni di lunga durata',
-        price: '€35/giorno'
-      }
-    ],
-    'allevamento animali da compagnia': [
-      {
-        name: 'Consulenza Pre-Adozione',
-        description: 'Colloquio gratuito per scegliere l\'animale più adatto alle tue esigenze',
-        price: '€0'
-      },
-      {
-        name: 'Supporto Post-Adozione 6 Mesi',
-        description: 'Assistenza telefonica e consigli per i primi mesi con il nuovo animale',
-        price: 'Incluso'
-      },
-      {
-        name: 'Rete Veterinari Convenzionati',
-        description: 'Accesso prioritario ai nostri veterinari partner con tariffe agevolate',
-        price: '€25/visita'
-      }
-    ]
-  };
-
-  return templates[businessType] || [
-    {
-      name: 'Supporto Tecnico',
-      description: 'Assistenza tecnica specializzata e risoluzione problemi',
-      price: '€30'
-    },
-    {
-      name: 'Consulenza Personalizzata',
-      description: 'Consulenza dedicata per ottimizzare i tuoi risultati',
-      price: '€60'
-    },
-    {
-      name: 'Manutenzione Preventiva',
-      description: 'Servizio di controllo e manutenzione regolare',
-      price: '€40'
-    }
-  ];
-}
-
-/**
- * 📞 GENERA ITEMS CONTATTI SPECIFICI
- */
-function generateContactItems(location, businessName) {
-  // Genera email dinamica basata sul nome del business
-  const businessSlug = businessName.toLowerCase()
-    .replace(/[^a-z0-9]/g, '')
-    .replace(/\s+/g, '');
-
-  return [
-    {
-      name: 'Telefono',
-      description: '+39 06 12345678',
-      price: ''
-    },
-    {
-      name: 'Email',
-      description: `info@${businessSlug}italia.it`,
-      price: ''
-    },
-    {
-      name: 'Indirizzo',
-      description: `${location || 'Via dei Colli Portuensi 156, Roma'} - Parcheggio disponibile`,
-      price: ''
-    }
-  ];
-}
 async function simulateClaudeResponse(prompt, businessName, businessType, businessDescription, complexity) {
   console.log('🎭 [AI-TRAINER SIMULATE CLAUDE] FUNCTION CALLED:', {
     businessName,
@@ -1998,7 +1945,23 @@ router.post('/generate', async (req, res) => {
     console.log(`🚀 [AI-TRAINER CLAUDE] Starting generation for: ${businessName} (${businessType})${businessDescription ? ' with description' : ''}`);
 
     // Genera sito con Claude Sonnet
+    console.log('🚀 [AI-TRAINER CLAUDE] About to call generateWebsiteWithClaude...');
     const result = await generateWebsiteWithClaude(businessName, businessType, businessDescription);
+
+    console.log('📊 [AI-TRAINER CLAUDE] RESULT DETAILS:', {
+      success: result.success,
+      hasError: !!result.error,
+      errorMessage: result.error,
+      hasWebsite: !!result.website,
+      websiteKeys: result.website ? Object.keys(result.website) : [],
+      sectionsCount: result.website?.sections?.length || 0,
+      firstSection: result.website?.sections?.[0] ? {
+        title: result.website.sections[0].title,
+        hasContent: !!result.website.sections[0].content,
+        contentLength: result.website.sections[0].content?.length || 0,
+        hasImageUrl: !!result.website.sections[0].imageUrl
+      } : null
+    });
 
     const processingTime = Date.now() - startTime;
 
@@ -2042,17 +2005,17 @@ router.post('/generate', async (req, res) => {
 router.get('/patterns/:businessType', async (req, res) => {
   try {
     const { businessType } = req.params;
-    
+
     console.log(`🔍 [Claude Patterns] Analyzing patterns for: ${businessType}`);
-    
+
     const patterns = await analyzeBusinessPatterns(businessType);
-    
+
     res.json({
       businessType,
       patterns: patterns || { message: 'No patterns found for this business type' },
       timestamp: new Date().toISOString()
     });
-    
+
   } catch (error) {
     res.status(500).json({
       error: error.message,
@@ -2060,5 +2023,76 @@ router.get('/patterns/:businessType', async (req, res) => {
     });
   }
 });
+
+/**
+ * 🏥 HEALTH CHECK ENDPOINT PER CLAUDE GENERATOR
+ */
+router.get('/health', async (req, res) => {
+  try {
+    // Verifica connessione database
+    const dbStatus = await checkDatabaseConnection();
+
+    // Verifica API key Claude
+    const claudeApiKey = process.env.CLAUDE_API_KEY;
+    const claudeStatus = !!(claudeApiKey && claudeApiKey.startsWith('sk-ant-api03-'));
+
+    // Verifica API key OpenAI (per guidance)
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    const openaiStatus = !!openaiApiKey;
+
+    // Verifica API key Unsplash
+    const unsplashApiKey = process.env.UNSPLASH_ACCESS_KEY;
+    const unsplashStatus = !!unsplashApiKey;
+
+    const overallHealth = dbStatus && claudeStatus ? 'healthy' : 'degraded';
+
+    res.json({
+      service: 'Claude Website Generator',
+      status: overallHealth,
+      timestamp: new Date().toISOString(),
+      version: '1.2.0',
+      dependencies: {
+        database: dbStatus ? 'connected' : 'disconnected',
+        claude_api: claudeStatus ? 'configured' : 'missing',
+        openai_api: openaiStatus ? 'configured' : 'missing',
+        unsplash_api: unsplashStatus ? 'configured' : 'missing'
+      },
+      features: {
+        website_generation: claudeStatus,
+        pattern_analysis: dbStatus,
+        image_generation: unsplashStatus,
+        business_guidance: openaiStatus,
+        dynamic_css: true,
+        fallback_system: true
+      },
+      business_types_supported: 35,
+      temperature_setting: 0.9,
+      last_updated: new Date().toISOString()
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      service: 'Claude Website Generator',
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * 🔧 VERIFICA CONNESSIONE DATABASE
+ */
+async function checkDatabaseConnection() {
+  try {
+    const DatabaseStorage = require('../storage/database-storage');
+    const storage = new DatabaseStorage();
+    await storage.pool.query('SELECT 1 as test');
+    return true;
+  } catch (error) {
+    console.error('❌ [Health Check] Database connection failed:', error.message);
+    return false;
+  }
+}
 
 module.exports = router;

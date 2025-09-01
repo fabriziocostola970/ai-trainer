@@ -2,10 +2,11 @@
 nixPkgs = ["nodejs-18_x", "npm-9_x"]
 
 [phases.install]
-cmd = "npm ci"
+# Force clean install without any caching
+cmd = "rm -rf node_modules package-lock.json && npm install --production --no-audit --no-fund --no-cache --prefer-offline --no-optional"
 
 [phases.build]
-cmd = "echo 'No build step required for AI-Trainer'"
+cmd = "echo 'Build phase completed - no additional build steps required'"
 
 [start]
 cmd = "npm start"
