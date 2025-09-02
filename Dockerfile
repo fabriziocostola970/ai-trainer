@@ -15,7 +15,6 @@ RUN npm ci --only=production
 COPY . .
 
 # Expose the port Railway expects
-ENV PORT=4000
-EXPOSE 4000
+EXPOSE 8080
 
 CMD ["npm", "start"]
