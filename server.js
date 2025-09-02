@@ -12,6 +12,21 @@ const LIGHTWEIGHT_MODE = process.env.LIGHTWEIGHT_MODE === 'true';
 const DISABLE_TRAINING_SYSTEM = process.env.DISABLE_TRAINING_SYSTEM === 'true';
 const DISABLE_DATA_COLLECTION = process.env.DISABLE_DATA_COLLECTION === 'true';
 
+// 🚀 Error handling for unhandled rejections and exceptions
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🚨 Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('Stack trace:', reason?.stack || 'No stack trace available');
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('🚨 Uncaught Exception:', err);
+  console.error('Stack trace:', err.stack);
+  // Don't exit the process in production, just log the error
+  if (process.env.NODE_ENV !== 'production') {
+    process.exit(1);
+  }
+});
+
 console.log('🔧 Environment Variables Check:');
 console.log('- PORT:', PORT);
 console.log('- NODE_ENV:', process.env.NODE_ENV);
@@ -431,13 +446,13 @@ try {
   });
 
   if (missingVars.length > 0) {
-    console.error('❌ Missing critical environment variables:', missingVars.join(', '));
-    console.error('🔧 Please configure these in Railway dashboard under Variables');
-    console.error('💡 Railway URL: https://railway.app/project/YOUR_PROJECT/variables');
-    process.exit(1);
+    console.warn('⚠️ Missing critical environment variables:', missingVars.join(', '));
+    console.warn('🔧 Please configure these in Railway dashboard under Variables');
+    console.warn('💡 Railway URL: https://railway.app/project/YOUR_PROJECT/variables');
+    console.warn('🚀 Server will start in DEGRADED mode without AI features');
+  } else {
+    console.log('✅ All critical variables are set, proceeding with server startup...');
   }
-
-  console.log('✅ All critical variables are set, proceeding with server startup...');
 
   // Test database connection before starting server
   console.log('🔌 Testing database connection...');
