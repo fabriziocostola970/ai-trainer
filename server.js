@@ -471,6 +471,8 @@ try {
     console.log('ℹ️  No DATABASE_URL configured - skipping database test');
   }
 
+  console.log('✅ Server is about to start...');
+
   app.listen(PORT, () => {
     console.log(`🤖 AI-Trainer server running on port ${PORT}`);
     console.log(`🔗 Health check: http://localhost:${PORT}/health`);
