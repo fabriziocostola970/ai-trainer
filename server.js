@@ -435,83 +435,87 @@ console.log('📊 Process Info:', {
   memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
 });
 
-try {
-  // Check critical environment variables before starting
-  const criticalVars = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY'];
-  const missingVars = criticalVars.filter(varName => !process.env[varName]);
+async function startServer() {
+  try {
+    // Check critical environment variables before starting
+    const criticalVars = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY'];
+    const missingVars = criticalVars.filter(varName => !process.env[varName]);
 
-  console.log('🔍 Checking critical environment variables...');
-  criticalVars.forEach(varName => {
-    console.log(`- ${varName}: ${process.env[varName] ? '✅ Set' : '❌ NOT SET'}`);
-  });
+    console.log('🔍 Checking critical environment variables...');
+    criticalVars.forEach(varName => {
+      console.log(`- ${varName}: ${process.env[varName] ? '✅ Set' : '❌ NOT SET'}`);
+    });
 
-  if (missingVars.length > 0) {
-    console.warn('⚠️ Missing critical environment variables:', missingVars.join(', '));
-    console.warn('🔧 Please configure these in Railway dashboard under Variables');
-    console.warn('💡 Railway URL: https://railway.app/project/YOUR_PROJECT/variables');
-    console.warn('🚀 Server will start in DEGRADED mode without AI features');
-  } else {
-    console.log('✅ All critical variables are set, proceeding with server startup...');
+    if (missingVars.length > 0) {
+      console.warn('⚠️ Missing critical environment variables:', missingVars.join(', '));
+      console.warn('🔧 Please configure these in Railway dashboard under Variables');
+      console.warn('💡 Railway URL: https://railway.app/project/YOUR_PROJECT/variables');
+      console.warn('🚀 Server will start in DEGRADED mode without AI features');
+    } else {
+      console.log('✅ All critical variables are set, proceeding with server startup...');
+    }
+
+    // Test database connection before starting server
+    console.log('🔌 Testing database connection...');
+    if (process.env.DATABASE_URL) {
+      try {
+        const { Client } = require('pg');
+        const client = new Client({ connectionString: process.env.DATABASE_URL });
+        await client.connect();
+        console.log('✅ Database connection successful');
+        await client.end();
+      } catch (dbError) {
+        console.warn('⚠️  Database connection warning:', dbError.message);
+        console.log('ℹ️  This is usually not critical - proceeding with startup');
+      }
+    } else {
+      console.log('ℹ️  No DATABASE_URL configured - skipping database test');
+    }
+
+    console.log('✅ Server is about to start...');
+
+    app.listen(PORT, () => {
+      console.log(`🤖 AI-Trainer server running on port ${PORT}`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`🌐 Web Interface: http://localhost:${PORT}/`);
+      console.log(`📊 Training API: http://localhost:${PORT}/training/`);
+      console.log(`🛠️  API Status: http://localhost:${PORT}/status`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log('🎉 Server startup completed successfully!');
+      console.log('📝 Note: PostgreSQL collation warnings are normal and don\'t affect functionality');
+      
+      // Check if training system is available
+      try {
+        require('./src/training/training-interface');
+        console.log(`✅ Training system loaded successfully`);
+      } catch (error) {
+        console.warn(`⚠️  Training system not available:`, error.message);
+      }
+      
+      // Check if data collector is available
+      try {
+        require('./src/training/data-collector');
+        console.log(`✅ Data collector loaded successfully`);
+      } catch (error) {
+        console.warn(`⚠️  Data collector not available:`, error.message);
+      }
+
+      // ✅ AI Design Patterns schema ready (supports multiple competitors per business_type)
+      console.log('✅ AI Design Patterns schema ready (supports multiple competitors per business_type)');
+    });
+
+    console.log('⏳ Attempting to bind to port', PORT);
+  } catch (error) {
+    console.error('❌ Failed to start server:', error.message);
+    console.error('🔍 Stack trace:', error.stack);
+    console.error('💡 This usually means:');
+    console.error('   - Port', PORT, 'is already in use');
+    console.error('   - Missing environment variables');
+    console.error('   - Application code error');
+    process.exit(1);
   }
-
-  // Test database connection before starting server
-  console.log('🔌 Testing database connection...');
-  if (process.env.DATABASE_URL) {
-    try {
-      const { Client } = require('pg');
-      const client = new Client({ connectionString: process.env.DATABASE_URL });
-      await client.connect();
-      console.log('✅ Database connection successful');
-      await client.end();
-    } catch (dbError) {
-      console.warn('⚠️  Database connection warning:', dbError.message);
-      console.log('ℹ️  This is usually not critical - proceeding with startup');
-    }
-  } else {
-    console.log('ℹ️  No DATABASE_URL configured - skipping database test');
-  }
-
-  console.log('✅ Server is about to start...');
-
-  app.listen(PORT, () => {
-    console.log(`🤖 AI-Trainer server running on port ${PORT}`);
-    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-    console.log(`🌐 Web Interface: http://localhost:${PORT}/`);
-    console.log(`📊 Training API: http://localhost:${PORT}/training/`);
-    console.log(`🛠️  API Status: http://localhost:${PORT}/status`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log('🎉 Server startup completed successfully!');
-    console.log('📝 Note: PostgreSQL collation warnings are normal and don\'t affect functionality');
-    
-    // Check if training system is available
-    try {
-      require('./src/training/training-interface');
-      console.log(`✅ Training system loaded successfully`);
-    } catch (error) {
-      console.warn(`⚠️  Training system not available:`, error.message);
-    }
-    
-    // Check if data collector is available
-    try {
-      require('./src/training/data-collector');
-      console.log(`✅ Data collector loaded successfully`);
-    } catch (error) {
-      console.warn(`⚠️  Data collector not available:`, error.message);
-    }
-
-    // ✅ AI Design Patterns schema ready (supports multiple competitors per business_type)
-    console.log('✅ AI Design Patterns schema ready (supports multiple competitors per business_type)');
-  });
-
-  console.log('⏳ Attempting to bind to port', PORT);
-} catch (error) {
-  console.error('❌ Failed to start server:', error.message);
-  console.error('🔍 Stack trace:', error.stack);
-  console.error('💡 This usually means:');
-  console.error('   - Port', PORT, 'is already in use');
-  console.error('   - Missing environment variables');
-  console.error('   - Application code error');
-  process.exit(1);
 }
+
+startServer();
 
 module.exports = app;
