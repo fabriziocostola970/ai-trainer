@@ -167,20 +167,21 @@ app.get('/debug/business-types', async (req, res) => {
       ORDER BY count DESC
     `);
     
-    const floristCheck = await storage.pool.query(`
+    // Dynamic business type search
+    const searchType = req.query.businessType || 'restaurant';
+    const dynamicCheck = await storage.pool.query(`
       SELECT id, business_type, layout_structure, semantic_analysis 
       FROM ai_design_patterns 
-      WHERE business_type ILIKE '%florist%' 
-      OR business_type ILIKE '%flower%' 
-      OR business_type ILIKE '%flor%'
+      WHERE business_type ILIKE $1
       LIMIT 5
-    `);
+    `, [`%${searchType}%`]);
     
     res.json({
       status: 'OK',
       timestamp: new Date().toISOString(),
+      searchType: searchType,
       business_types: result.rows,
-      florist_records: floristCheck.rows,
+      searched_records: dynamicCheck.rows,
       total_records: result.rows.reduce((sum, row) => sum + parseInt(row.count), 0)
     });
   } catch (error) {
