@@ -1,16 +1,5 @@
 FROM node:18-alpine
 
-# Install system dependencies for Puppeteer
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    nodejs \
-    yarn
-
 # Set environment variables for Puppeteer
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
@@ -21,12 +10,12 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm ci
+RUN npm ci --only=production
 
 COPY . .
 
 # Expose the port Railway expects
-ENV PORT=3000
-EXPOSE 3000
+ENV PORT=4000
+EXPOSE 4000
 
 CMD ["npm", "start"]
