@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:18-slim
 
 # Minimal production environment
 ENV NODE_ENV=production
