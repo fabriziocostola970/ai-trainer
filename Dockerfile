@@ -11,4 +11,4 @@ RUN npm install --omit=dev --no-package-lock
 
 COPY . .
 
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
