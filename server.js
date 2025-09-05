@@ -1,11 +1,20 @@
+// Global error handlers for diagnostics
+process.on('uncaughtException', (err, origin) => {
+  console.error(`\n\nFATAL: Uncaught Exception\nERROR: ${err.stack || err}\nORIGIN: ${origin}\n`);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error(`\n\nFATAL: Unhandled Rejection\nPROMISE: ${promise}\nREASON: ${reason.stack || reason}\n`);
+  process.exit(1);
+});
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
-require('dotenv').config();
-
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = 8080;
 
 // Basic security and middleware
 app.use(helmet({
