@@ -16,7 +16,12 @@ app.get('/', (req, res) => {
 
 app.get('/health', (req, res) => {
   console.log('Health check endpoint hit');
-  res.json({ status: 'OK', message: 'Server is healthy', port: PORT });
+  res.json({ 
+    status: 'OK', 
+    message: 'Server is healthy', 
+    port: PORT,
+    timestamp: new Date().toISOString()
+  });
 });
 
 console.log('About to start listening on port:', PORT);
