@@ -11,6 +11,4 @@ RUN npm install --omit=dev --no-package-lock
 
 COPY . .
 
-EXPOSE 8080
-
 CMD ["node", "server.js"]
