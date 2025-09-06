@@ -134,3 +134,19 @@ Trasformare AI-Trainer in un motore AI autonomo che apprende da siti reali e gen
 **Status:** � **FASE 1 COMPLETATA CON SUCCESSO**  
 **Prossima Fase:** Fase 2 - Apprendimento Avanzato  
 **Sistema Attuale:** 100% Dinamico, Moduli Separati, Test Superati 🚀
+
+
+Abbiamo
+- Sistema di registrazione/login
+- Protezione delle pagine
+
+Frontend
+- L'utente userà un linguaggio naturale per descrivere il proprio business 
+- Analizzeremo con l'aiuto di openAI il testo per ricavare il tipo di business e una descrizione da usare nel sito dell'utente. Useremo il linguaggio in inglese per dialogare con openAI, quindi sarà da lingua originale(qualunque lingua) a inglese. La risposta del businessType sarà in inglese, mentre la descrizione del da usare tornerà nella lingua originale
+
+Backend
+- Sistema di autoapprendimento per lo sviluppo di siti internet completi
+- Cerchiamo nel db se esiste il business che sta creando l'utente, se non esiste chiediamo a openAI di darci 10 siti di competitor così da creare una tabella con i dati ricavati dai competitor
+- Ricevuto l'elenco dei siti internet da openAI, effetueremo uno scraping per ricavare i css utilizzati, i font, i colori, i layout e useremo unsplash per prendere 5 immagini dello stesso tipo di business da usare nel sito dell'utente
+
+Questo è lo schema che dobbiamo seguire
