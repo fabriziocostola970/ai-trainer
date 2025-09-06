@@ -56,6 +56,43 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Server status endpoint for dashboard
+app.get('/status', (req, res) => {
+  res.json({
+    status: 'online',
+    server: 'AI-Trainer',
+    version: '1.2.0',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Training alerts endpoint
+app.get('/api/training/alerts', (req, res) => {
+  res.json({
+    alerts: [],
+    criticalAlerts: 0,
+    warningAlerts: 0,
+    lastCheck: new Date().toISOString()
+  });
+});
+
+// Design extraction stats endpoint  
+app.get('/api/design/extraction-stats', (req, res) => {
+  res.json({
+    totalExtractions: 0,
+    successfulExtractions: 0,
+    failedExtractions: 0,
+    averageProcessingTime: 0,
+    lastExtraction: null,
+    stats: {
+      today: 0,
+      thisWeek: 0,
+      thisMonth: 0
+    }
+  });
+});
+
 // Basic root endpoint
 app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'frontend', 'index.html');
