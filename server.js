@@ -14,7 +14,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
 const app = express();
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 
 // Basic security and middleware
 app.use(helmet({
@@ -75,7 +75,7 @@ console.log('📊 Process Info:', {
   memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🤖 AI-Trainer server running on port ${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`🌐 Web Interface: http://localhost:${PORT}/`);
