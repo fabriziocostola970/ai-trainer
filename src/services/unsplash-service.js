@@ -108,6 +108,46 @@ class UnsplashService {
   }
 
   /**
+   * 🎯 Cerca un'immagine specifica basata su keywords
+   * @param {string} keywords - Keywords specifiche per la ricerca
+   * @returns {Promise<Object>} Immagine specifica o null
+   */
+  async searchSpecificImage(keywords) {
+    try {
+      // Pulisci e ottimizza le keywords per Unsplash
+      const cleanKeywords = keywords
+        .replace(/degli?|del|della|delle|con|per|in|una?|il|la|i|le/gi, '')
+        .trim();
+      
+      console.log(`🔍 Searching specific image for: "${cleanKeywords}"`);
+      
+      const result = await this.unsplash.search.getPhotos({
+        query: cleanKeywords,
+        page: 1,
+        perPage: 3,
+        orientation: 'landscape'
+      });
+
+      if (result.errors) {
+        console.error('🚨 Unsplash specific search error:', result.errors);
+        return null;
+      }
+
+      const photos = result.response.results;
+      if (photos && photos.length > 0) {
+        // Prendi la prima immagine più rilevante
+        const photo = photos[0];
+        return this.formatPhotoData(photo, 'specific');
+      }
+
+      return null;
+    } catch (error) {
+      console.error('🚨 Error searching specific image:', error);
+      return null;
+    }
+  }
+
+  /**
    * 🚨 Immagini di fallback se Unsplash fallisce
    */
   getFallbackImages() {

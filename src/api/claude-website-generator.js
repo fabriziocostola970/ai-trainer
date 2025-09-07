@@ -9,6 +9,40 @@ const anthropic = new Anthropic({
 });
 
 /**
+ * 🖼️ ESTRAE RICHIESTE SPECIFICHE DI IMMAGINI DALLA DESCRIZIONE CLIENTE
+ */
+function extractImageRequests(description) {
+  if (!description) return [];
+  
+  const imageRequests = [];
+  const text = description.toLowerCase();
+  
+  // Pattern per trovare richieste di immagini
+  const patterns = [
+    /inserisci un'?immagine (di|con|che mostra) ([^,\.;]+)/gi,
+    /con un'?immagine (di|con|che mostra) ([^,\.;]+)/gi,
+    /aggiungi un'?immagine (di|con|che mostra) ([^,\.;]+)/gi,
+    /immagine (di|con|che mostra) ([^,\.;]+)/gi
+  ];
+  
+  patterns.forEach(pattern => {
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      const imageDescription = match[2].trim();
+      if (imageDescription && imageDescription.length > 3) {
+        imageRequests.push({
+          description: imageDescription,
+          searchKeywords: imageDescription.replace(/degli?|del|della|delle|con|per|in/gi, '').trim()
+        });
+      }
+    }
+  });
+  
+  console.log('🖼️ Extracted image requests:', imageRequests);
+  return imageRequests;
+}
+
+/**
  * 🎨 ENDPOINT GENERAZIONE WEBSITE CON CLAUDE SONNET
  * POST /api/claude/generate
  */
@@ -43,14 +77,37 @@ router.post('/generate', async (req, res) => {
     
     console.log('🎭 Mode:', generationMode.toUpperCase());
 
-    // �️ RECUPERO IMMAGINI DA UNSPLASH
+    // 🖼️ ESTRAI RICHIESTE SPECIFICHE DI IMMAGINI
+    const imageRequests = extractImageRequests(businessDescription);
+    
+    // 🖼️ RECUPERO IMMAGINI DA UNSPLASH - SPECIFICHE + GENERICHE
     console.log('🖼️ Fetching images from Unsplash...');
+    
+    // Immagini generiche per il business
     const businessImages = await UnsplashService.getBusinessImages(
       businessType || 'business', 
       businessName, 
-      6
+      3
     );
-    console.log(`✅ Retrieved ${businessImages.total} images from Unsplash`);
+    
+    // Immagini specifiche dalle richieste del cliente
+    const specificImages = [];
+    for (const request of imageRequests) {
+      try {
+        console.log(`🔍 Searching for: ${request.searchKeywords}`);
+        const specificImage = await UnsplashService.searchSpecificImage(request.searchKeywords);
+        if (specificImage) {
+          specificImages.push({
+            ...specificImage,
+            requestDescription: request.description
+          });
+        }
+      } catch (error) {
+        console.log(`⚠️ Failed to find image for: ${request.searchKeywords}`);
+      }
+    }
+    
+    console.log(`✅ Retrieved ${businessImages.total} generic + ${specificImages.length} specific images`);
 
     // 🎭 TEMPERATURA DINAMICA BASATA SU MODALITÀ
     const temperature = generationMode === 'professional' ? 0.3 : 0.9;
@@ -80,6 +137,14 @@ ${businessImages.services.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).joi
 BACKGROUND IMAGES (per sfondi sezioni):
 ${businessImages.backgrounds.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).join('\n')}
 
+🎯 IMMAGINI SPECIFICHE RICHIESTE DAL CLIENTE:
+${specificImages.length > 0 
+  ? specificImages.map((img, i) => `${i+1}. ${img.url} (per: ${img.requestDescription})`).join('\n')
+  : 'Nessuna immagine specifica richiesta'
+}
+
+🚨 PRIORITÀ IMMAGINI: USA SEMPRE le "IMMAGINI SPECIFICHE RICHIESTE DAL CLIENTE" quando disponibili per le sezioni corrispondenti!
+
 🎨 LINEE GUIDA DESIGN:
 - Modalità: ${generationMode === 'professional' ? 'PROFESSIONALE (elegante, pulito, tradizionale)' : 'CREATIVO (audace, colorato, originale)'}
 - Rispecchia il settore: ${businessType || 'business'}
@@ -91,6 +156,12 @@ ${businessImages.backgrounds.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).
 - Se elenca PRODOTTI specifici (orchidee, rose rosse, piante ornamentali) - scrivili nel contenuto
 - NO template generici quando il cliente è specifico
 - SÌ a ogni singolo dettaglio richiesto nella descrizione
+
+🚨 STOP AL RAGGRUPPAMENTO GENERICO:
+- NON raggruppare tutto in "I Nostri Servizi" o "Servizi"
+- Se il cliente chiede 4 sezioni separate, crea 4 sezioni separate
+- Ogni sezione deve avere il suo ID univoco e il titolo esatto richiesto
+- Esempio: se chiede "Alberi da Frutta" + "Giardinaggio Casalingo" = 2 sezioni separate, non 1 sezione "Servizi"
 
 STRUTTURA JSON ESATTA:
 {
@@ -108,20 +179,47 @@ STRUTTURA JSON ESATTA:
       }
     },
     {
-      "id": "services", 
+      "id": "section1", 
       "type": "services",
-      "title": "Titolo sezione servizi/prodotti COME RICHIESTO dal cliente",
+      "title": "TITOLO ESATTO RICHIESTO DAL CLIENTE (es: Alberi da Frutta)",
       "backgroundImage": "URL_BACKGROUND_IMAGE_DA_LISTA_SOPRA",
       "content": {
         "subtitle": "Sottotitolo pertinente",
-        "description": "Descrizione dei servizi/prodotti",
+        "description": "Descrizione specifica per questa sezione",
         "items": [
           {
-            "title": "Nome prodotto/servizio REALE richiesto dal cliente",
-            "description": "Descrizione accurata del prodotto/servizio",
+            "title": "Prodotto specifico di questa categoria",
+            "description": "Descrizione accurata del prodotto",
             "image": "URL_SERVICE_IMAGE_DA_LISTA_SOPRA"
           }
         ]
+      }
+    },
+    {
+      "id": "section2",
+      "type": "services", 
+      "title": "SECONDO TITOLO ESATTO (es: Giardinaggio Casalingo)",
+      "backgroundImage": "URL_BACKGROUND_IMAGE_DA_LISTA_SOPRA",
+      "content": {
+        "subtitle": "Sottotitolo della seconda sezione",
+        "description": "Descrizione specifica per la seconda sezione",
+        "items": [
+          {
+            "title": "Prodotto della seconda categoria",
+            "description": "Descrizione della seconda categoria",
+            "image": "URL_SERVICE_IMAGE_DA_LISTA_SOPRA"
+          }
+        ]
+      }
+    },
+    {
+      "id": "section3",
+      "type": "services",
+      "title": "TERZO TITOLO ESATTO (es: Piante Ornamentali)",
+      "backgroundImage": "URL_BACKGROUND_IMAGE_DA_LISTA_SOPRA", 
+      "content": {
+        "subtitle": "Sottotitolo della terza sezione",
+        "description": "Descrizione specifica per la terza sezione"
       }
     },
     {
