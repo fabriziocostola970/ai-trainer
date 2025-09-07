@@ -273,11 +273,11 @@ STRUTTURA JSON ESATTA:
 
 RISPONDI SOLO CON IL JSON - NIENTE ALTRO! SENZA BACKTICKS O FORMATTAZIONE!`;
 
-    // 🚀 CHIAMATA A CLAUDE SONNET
-    console.log(`🚀 Calling Claude Sonnet API... (${generationMode.toUpperCase()} mode, temperature: ${temperature})`);
+    // 🚀 CHIAMATA A CLAUDE SONNET 4 (NUOVO MODELLO)
+    console.log(`🚀 Calling Claude Sonnet 4 API... (${generationMode.toUpperCase()} mode, temperature: ${temperature})`);
     
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20240620',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 4000,
       temperature: temperature, // 🎭 TEMPERATURA DINAMICA PER MODALITÀ
       messages: [
@@ -395,7 +395,7 @@ router.get('/health', async (req, res) => {
           use_case: 'Corporate, services, e-commerce'
         }
       },
-      model: 'claude-3-5-sonnet-20240620',
+      model: 'claude-sonnet-4-20250514',
       endpoint: '/api/claude/generate',
       parameters: {
         required: ['businessName'],
