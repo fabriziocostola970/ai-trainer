@@ -85,6 +85,13 @@ ${businessImages.backgrounds.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).
 - Rispecchia il settore: ${businessType || 'business'}
 - Tono: Adatto al target del business
 
+🔥 REGOLE RIGIDE PER CONTATTI E SPECIFICHE:
+- Se il cliente fornisce INDIRIZZO, TELEFONO, WHATSAPP, ORARI - usali ESATTAMENTE
+- Se specifica SEZIONI precise (es: "Alberi da Frutta", "Giardinaggio Casalingo") - creale con QUESTI NOMI ESATTI
+- Se elenca PRODOTTI specifici (orchidee, rose rosse, piante ornamentali) - scrivili nel contenuto
+- NO template generici quando il cliente è specifico
+- SÌ a ogni singolo dettaglio richiesto nella descrizione
+
 STRUTTURA JSON ESATTA:
 {
   "title": "Titolo sito appropriato al business",
@@ -150,10 +157,13 @@ STRUTTURA JSON ESATTA:
 
 🎯 ESEMPI DI SETTORI SPECIFICI:
 - AUTOMOBILI: Crea sezioni per "Auto Nuove", "Auto Usate", "Furgoni Commerciali" con filtri di ricerca (alimentazione, cilindrata, tipo veicolo)
+- FIORISTI: Se chiedono "Alberi da Frutta", "Giardinaggio Casalingo", "Piante Ornamentali", "Cerimonie" - usa ESATTAMENTE questi nomi
 - RISTORANTI: Menu, specialità, prenotazioni, delivery
 - IMMOBILIARE: Proprietà in vendita, affitto, servizi immobiliari
 - MODA: Collezioni, catalogo prodotti, lookbook
 - SERVIZI: Pacchetti servizi, consulenze, portfolio lavori
+
+⚠️ CONTATTI PRECISI: Se forniti indirizzo, telefono, WhatsApp, orari - inseriscili nella sezione contact ESATTAMENTE come scritti dal cliente
 
 🖼️ ISTRUZIONI IMMAGINI:
 - USA LE IMMAGINI dalla lista fornita sopra
