@@ -78,13 +78,13 @@ async function runAllTests() {
   
   try {
     const pizzeria = await testPizzeria();
-    console.log(`✅ Pizzeria: ${pizzeria.website?.totalSections} sezioni generate\n`);
+    console.log(`✅ Pizzeria: ${pizzeria.website?.sections?.length || 0} sezioni generate\n`);
     
     const techStore = await testTechStore();
-    console.log(`✅ Tech Store: ${techStore.website?.totalSections} sezioni generate\n`);
+    console.log(`✅ Tech Store: ${techStore.website?.sections?.length || 0} sezioni generate\n`);
     
     const florist = await testFlorist();
-    console.log(`✅ Fioraio: ${florist.website?.totalSections} sezioni generate\n`);
+    console.log(`✅ Fioraio: ${florist.website?.sections?.length || 0} sezioni generate\n`);
     
     console.log('🎉 TUTTI I TEST COMPLETATI CON SUCCESSO!');
     

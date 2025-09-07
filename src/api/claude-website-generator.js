@@ -2,15 +2,17 @@ const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const UnifiedImageService = require('../services/unified-image-service.js');
-const BusinessPreProcessor = require('../services/business-preprocessor.js');
+const RequirementValidator = require('../services/requirement-validator.js');
 
-// CLAUDE SONNET 4 - SMART PREPROCESSING SYSTEM
+// CLAUDE SONNET 4 - CREATIVE GENERATION + REQUIREMENT VALIDATION
 const anthropic = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY,
 });
 
+const requirementValidator = new RequirementValidator();
+
 /**
- * ENDPOINT GENERAZIONE WEBSITE CON CLAUDE SONNET + SMART PREPROCESSING
+ * ENDPOINT GENERAZIONE WEBSITE CON CLAUDE SONNET + REQUIREMENT VALIDATION
  * POST /api/claude/generate
  */
 router.post('/generate', async (req, res) => {
@@ -24,68 +26,22 @@ router.post('/generate', async (req, res) => {
       });
     }
 
-    console.log('CLAUDE + SMART PRE-PROCESSOR - GENERAZIONE WEBSITE');
+    console.log('🎨 CLAUDE CREATIVE GENERATION + VALIDATION');
     console.log('Business:', { businessName, businessType, businessDescription });
-    
-    // MODALITA GENERAZIONE: creative | professional
-    let generationMode = mode.toLowerCase();
-    
-    if (mode === 'creative' && businessType) {
-      const professionalTypes = ['consulenza', 'avvocato', 'medico', 'dentista', 'commercialista', 
-                                'agenzia', 'studio', 'clinica', 'banca', 'assicurazione', 'contabilità'];
-      
-      if (professionalTypes.some(type => businessType.toLowerCase().includes(type))) {
-        generationMode = 'professional';
-        console.log('AUTO-DETECTED: Professional mode per business type');
-      }
-    }
-    
-    console.log('Mode:', generationMode.toUpperCase());
-
-    // SMART PRE-PROCESSING - ANALISI INTELLIGENTE RICHIESTA CLIENTE
-    console.log('Starting smart pre-processing...');
-    const preProcessedData = await BusinessPreProcessor.processBusinessRequest(
-      businessName,
-      businessType, 
-      businessDescription,
-      generationMode
-    );
-    
-    console.log('Pre-processing completed:', {
-      extractedSections: preProcessedData.extractedSections.length,
-      imageRequests: preProcessedData.imageRequests.length,
-      designContext: preProcessedData.designContext.style
+      design: clientRequirements.design.length
     });
 
-    // RECUPERO IMMAGINI CON SISTEMA UNIFICATO - Pexels → Unsplash fallback
-    console.log('Fetching images with unified service (Pexels → Unsplash)...');
+    // 🖼️ RECUPERO IMMAGINI BASATO SUL BUSINESS TYPE
+    console.log('🖼️ Fetching relevant images...');
     
     // Immagini generiche per il business
     const businessImages = await UnifiedImageService.getBusinessImages(
       businessType || 'business', 
       businessName, 
-      3
+      6
     );
     
-    // Immagini specifiche dalle richieste PRE-PROCESSATE
-    const specificImages = [];
-    for (const request of preProcessedData.imageRequests) {
-      try {
-        console.log(`Searching for: ${request.searchKeywords}`);
-        const specificImageResults = await UnifiedImageService.searchImages(request.searchKeywords, 1);
-        if (specificImageResults && specificImageResults.length > 0) {
-          specificImages.push({
-            ...specificImageResults[0],
-            requestDescription: request.description,
-            category: request.category
-          });
-        }
-      } catch (error) {
-        console.log(`Failed to find image for: ${request.searchKeywords}`);
-      }
-    }
-    
-    console.log(`Retrieved ${businessImages.total} generic + ${specificImages.length} specific images`);
+    console.log(`✅ Retrieved ${businessImages.total} images`);
 
     // 🆔 Genera ID univoco per il website (per tracking immagini)
     const websiteId = `${businessName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}`;
@@ -136,62 +92,48 @@ router.post('/generate', async (req, res) => {
     };
 
     // 📊 LOG delle URL che verranno usate
-    console.log('🔍 Image URLs being used:');
+    console.log('🔍 Available images for Claude:');
     if (businessImages.hero?.length > 0) {
       console.log('Hero images:', businessImages.hero.map(img => getImageUrl(img)));
     }
-    if (businessImages.services?.length > 0) {
-      console.log('Service images:', businessImages.services.map(img => getImageUrl(img)));
-    }
-    if (businessImages.backgrounds?.length > 0) {
-      console.log('Background images:', businessImages.backgrounds.map(img => getImageUrl(img)));
-    }
 
-    // TEMPERATURA DINAMICA BASATA SU MODALITA
-    const temperature = generationMode === 'professional' ? 0.3 : 0.9;
+    // 🎨 PROMPT CLAUDE COMPLETAMENTE CREATIVO E LIBERO
+    const claudePrompt = `SEI UN WEB DESIGNER ESPERTO E ALTAMENTE CREATIVO!
 
-    // PROMPT CLAUDE CON PRE-PROCESSING INTELLIGENTE
-    const claudePrompt = `SEI UN WEB DESIGNER ESPERTO CHE SEGUE SEMPRE LE SPECIFICHE DEL CLIENTE!
+Crea un sito web COMPLETO per: ${businessName}
+Settore: ${businessType || 'business'}
 
-Crea un sito web PERFETTO per: ${businessName} (${businessType || 'business'})
+RICHIESTA COMPLETA DEL CLIENTE:
+${businessDescription}
 
-DESCRIZIONE E RICHIESTE SPECIFICHE DEL CLIENTE:
-${businessDescription || 'Business innovativo'}
+ISTRUZIONI IMPORTANTI:
+- Analizza ATTENTAMENTE la richiesta del cliente sopra
+- Implementa OGNI singolo elemento richiesto (sezioni, funzionalità, filtri, ecc.)
+- Se il cliente chiede FILTRI di ricerca, creali funzionanti con JavaScript
+- Se chiede specifiche categorie di prodotti, organizzale nel layout
+- Mantieni lo stile richiesto (aggressivo/colorato/professionale/ecc.)
+- Sii CREATIVO nella struttura e nel design, ma RISPETTA ogni richiesta
 
-ISTRUZIONI SMART PRE-PROCESSATE:
-${preProcessedData.claudeInstructions}
+IMMAGINI DISPONIBILI (usa queste URL esatte):
+${businessImages.hero?.map((img, i) => `HERO ${i+1}: ${getImageUrl(img)}`).join('\n') || 'Nessuna immagine hero'}
+${(businessImages.services || []).map((img, i) => `CONTENT ${i+1}: ${getImageUrl(img)}`).join('\n') || 'Nessuna immagine content'}
+${(businessImages.backgrounds || []).map((img, i) => `BACKGROUND ${i+1}: ${getImageUrl(img)}`).join('\n') || 'Nessuna immagine background'}
 
-IMPORTANTISSIMO: SEGUI ESATTAMENTE LE RICHIESTE DELLA DESCRIZIONE SOPRA!
-- Se il cliente chiede sezioni specifiche, creale esattamente come richiesto
-- Se chiede funzionalità particolari (filtri, categorie, ecc.), includile nel design
-- Se specifica stili o colori, rispettali
-- Se richiede elementi specifici, non inventarne altri
-- La creatività deve RISPETTARE sempre le specifiche del cliente
+IMPORTANTE: Usa SOLO le immagini elencate sopra con le loro URL esatte!
 
-IMMAGINI DISPONIBILI PER IL SITO:
-HERO IMAGES (per header/hero section):
-${businessImages.hero?.map((img, i) => `${i+1}. ${getImageUrl(img)} (${img.alt || 'Hero image'})`).join('\n') || 'Nessuna immagine hero disponibile'}
+CREATIVITÀ TOTALE PERMESSA:
+- Design layout innovativo e accattivante
+- Usa colori, animazioni, effetti creativi 
+- Struttura creativa delle sezioni
+- Typography moderna e impattante
+- Interazioni JavaScript creative
+- Layout responsive e moderno
 
-SERVICE IMAGES (per servizi/prodotti):  
-${(businessImages.services || businessImages.service)?.map((img, i) => `${i+1}. ${getImageUrl(img)} (${img.alt || 'Service image'})`).join('\n') || 'Nessuna immagine servizi disponibile'}
-
-BACKGROUND IMAGES (per sfondi sezioni):
-${(businessImages.backgrounds || businessImages.background)?.map((img, i) => `${i+1}. ${getImageUrl(img)} (${img.alt || 'Background image'})`).join('\n') || 'Nessuna immagine background disponibile'}
-
-IMMAGINI SPECIFICHE RICHIESTE DAL CLIENTE:
-${specificImages.length > 0 
-  ? specificImages.map((img, i) => `${i+1}. ${getImageUrl(img)} (per: ${img.requestDescription}, categoria: ${img.category})`).join('\n')
-  : 'Nessuna immagine specifica richiesta'
-}
-
-PRIORITA IMMAGINI: USA SEMPRE le "IMMAGINI SPECIFICHE RICHIESTE DAL CLIENTE" quando disponibili per le sezioni corrispondenti!
-
-DESIGN CONTEXT PRE-ANALIZZATO:
-- Modalità: ${generationMode === 'professional' ? 'PROFESSIONALE (elegante, pulito, tradizionale)' : 'CREATIVO (audace, colorato, originale)'}
-- Settore: ${preProcessedData.designContext.industry}
-- Stile: ${preProcessedData.designContext.style}
-- Mood: ${preProcessedData.designContext.mood}
-- Colori suggeriti: ${preProcessedData.designContext.colors.join(', ')}
+PERO' RISPETTA SEMPRE:
+- Ogni richiesta specifica del cliente
+- Sezioni e funzionalità richieste
+- Stile generale indicato dal cliente
+- Filtri o funzionalità specifiche menzionate
 
 REGOLE RIGIDE PER CONTATTI E SPECIFICHE:
 - Se il cliente fornisce INDIRIZZO, TELEFONO, WHATSAPP, ORARI - usali ESATTAMENTE
@@ -252,19 +194,56 @@ STRUTTURA JSON ESATTA:
 
 REGOLE ASSOLUTE:
 1. RISPETTA OGNI SINGOLA RICHIESTA della descrizione cliente
-2. USA le immagini specifiche per le sezioni corrispondenti  
+2. USA le immagini fornite con le URL esatte
 3. CREA sezioni separate se richieste separate
 4. NON inventare contatti se non forniti
-5. SEGUI il design context pre-analizzato
-6. OUTPUT: SOLO JSON valido, nessun testo extra`;
+5. SFRUTTA tutta la creatività per design e layout
+6. OUTPUT: SOLO JSON valido, nessun testo extra
 
-    console.log('Calling Claude Sonnet 4...');
+STRUTTURA JSON:
+{
+  "website": {
+    "name": "${businessName}",
+    "title": "Titolo creativo basato sulla richiesta",
+    "description": "Meta description SEO",
+    "sections": [
+      {
+        "id": "hero",
+        "type": "hero", 
+        "title": "Hero Title",
+        "content": "Hero content",
+        "image": "URL_HERO_IMAGE",
+        "backgroundColor": "#HEX_COLOR",
+        "textColor": "#FFFFFF"
+      }
+      // ... altre sezioni richieste dal cliente
+    ],
+    "contact": {
+      "phone": "SOLO se specificato dal cliente",
+      "email": "SOLO se specificato dal cliente", 
+      "address": "SOLO se specificato dal cliente",
+      "whatsapp": "SOLO se specificato dal cliente",
+      "hours": "SOLO se specificato dal cliente"
+    },
+    "colors": {
+      "primary": "#colore_principale",
+      "secondary": "#colore_secondario", 
+      "accent": "#colore_accento"
+    },
+    "fonts": {
+      "heading": "Font moderno per titoli",
+      "body": "Font leggibile per testo"
+    }
+  }
+}`;
+
+    console.log('🎨 Calling Claude Sonnet 4 with CREATIVE freedom...');
     
-    // CHIAMATA A CLAUDE SONNET 4
+    // CHIAMATA A CLAUDE SONNET 4 CON MASSIMA CREATIVITÀ
     const claudeResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4000,
-      temperature: temperature,
+      temperature: 0.9, // Alta creatività sempre
       messages: [
         {
           role: 'user',
@@ -274,6 +253,7 @@ REGOLE ASSOLUTE:
     });
 
     const responseText = claudeResponse.content[0].text;
+    console.log('✅ Claude response received');
     
     // PARSE JSON RESPONSE
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -282,30 +262,71 @@ REGOLE ASSOLUTE:
     }
 
     const website = JSON.parse(jsonMatch[0]);
+    console.log(`🏗️  Website generated with ${website.website.sections.length} sections`);
+
+    // 🔍 VALIDAZIONE POST-GENERAZIONE CON REQUIREMENT VALIDATOR
+    console.log('🔍 Validating generated website against client requirements...');
     
-    // SALVA DATI DI TRAINING
-    preProcessedData.trainingData.output = website;
-    preProcessedData.trainingData.claude_response_length = responseText.length;
-    
-    console.log('Training data prepared for future ML:', {
-      sections_requested: preProcessedData.extractedSections.length,
-      sections_generated: website.website.sections.length,
-      images_used: specificImages.length
-    });
+    const validator = new RequirementValidator();
+    const clientRequirements = validator.extractRequirements(businessDescription);
+    const validationResult = validator.validateGeneratedHTML(
+      JSON.stringify(website), 
+      businessDescription
+    );
+
+    console.log('📋 Client requirements found:', clientRequirements.length);
+    console.log('✅ Requirements satisfied:', validationResult.satisfied.length);
+    console.log('❌ Requirements missing:', validationResult.missing.length);
+
+    // 🚨 SE CI SONO REQUISITI MANCANTI, COMPLETA AUTOMATICAMENTE
+    if (validationResult.missing.length > 0) {
+      console.log('🔧 Auto-completing missing requirements...');
+      
+      const completionPrompt = validator.generateCompletionPrompt(
+        website, 
+        validationResult.missing
+      );
+
+      const completionResponse = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        temperature: 0.7,
+        messages: [
+          {
+            role: 'user',
+            content: completionPrompt
+          }
+        ]
+      });
+
+      const completionText = completionResponse.content[0].text;
+      const completionMatch = completionText.match(/\{[\s\S]*\}/);
+      
+      if (completionMatch) {
+        const completedWebsite = JSON.parse(completionMatch[0]);
+        website.website = completedWebsite.website;
+        console.log('✅ Website completed with missing requirements');
+      }
+    }
 
     // RESPONSE
     res.json({
       success: true,
       website: website.website,
       metadata: {
-        temperature: temperature,
-        mode: generationMode,
-        preprocessing: {
-          sectionsExtracted: preProcessedData.extractedSections.length,
-          imagesRequested: preProcessedData.imageRequests.length,
-          designContext: preProcessedData.designContext
+        creative_mode: true,
+        requirements_validation: {
+          total_requirements: clientRequirements.length,
+          satisfied: validationResult.satisfied.length,
+          missing_auto_completed: validationResult.missing.length
         },
-        trainingData: preProcessedData.trainingData
+        images_used: {
+          hero: businessImages.hero?.length || 0,
+          content: (businessImages.services || []).length,
+          backgrounds: (businessImages.backgrounds || []).length
+        },
+        website_id: websiteId,
+        creative_system: 'v2.0 - Post-validation requirements'
       }
     });
 
