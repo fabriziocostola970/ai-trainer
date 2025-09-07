@@ -39,7 +39,7 @@ router.post('/generate-html', async (req, res) => {
 
     // 🖼️ OTTIENI IMMAGINI DAL UNIFIED SERVICE
     console.log('🖼️ Fetching images...');
-    const businessImages = await UnifiedImageService.downloadBusinessImages(
+    const businessImages = await UnifiedImageService.getBusinessImages(
       businessName, 
       businessType, 
       businessDescription,
