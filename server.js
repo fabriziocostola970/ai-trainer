@@ -205,6 +205,10 @@ app.get('/api/design/extraction-stats', (req, res) => {
 const claudeRouter = require('./src/api/claude-website-generator');
 app.use('/api/claude', claudeRouter);
 
+// 🎨 CLAUDE HTML GENERATOR ROUTES (Direct HTML Generation)
+const claudeHtmlRouter = require('./src/api/claude-html-generator');
+app.use('/api/claude', claudeHtmlRouter);
+
 // Basic root endpoint
 app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'frontend', 'index.html');

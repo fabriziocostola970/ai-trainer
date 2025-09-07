@@ -9,8 +9,6 @@ const anthropic = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY,
 });
 
-const requirementValidator = new RequirementValidator();
-
 /**
  * ENDPOINT GENERAZIONE WEBSITE CON CLAUDE SONNET + REQUIREMENT VALIDATION
  * POST /api/claude/generate
@@ -28,8 +26,6 @@ router.post('/generate', async (req, res) => {
 
     console.log('🎨 CLAUDE CREATIVE GENERATION + VALIDATION');
     console.log('Business:', { businessName, businessType, businessDescription });
-      design: clientRequirements.design.length
-    });
 
     // 🖼️ RECUPERO IMMAGINI BASATO SUL BUSINESS TYPE
     console.log('🖼️ Fetching relevant images...');
@@ -147,50 +143,6 @@ STOP AL RAGGRUPPAMENTO GENERICO:
 - Se il cliente chiede 4 sezioni separate, crea 4 sezioni separate
 - Ogni sezione deve avere il suo ID univoco e il titolo esatto richiesto
 - Esempio: se chiede "Alberi da Frutta" + "Giardinaggio Casalingo" = 2 sezioni separate, non 1 sezione "Servizi"
-
-STRUTTURA JSON ESATTA:
-{
-  "website": {
-    "name": "${businessName}",
-    "title": "Titolo Specifico Based on Request",
-    "description": "Meta description SEO",
-    "sections": [
-      {
-        "id": "hero",
-        "type": "hero",
-        "title": "Hero Title che rispetta richiesta cliente",
-        "content": "Hero content with specific business info",
-        "image": "URL_HERO_IMAGE",
-        "backgroundColor": "#HEX_COLOR",
-        "textColor": "#FFFFFF"
-      },
-      {
-        "id": "section_name_exact_from_request",
-        "type": "service",
-        "title": "EXACT TITLE from client request",
-        "content": "Specific content for this exact section",
-        "image": "URL_SPECIFIC_IMAGE_IF_REQUESTED",
-        "backgroundColor": "#HEX_COLOR"
-      }
-    ],
-    "contact": {
-      "phone": "ONLY if specified by client",
-      "email": "ONLY if specified by client", 
-      "address": "ONLY if specified by client",
-      "whatsapp": "ONLY if specified by client",
-      "hours": "ONLY if specified by client"
-    },
-    "colors": {
-      "primary": "${preProcessedData.designContext.colors[0] || '#2196F3'}",
-      "secondary": "${preProcessedData.designContext.colors[1] || '#FF5722'}",
-      "accent": "${preProcessedData.designContext.colors[2] || '#4CAF50'}"
-    },
-    "fonts": {
-      "heading": "Modern font appropriate for ${businessType}",
-      "body": "Clean readable font"
-    }
-  }
-}
 
 REGOLE ASSOLUTE:
 1. RISPETTA OGNI SINGOLA RICHIESTA della descrizione cliente
