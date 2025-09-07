@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
+const UnsplashService = require('../services/unsplash-service.js').default;
 
 // 🚀 CLAUDE PURO - ZERO FALLBACK - SOLO CREATIVITÀ CLAUDE
 const anthropic = new Anthropic({
@@ -25,12 +26,31 @@ router.post('/generate', async (req, res) => {
     console.log('🎨 CLAUDE PURO AI-TRAINER - GENERAZIONE WEBSITE');
     console.log('📋 Business:', { businessName, businessType, businessDescription });
 
-    // 🔥 PROMPT CLAUDE MASSIMA CREATIVITÀ
+    // �️ RECUPERO IMMAGINI DA UNSPLASH
+    console.log('🖼️ Fetching images from Unsplash...');
+    const businessImages = await UnsplashService.getBusinessImages(
+      businessType || 'business', 
+      businessName, 
+      6
+    );
+    console.log(`✅ Retrieved ${businessImages.total} images from Unsplash`);
+
+    // �🔥 PROMPT CLAUDE MASSIMA CREATIVITÀ
     const claudePrompt = `SEI UN WEB DESIGNER GENIALE E COMPLETAMENTE LIBERO!
 
 Crea un sito web STRAORDINARIO per: ${businessName} (${businessType || 'business'})
 
 DESCRIZIONE: ${businessDescription || 'Business innovativo'}
+
+🖼️ IMMAGINI DISPONIBILI PER IL SITO:
+HERO IMAGES (per header/hero section):
+${businessImages.hero.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).join('\n')}
+
+SERVICE IMAGES (per servizi/prodotti):  
+${businessImages.services.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).join('\n')}
+
+BACKGROUND IMAGES (per sfondi sezioni):
+${businessImages.backgrounds.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).join('\n')}
 
 🎨 DIVERSITÀ ESTREMA OBBLIGATORIA:
 - CAMBIA COMPLETAMENTE lo stile da qualsiasi sito precedente
@@ -52,6 +72,7 @@ STRUTTURA JSON ESATTA:
       "id": "hero",
       "type": "hero",
       "title": "TITOLO HERO CHE SPACCA",
+      "image": "URL_HERO_IMAGE_DA_LISTA_SOPRA",
       "content": {
         "subtitle": "Sottotitolo magnetico",
         "description": "Storia epica in HTML con grassetti e corsivi"
@@ -61,29 +82,25 @@ STRUTTURA JSON ESATTA:
       "id": "services",
       "type": "services", 
       "title": "SERVIZI DAI NOMI CREATIVI",
+      "backgroundImage": "URL_BACKGROUND_IMAGE_DA_LISTA_SOPRA",
       "content": {
-        "subtitle": "Tagline indimenticabile",
-        "description": "Intro servizi coinvolgente",
+        "subtitle": "Sottotitolo che incuriosisce",
+        "description": "Descrizione coinvolgente",
         "items": [
           {
-            "title": "Nome Servizio PAZZESCO #1",
-            "description": "Descrizione che vende emozioni"
-          },
-          {
-            "title": "Nome Servizio GENIALE #2", 
-            "description": "Descrizione che fa sognare"
-          },
-          {
-            "title": "Nome Servizio INCREDIBILE #3",
-            "description": "Descrizione che conquista"
+            "title": "SERVIZIO CON NOME FOLLE",
+            "description": "Descrizione che fa sognare",
+            "image": "URL_SERVICE_IMAGE_DA_LISTA_SOPRA"
           }
         ]
       }
+    }
     },
     {
       "id": "about",
       "type": "about",
       "title": "LA NOSTRA LEGGENDA EPICA", 
+      "backgroundImage": "URL_BACKGROUND_IMAGE_DA_LISTA_SOPRA",
       "content": {
         "subtitle": "Come è nata la magia",
         "description": "Storia coinvolgente con passione e visione del futuro"
@@ -109,6 +126,14 @@ STRUTTURA JSON ESATTA:
     "dynamicCSS": "CSS MAGICO con animazioni STRAORDINARIE! Crea effetti visivi UNICI per questo business specifico: gradienti personalizzati, animazioni tematiche, hover effects creativi, tipografia caratteristica. RENDI QUESTO SITO INCONFONDIBILE!"
   }
 }
+
+🖼️ ISTRUZIONI IMMAGINI:
+- USA LE IMMAGINI dalla lista fornita sopra
+- INSERISCI URL ESATTI delle immagini appropriate  
+- Hero section: usa HERO IMAGES
+- Servizi: usa SERVICE IMAGES per ogni item
+- Sfondi sezioni: usa BACKGROUND IMAGES
+- COMBINA immagini e CSS per effetti WOW!
 
 RISPONDI SOLO CON IL JSON - NIENTE ALTRO! SENZA BACKTICKS O FORMATTAZIONE!`;
 
