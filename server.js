@@ -100,7 +100,7 @@ app.get('/api/images/search', async (req, res) => {
     } = req.query;
 
     const imageDownloadService = require('./src/services/image-download-service');
-    const results = imageDownloadService.searchImages({
+    const results = await imageDownloadService.searchImages({
       businessType,
       businessName,
       category,

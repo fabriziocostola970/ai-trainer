@@ -107,7 +107,7 @@ router.post('/generate', async (req, res) => {
 
         if (imageFileNames.length > 0) {
           const imageDownloadService = require('../services/image-download-service');
-          const linkedCount = imageDownloadService.linkImagesToWebsite(
+          const linkedCount = await imageDownloadService.linkImagesToWebsite(
             websiteId, 
             imageFileNames, 
             'claude_website_generation'

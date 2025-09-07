@@ -1,31 +1,32 @@
 /**
  * 🗃️ IMAGE DATABASE SERVICE
- * Gestisce il tracking delle immagini nel database per collegamenti sito-immagini
+ * Gestisce il tracking delle immagini nel database PostgreSQL per collegamenti sito-immagini
  */
 
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs').promises;
+const { Pool } = require('pg');
 
 class ImageDatabaseService {
     constructor() {
-        const dbPath = path.join(process.cwd(), 'database', 'ai-trainer.db');
-        this.db = new Database(dbPath);
+        // Usa la connessione PostgreSQL esistente
+        this.pool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        });
+        
         this.initializeTables();
     }
 
     /**
      * 🏗️ Inizializza le tabelle se non esistono
      */
-    initializeTables() {
+    async initializeTables() {
         try {
-            // Leggi e esegui migration
-            const migrationPath = path.join(process.cwd(), 'database', 'migrations', 'add_image_tracking.sql');
+            const client = await this.pool.connect();
             
-            // Se il file non esiste, crea le tabelle inline
-            const tables = [
-                `CREATE TABLE IF NOT EXISTS downloaded_images (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+            // Crea le tabelle se non esistono
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS downloaded_images (
+                    id SERIAL PRIMARY KEY,
                     file_name TEXT NOT NULL UNIQUE,
                     original_url TEXT NOT NULL,
                     local_path TEXT NOT NULL,
@@ -34,32 +35,34 @@ class ImageDatabaseService {
                     category TEXT NOT NULL,
                     file_size INTEGER NOT NULL,
                     content_type TEXT NOT NULL,
-                    download_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    last_used DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    is_active BOOLEAN DEFAULT 1,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )`,
-                
-                `CREATE TABLE IF NOT EXISTS website_images (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    download_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    is_active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS website_images (
+                    id SERIAL PRIMARY KEY,
                     website_id TEXT NOT NULL,
                     image_id INTEGER NOT NULL,
                     usage_context TEXT NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (image_id) REFERENCES downloaded_images (id) ON DELETE CASCADE
-                )`,
+                )
+            `);
 
-                `CREATE INDEX IF NOT EXISTS idx_downloaded_images_business ON downloaded_images(business_type, business_name)`,
-                `CREATE INDEX IF NOT EXISTS idx_downloaded_images_active ON downloaded_images(is_active)`,
-                `CREATE INDEX IF NOT EXISTS idx_website_images_website ON website_images(website_id)`
-            ];
+            // Crea indici se non esistono
+            await client.query(`CREATE INDEX IF NOT EXISTS idx_downloaded_images_business ON downloaded_images(business_type, business_name)`);
+            await client.query(`CREATE INDEX IF NOT EXISTS idx_downloaded_images_active ON downloaded_images(is_active)`);
+            await client.query(`CREATE INDEX IF NOT EXISTS idx_downloaded_images_last_used ON downloaded_images(last_used)`);
+            await client.query(`CREATE INDEX IF NOT EXISTS idx_website_images_website ON website_images(website_id)`);
+            await client.query(`CREATE INDEX IF NOT EXISTS idx_website_images_image ON website_images(image_id)`);
 
-            tables.forEach(sql => {
-                this.db.exec(sql);
-            });
-
-            console.log('📊 Image database tables initialized');
+            client.release();
+            console.log('📊 Image database tables initialized in PostgreSQL');
         } catch (error) {
             console.error('❌ Error initializing image tables:', error);
         }
@@ -68,15 +71,19 @@ class ImageDatabaseService {
     /**
      * 💾 Registra un'immagine scaricata
      */
-    registerDownloadedImage(imageData) {
+    async registerDownloadedImage(imageData) {
         try {
-            const stmt = this.db.prepare(`
-                INSERT OR REPLACE INTO downloaded_images 
+            const client = await this.pool.connect();
+            
+            const result = await client.query(`
+                INSERT INTO downloaded_images 
                 (file_name, original_url, local_path, business_type, business_name, category, file_size, content_type, last_used)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            `);
-
-            const result = stmt.run(
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
+                ON CONFLICT (file_name) DO UPDATE SET
+                    last_used = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                RETURNING id
+            `, [
                 imageData.fileName,
                 imageData.originalUrl,
                 imageData.localPath,
@@ -85,10 +92,13 @@ class ImageDatabaseService {
                 imageData.category,
                 imageData.size,
                 imageData.contentType
-            );
+            ]);
 
-            console.log(`📝 Registered image: ${imageData.fileName}`);
-            return result.lastInsertRowid;
+            client.release();
+            
+            const imageId = result.rows[0]?.id;
+            console.log(`📝 Registered image: ${imageData.fileName} (ID: ${imageId})`);
+            return imageId;
 
         } catch (error) {
             console.error('❌ Error registering image:', error);
@@ -99,31 +109,35 @@ class ImageDatabaseService {
     /**
      * 🔗 Collega immagini a un sito web
      */
-    linkImagesToWebsite(websiteId, imageFileNames, usageContext = 'website_generation') {
+    async linkImagesToWebsite(websiteId, imageFileNames, usageContext = 'website_generation') {
         try {
-            const linkStmt = this.db.prepare(`
-                INSERT INTO website_images (website_id, image_id, usage_context)
-                SELECT ?, id, ?
-                FROM downloaded_images 
-                WHERE file_name = ? AND is_active = 1
-            `);
-
+            const client = await this.pool.connect();
             let linkedCount = 0;
+
             for (const fileName of imageFileNames) {
-                const result = linkStmt.run(websiteId, usageContext, fileName);
-                if (result.changes > 0) {
+                const result = await client.query(`
+                    INSERT INTO website_images (website_id, image_id, usage_context)
+                    SELECT $1, id, $2
+                    FROM downloaded_images 
+                    WHERE file_name = $3 AND is_active = true
+                `, [websiteId, usageContext, fileName]);
+
+                if (result.rowCount > 0) {
                     linkedCount++;
                 }
             }
 
             // Aggiorna last_used per le immagini collegate
-            const updateStmt = this.db.prepare(`
-                UPDATE downloaded_images 
-                SET last_used = CURRENT_TIMESTAMP 
-                WHERE file_name IN (${imageFileNames.map(() => '?').join(',')})
-            `);
-            updateStmt.run(...imageFileNames);
+            if (imageFileNames.length > 0) {
+                const placeholders = imageFileNames.map((_, i) => `$${i + 1}`).join(',');
+                await client.query(`
+                    UPDATE downloaded_images 
+                    SET last_used = CURRENT_TIMESTAMP 
+                    WHERE file_name IN (${placeholders})
+                `, imageFileNames);
+            }
 
+            client.release();
             console.log(`🔗 Linked ${linkedCount} images to website ${websiteId}`);
             return linkedCount;
 
@@ -136,16 +150,18 @@ class ImageDatabaseService {
     /**
      * 🗑️ Rimuovi collegamenti quando un sito viene eliminato
      */
-    unlinkWebsiteImages(websiteId) {
+    async unlinkWebsiteImages(websiteId) {
         try {
-            const stmt = this.db.prepare(`
+            const client = await this.pool.connect();
+            
+            const result = await client.query(`
                 DELETE FROM website_images 
-                WHERE website_id = ?
-            `);
+                WHERE website_id = $1
+            `, [websiteId]);
 
-            const result = stmt.run(websiteId);
-            console.log(`🗑️ Unlinked ${result.changes} images from website ${websiteId}`);
-            return result.changes;
+            client.release();
+            console.log(`🗑️ Unlinked ${result.rowCount} images from website ${websiteId}`);
+            return result.rowCount;
 
         } catch (error) {
             console.error('❌ Error unlinking website images:', error);
@@ -156,19 +172,23 @@ class ImageDatabaseService {
     /**
      * 🧹 Trova immagini orfane (non collegate a nessun sito)
      */
-    findOrphanImages(olderThanHours = 24) {
+    async findOrphanImages(olderThanHours = 24) {
         try {
-            const stmt = this.db.prepare(`
+            const client = await this.pool.connect();
+            
+            const result = await client.query(`
                 SELECT di.*
                 FROM downloaded_images di
                 LEFT JOIN website_images wi ON di.id = wi.image_id
                 WHERE wi.image_id IS NULL 
-                AND di.is_active = 1
-                AND datetime(di.last_used) < datetime('now', '-${olderThanHours} hours')
+                AND di.is_active = true
+                AND di.last_used < NOW() - INTERVAL '${olderThanHours} hours'
                 ORDER BY di.last_used ASC
             `);
 
-            const orphans = stmt.all();
+            client.release();
+            
+            const orphans = result.rows;
             console.log(`🔍 Found ${orphans.length} orphan images older than ${olderThanHours}h`);
             return orphans;
 
@@ -181,19 +201,22 @@ class ImageDatabaseService {
     /**
      * 🗑️ Marca immagini come inattive (soft delete)
      */
-    markImagesInactive(imageIds) {
+    async markImagesInactive(imageIds) {
         try {
             if (imageIds.length === 0) return 0;
 
-            const stmt = this.db.prepare(`
+            const client = await this.pool.connect();
+            
+            const placeholders = imageIds.map((_, i) => `$${i + 1}`).join(',');
+            const result = await client.query(`
                 UPDATE downloaded_images 
-                SET is_active = 0, updated_at = CURRENT_TIMESTAMP
-                WHERE id IN (${imageIds.map(() => '?').join(',')})
-            `);
+                SET is_active = false, updated_at = CURRENT_TIMESTAMP
+                WHERE id IN (${placeholders})
+            `, imageIds);
 
-            const result = stmt.run(...imageIds);
-            console.log(`🗑️ Marked ${result.changes} images as inactive`);
-            return result.changes;
+            client.release();
+            console.log(`🗑️ Marked ${result.rowCount} images as inactive`);
+            return result.rowCount;
 
         } catch (error) {
             console.error('❌ Error marking images inactive:', error);
@@ -204,59 +227,63 @@ class ImageDatabaseService {
     /**
      * 📊 Ottieni statistiche complete
      */
-    getDetailedStats() {
+    async getDetailedStats() {
         try {
+            const client = await this.pool.connect();
+
             // Statistiche generali
-            const generalStats = this.db.prepare(`
+            const generalResult = await client.query(`
                 SELECT 
                     COUNT(*) as total_images,
-                    COUNT(CASE WHEN is_active = 1 THEN 1 END) as active_images,
-                    COUNT(CASE WHEN is_active = 0 THEN 1 END) as inactive_images,
+                    COUNT(CASE WHEN is_active = true THEN 1 END) as active_images,
+                    COUNT(CASE WHEN is_active = false THEN 1 END) as inactive_images,
                     ROUND(SUM(file_size) / 1024.0 / 1024.0, 2) as total_size_mb,
-                    ROUND(SUM(CASE WHEN is_active = 1 THEN file_size ELSE 0 END) / 1024.0 / 1024.0, 2) as active_size_mb
+                    ROUND(SUM(CASE WHEN is_active = true THEN file_size ELSE 0 END) / 1024.0 / 1024.0, 2) as active_size_mb
                 FROM downloaded_images
-            `).get();
+            `);
 
             // Immagini collegate vs orfane
-            const linkageStats = this.db.prepare(`
+            const linkageResult = await client.query(`
                 SELECT 
                     COUNT(DISTINCT di.id) as linked_images,
                     COUNT(DISTINCT CASE WHEN wi.image_id IS NULL THEN di.id END) as orphan_images,
                     COUNT(DISTINCT wi.website_id) as linked_websites
                 FROM downloaded_images di
                 LEFT JOIN website_images wi ON di.id = wi.image_id
-                WHERE di.is_active = 1
-            `).get();
+                WHERE di.is_active = true
+            `);
 
             // Breakdown per business type
-            const businessStats = this.db.prepare(`
+            const businessResult = await client.query(`
                 SELECT 
                     business_type,
                     COUNT(*) as images_count,
                     ROUND(SUM(file_size) / 1024.0 / 1024.0, 2) as size_mb
                 FROM downloaded_images 
-                WHERE is_active = 1
+                WHERE is_active = true
                 GROUP BY business_type
                 ORDER BY images_count DESC
-            `).all();
+            `);
 
             // Breakdown per categoria
-            const categoryStats = this.db.prepare(`
+            const categoryResult = await client.query(`
                 SELECT 
                     category,
                     COUNT(*) as images_count,
                     ROUND(SUM(file_size) / 1024.0 / 1024.0, 2) as size_mb
                 FROM downloaded_images 
-                WHERE is_active = 1
+                WHERE is_active = true
                 GROUP BY category
                 ORDER BY images_count DESC
-            `).all();
+            `);
+
+            client.release();
 
             return {
-                general: generalStats,
-                linkage: linkageStats,
-                byBusinessType: businessStats,
-                byCategory: categoryStats,
+                general: generalResult.rows[0],
+                linkage: linkageResult.rows[0],
+                byBusinessType: businessResult.rows,
+                byCategory: categoryResult.rows,
                 timestamp: new Date().toISOString()
             };
 
@@ -269,24 +296,30 @@ class ImageDatabaseService {
     /**
      * 🔍 Cerca immagini per criteri
      */
-    searchImages(criteria = {}) {
+    async searchImages(criteria = {}) {
         try {
-            let whereClause = ['di.is_active = 1'];
+            const client = await this.pool.connect();
+            
+            let whereClause = ['di.is_active = true'];
             let params = [];
+            let paramCount = 1;
 
             if (criteria.businessType) {
-                whereClause.push('di.business_type = ?');
+                whereClause.push(`di.business_type = $${paramCount}`);
                 params.push(criteria.businessType);
+                paramCount++;
             }
 
             if (criteria.businessName) {
-                whereClause.push('di.business_name LIKE ?');
+                whereClause.push(`di.business_name ILIKE $${paramCount}`);
                 params.push(`%${criteria.businessName}%`);
+                paramCount++;
             }
 
             if (criteria.category) {
-                whereClause.push('di.category = ?');
+                whereClause.push(`di.category = $${paramCount}`);
                 params.push(criteria.category);
+                paramCount++;
             }
 
             if (criteria.linkedOnly) {
@@ -301,7 +334,7 @@ class ImageDatabaseService {
                 SELECT 
                     di.*,
                     COUNT(wi.id) as website_links,
-                    GROUP_CONCAT(DISTINCT wi.website_id) as linked_websites
+                    STRING_AGG(DISTINCT wi.website_id, ',') as linked_websites
                 FROM downloaded_images di
                 LEFT JOIN website_images wi ON di.id = wi.image_id
                 WHERE ${whereClause.join(' AND ')}
@@ -310,8 +343,10 @@ class ImageDatabaseService {
                 LIMIT ${criteria.limit || 100}
             `;
 
-            const results = this.db.prepare(sql).all(...params);
-            return results;
+            const result = await client.query(sql, params);
+            client.release();
+            
+            return result.rows;
 
         } catch (error) {
             console.error('❌ Error searching images:', error);
@@ -319,9 +354,9 @@ class ImageDatabaseService {
         }
     }
 
-    close() {
-        if (this.db) {
-            this.db.close();
+    async close() {
+        if (this.pool) {
+            await this.pool.end();
         }
     }
 }

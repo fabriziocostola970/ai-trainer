@@ -116,7 +116,7 @@ class ImageDownloadService {
                 contentType: contentType
             };
 
-            const imageId = this.dbService.registerDownloadedImage(imageData);
+            const imageId = await this.dbService.registerDownloadedImage(imageData);
 
             console.log(`✅ Immagine salvata: ${fileName}`);
 
@@ -234,7 +234,7 @@ class ImageDownloadService {
             console.log(`🧹 Smart cleanup: rimozione immagini orfane più vecchie di ${maxAgeHours}h`);
 
             // Trova immagini orfane nel database
-            const orphanImages = this.dbService.findOrphanImages(maxAgeHours);
+            const orphanImages = await this.dbService.findOrphanImages(maxAgeHours);
             
             if (orphanImages.length === 0) {
                 console.log('✅ Nessuna immagine orfana trovata');
@@ -254,7 +254,7 @@ class ImageDownloadService {
                     await fs.unlink(image.local_path);
                     
                     // Marca come inattivo nel database
-                    this.dbService.markImagesInactive([image.id]);
+                    await this.dbService.markImagesInactive([image.id]);
                     
                     deletedCount++;
                     console.log(`🗑️  Rimossa immagine orfana: ${image.file_name}`);
@@ -262,7 +262,7 @@ class ImageDownloadService {
                 } catch (fileError) {
                     console.warn(`⚠️  File già rimosso o non accessibile: ${image.file_name}`);
                     // Marca comunque come inattivo nel database
-                    this.dbService.markImagesInactive([image.id]);
+                    await this.dbService.markImagesInactive([image.id]);
                     errorCount++;
                 }
             }
@@ -290,7 +290,7 @@ class ImageDownloadService {
     async getStorageStats() {
         try {
             // Statistiche dal database
-            const dbStats = this.dbService.getDetailedStats();
+            const dbStats = await this.dbService.getDetailedStats();
             
             // Statistiche fisiche directory
             const files = await fs.readdir(this.businessImagesDir);
@@ -338,22 +338,22 @@ class ImageDownloadService {
     /**
      * 🔗 Collega immagini a un website (per tracking lifecycle)
      */
-    linkImagesToWebsite(websiteId, imageFileNames, usageContext = 'claude_generation') {
-        return this.dbService.linkImagesToWebsite(websiteId, imageFileNames, usageContext);
+    async linkImagesToWebsite(websiteId, imageFileNames, usageContext = 'claude_generation') {
+        return await this.dbService.linkImagesToWebsite(websiteId, imageFileNames, usageContext);
     }
 
     /**
      * 🗑️ Scollega immagini quando un website viene rimosso
      */
-    unlinkWebsiteImages(websiteId) {
-        return this.dbService.unlinkWebsiteImages(websiteId);
+    async unlinkWebsiteImages(websiteId) {
+        return await this.dbService.unlinkWebsiteImages(websiteId);
     }
 
     /**
      * 🔍 Cerca immagini nel database
      */
-    searchImages(criteria) {
-        return this.dbService.searchImages(criteria);
+    async searchImages(criteria) {
+        return await this.dbService.searchImages(criteria);
     }
 }
 
