@@ -114,7 +114,7 @@ class RequirementValidator {
         const html = htmlContent.toLowerCase();
 
         // Verifica SEZIONI
-        originalRequirements.sections.forEach(section => {
+        (originalRequirements.sections || []).forEach(section => {
             let found = false;
             switch(section) {
                 case 'Homepage':
@@ -139,7 +139,7 @@ class RequirementValidator {
         });
 
         // Verifica FUNZIONALITÀ
-        originalRequirements.features.forEach(feature => {
+        (originalRequirements.features || []).forEach(feature => {
             let found = false;
             switch(feature) {
                 case 'Sistema di filtri':
@@ -196,6 +196,7 @@ class RequirementValidator {
         let prompt = `ATTENZIONE: Il sito generato non soddisfa alcuni requisiti del cliente!\n\n`;
         prompt += `REQUISITI MANCANTI:\n`;
         
+        missingRequirements = missingRequirements || [];
         missingRequirements.forEach(req => {
             prompt += `- ${req}\n`;
         });

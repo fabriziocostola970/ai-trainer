@@ -223,10 +223,10 @@ STRUTTURA JSON:
     const clientRequirements = validator.extractRequirements(businessDescription);
     const validationResult = validator.validateGeneratedHTML(
       JSON.stringify(website), 
-      businessDescription
+      clientRequirements
     );
 
-    console.log('📋 Client requirements found:', clientRequirements.length);
+    console.log('📋 Client requirements found:', clientRequirements.sections?.length || 0);
     console.log('✅ Requirements satisfied:', validationResult.satisfied.length);
     console.log('❌ Requirements missing:', validationResult.missing.length);
 
