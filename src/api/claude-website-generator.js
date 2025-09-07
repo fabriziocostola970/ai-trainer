@@ -32,12 +32,16 @@ Crea un sito web STRAORDINARIO per: ${businessName} (${businessType || 'business
 
 DESCRIZIONE: ${businessDescription || 'Business innovativo'}
 
-LIBERTÀ TOTALE - SENTI LA TUA CREATIVITÀ:
-- Inventa nomi di servizi FOLLI e ORIGINALI
-- Usa COLORI AUDACI e combinazioni WOW  
-- Scrivi testi EMOZIONANTI che colpiscono il cuore
-- Crea titoli MAGNETICI che fanno venire voglia di leggere
-- Pensa come Steve Jobs + Van Gogh insieme!
+🎨 DIVERSITÀ ESTREMA OBBLIGATORIA:
+- CAMBIA COMPLETAMENTE lo stile da qualsiasi sito precedente
+- Inventa nomi di servizi FOLLI e MAI SENTITI PRIMA
+- USA COLORI che nessuno si aspetta per questo settore
+- Scrivi con PERSONALITÀ UNICA (formale/informale/poetico/aggressivo)
+- ROMPI LE CONVENZIONI del settore!
+
+🎯 ISPIRAZIONE CASUALE:
+- Mescola stili: ${['Minimalista Nordico', 'Cyberpunk Neon', 'Vintage Anni 70', 'Brutalista Moderno', 'Art Deco Luxury', 'Kawaii Giapponese', 'Industrial Grunge', 'Organic Nature'][Math.floor(Math.random() * 8)]}
+- Personalità: ${['Steve Jobs visionario', 'Gordon Ramsay aggressivo', 'David Attenborough narratore', 'Elon Musk futuristico', 'Wes Anderson estetico', 'Banksy ribelle'][Math.floor(Math.random() * 6)]}
 
 STRUTTURA JSON ESATTA:
 {
@@ -97,12 +101,12 @@ STRUTTURA JSON ESATTA:
     }
   ],
   "design": {
-    "primaryColor": "#FF6B6B",
-    "secondaryColor": "#4ECDC4",
-    "accentColor": "#45B7D1", 
-    "backgroundColor": "#FFFFFF",
-    "textColor": "#2C3E50",
-    "dynamicCSS": "CSS MAGICO QUI con animazioni STRAORDINARIE, gradienti FANTASTICI, effetti hover SPETTACOLARI! Usa la tua immaginazione più selvaggia per creare CSS che fa WOW!"
+    "primaryColor": "COLORE PRINCIPALE SORPRENDENTE che rifletta la personalità unica",
+    "secondaryColor": "COLORE SECONDARIO in armonia ma inaspettato", 
+    "accentColor": "COLORE ACCENTO che fa POP!",
+    "backgroundColor": "SFONDO che supporta l'atmosfera (bianco/nero/colorato)",
+    "textColor": "TESTO leggibile ma caratteristico",
+    "dynamicCSS": "CSS MAGICO con animazioni STRAORDINARIE! Crea effetti visivi UNICI per questo business specifico: gradienti personalizzati, animazioni tematiche, hover effects creativi, tipografia caratteristica. RENDI QUESTO SITO INCONFONDIBILE!"
   }
 }
 
