@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
-const UnsplashService = require('../services/unsplash-service.js').default;
+const UnsplashService = require('../services/unsplash-service.js');
 
 // 🚀 CLAUDE PURO - ZERO FALLBACK - SOLO CREATIVITÀ CLAUDE
 const anthropic = new Anthropic({

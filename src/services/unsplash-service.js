@@ -1,7 +1,7 @@
 // 🖼️ UNSPLASH SERVICE - Generatore Immagini per Claude
 // Servizio per recuperare immagini professionali da Unsplash
 
-import { createApi } from 'unsplash-js';
+const { createApi } = require('unsplash-js');
 
 class UnsplashService {
   constructor() {
@@ -146,4 +146,4 @@ class UnsplashService {
   }
 }
 
-export default new UnsplashService();
+module.exports = new UnsplashService();
