@@ -1,5 +1,5 @@
 const express = require('express');
-co    console.log(`✅ Retrieved ${businessImages.total} images from Unsplash`);
+    console.log(`✅ Retrieved ${businessImages.total} images from Unsplash`);
 
     // 🎭 PROMPT DINAMICO BASATO SU MODALITÀ
     let claudePrompt;
