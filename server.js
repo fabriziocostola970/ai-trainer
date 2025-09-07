@@ -42,6 +42,64 @@ app.use(express.static(path.join(__dirname, 'frontend'), {
   lastModified: true
 }));
 
+// 📸 Serve locally stored images
+app.use('/images', express.static(path.join(__dirname, 'uploads', 'images'), {
+  maxAge: '7d', // Cache immagini per 7 giorni
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, path, stat) => {
+    // Headers per le immagini
+    res.set({
+      'Cache-Control': 'public, max-age=604800', // 7 giorni
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+      'Access-Control-Allow-Headers': 'Range'
+    });
+  }
+}));
+
+// 📊 Endpoint per statistiche immagini
+app.get('/api/images/stats', async (req, res) => {
+  try {
+    const unifiedImageService = require('./src/services/unified-image-service');
+    const stats = await unifiedImageService.getStorageStats();
+    
+    res.json({
+      success: true,
+      stats: stats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Errore statistiche immagini:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// 🧹 Endpoint per pulizia cache immagini
+app.delete('/api/images/cleanup', async (req, res) => {
+  try {
+    const unifiedImageService = require('./src/services/unified-image-service');
+    const maxAgeHours = req.query.maxAge || 24;
+    
+    await unifiedImageService.cleanupLocalImages(maxAgeHours);
+    
+    res.json({
+      success: true,
+      message: `Cleanup completed for images older than ${maxAgeHours} hours`,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Errore pulizia immagini:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({

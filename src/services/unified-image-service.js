@@ -1,16 +1,23 @@
-// 🔄 UNIFIED IMAGE SERVICE - Bilanciamento intelligente Pexels + Unsplash
-// Sistema di fallback automatico per massima affidabilità
+// 🔄 UNIFIED IMAGE SERVICE - Bilanciamento intelligente Pexels + Unsplash + Storage Locale
+// Sistema di fallback automatico con download locale per massima affidabilità
 
 const PexelsServiceClass = require('./pexels-service');
 const UnsplashService = require('./unsplash-service');
+const ImageDownloadService = require('./image-download-service');
 
 class UnifiedImageService {
   constructor() {
     this.pexels = new PexelsServiceClass();
     this.unsplash = UnsplashService;
+    this.downloadService = new ImageDownloadService();
+    
+    // Configurazione
+    this.enableLocalStorage = true;
+    this.fallbackToExternal = true;
     
     console.log('🔄 Unified Image Service initialized');
-    console.log('📊 Strategy: Pexels → Unsplash fallback');
+    console.log('📊 Strategy: Pexels → Unsplash → Local Storage');
+    console.log('💾 Local storage enabled:', this.enableLocalStorage);
   }
 
   /**
@@ -29,6 +36,23 @@ class UnifiedImageService {
       if (result && result.total > 0) {
         console.log(`✅ SUCCESS with Pexels! Found ${result.total} images`);
         result.source = 'pexels';
+        
+        // 💾 Download locale se abilitato
+        if (this.enableLocalStorage) {
+          try {
+            console.log('💾 Downloading images locally...');
+            const localImages = await this.downloadService.downloadBusinessImages(result, businessType);
+            
+            if (localImages.stats.success > 0) {
+              console.log(`✅ Downloaded ${localImages.stats.success} images locally`);
+              result.localImages = localImages;
+              result.useLocal = true;
+            }
+          } catch (downloadError) {
+            console.warn('⚠️  Local download failed, using external URLs:', downloadError.message);
+          }
+        }
+        
         return result;
       } else {
         throw new Error('No images found in Pexels');
@@ -46,6 +70,23 @@ class UnifiedImageService {
       if (result && result.total > 0) {
         console.log(`✅ SUCCESS with Unsplash fallback! Found ${result.total} images`);
         result.source = 'unsplash';
+        
+        // 💾 Download locale se abilitato
+        if (this.enableLocalStorage) {
+          try {
+            console.log('💾 Downloading images locally...');
+            const localImages = await this.downloadService.downloadBusinessImages(result, businessType);
+            
+            if (localImages.stats.success > 0) {
+              console.log(`✅ Downloaded ${localImages.stats.success} images locally`);
+              result.localImages = localImages;
+              result.useLocal = true;
+            }
+          } catch (downloadError) {
+            console.warn('⚠️  Local download failed, using external URLs:', downloadError.message);
+          }
+        }
+        
         return result;
       } else {
         throw new Error('No images found in Unsplash');
@@ -133,6 +174,57 @@ class UnifiedImageService {
     }
 
     return status;
+  }
+
+  /**
+   * 🗂️ Ottieni immagini dalle cache locale o esterna
+   */
+  getImageUrls(imageData) {
+    if (!imageData) return [];
+
+    // Se abbiamo immagini locali, usale
+    if (imageData.useLocal && imageData.localImages) {
+      const urls = [];
+      
+      // Hero images
+      if (imageData.localImages.hero) {
+        urls.push(...imageData.localImages.hero.map(img => img.url));
+      }
+      
+      // Service images
+      if (imageData.localImages.services) {
+        urls.push(...imageData.localImages.services.map(img => img.url));
+      }
+      
+      // Background images
+      if (imageData.localImages.backgrounds) {
+        urls.push(...imageData.localImages.backgrounds.map(img => img.url));
+      }
+      
+      return urls;
+    }
+
+    // Altrimenti usa le URL esterne
+    const urls = [];
+    if (imageData.hero) urls.push(...imageData.hero.map(img => img.webformatURL || img.download_url || img.url));
+    if (imageData.services) urls.push(...imageData.services.map(img => img.webformatURL || img.download_url || img.url));
+    if (imageData.backgrounds) urls.push(...imageData.backgrounds.map(img => img.webformatURL || img.download_url || img.url));
+    
+    return urls.filter(Boolean);
+  }
+
+  /**
+   * 📊 Statistiche storage locale
+   */
+  async getStorageStats() {
+    return await this.downloadService.getStorageStats();
+  }
+
+  /**
+   * 🧹 Pulizia cache locale
+   */
+  async cleanupLocalImages(maxAgeHours = 24) {
+    return await this.downloadService.cleanupOldImages(maxAgeHours);
   }
 }
 

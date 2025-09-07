@@ -87,6 +87,34 @@ router.post('/generate', async (req, res) => {
     
     console.log(`Retrieved ${businessImages.total} generic + ${specificImages.length} specific images`);
 
+    // 🔧 HELPER FUNCTION per ottenere URL immagini (locale o esterna)
+    const getImageUrl = (img, fallbackKey = 'url') => {
+      // Se abbiamo immagini locali, usa quelle
+      if (businessImages.useLocal && businessImages.localImages) {
+        return img.url || img[fallbackKey];
+      }
+      
+      // Altrimenti usa URL esterne con fallback intelligente
+      return img.webformatURL || 
+             img.urls?.regular || 
+             img.download_url || 
+             img.url || 
+             img[fallbackKey] || 
+             'placeholder.jpg';
+    };
+
+    // 📊 LOG delle URL che verranno usate
+    console.log('🔍 Image URLs being used:');
+    if (businessImages.hero?.length > 0) {
+      console.log('Hero images:', businessImages.hero.map(img => getImageUrl(img)));
+    }
+    if (businessImages.services?.length > 0) {
+      console.log('Service images:', businessImages.services.map(img => getImageUrl(img)));
+    }
+    if (businessImages.backgrounds?.length > 0) {
+      console.log('Background images:', businessImages.backgrounds.map(img => getImageUrl(img)));
+    }
+
     // TEMPERATURA DINAMICA BASATA SU MODALITA
     const temperature = generationMode === 'professional' ? 0.3 : 0.9;
 
@@ -110,17 +138,17 @@ IMPORTANTISSIMO: SEGUI ESATTAMENTE LE RICHIESTE DELLA DESCRIZIONE SOPRA!
 
 IMMAGINI DISPONIBILI PER IL SITO:
 HERO IMAGES (per header/hero section):
-${businessImages.hero?.map((img, i) => `${i+1}. ${img.urls?.regular || img.url} (${img.alt})`).join('\n') || 'Nessuna immagine hero disponibile'}
+${businessImages.hero?.map((img, i) => `${i+1}. ${getImageUrl(img)} (${img.alt || 'Hero image'})`).join('\n') || 'Nessuna immagine hero disponibile'}
 
 SERVICE IMAGES (per servizi/prodotti):  
-${(businessImages.services || businessImages.service)?.map((img, i) => `${i+1}. ${img.urls?.regular || img.url} (${img.alt})`).join('\n') || 'Nessuna immagine servizi disponibile'}
+${(businessImages.services || businessImages.service)?.map((img, i) => `${i+1}. ${getImageUrl(img)} (${img.alt || 'Service image'})`).join('\n') || 'Nessuna immagine servizi disponibile'}
 
 BACKGROUND IMAGES (per sfondi sezioni):
-${(businessImages.backgrounds || businessImages.background)?.map((img, i) => `${i+1}. ${img.urls?.regular || img.url} (${img.alt})`).join('\n') || 'Nessuna immagine background disponibile'}
+${(businessImages.backgrounds || businessImages.background)?.map((img, i) => `${i+1}. ${getImageUrl(img)} (${img.alt || 'Background image'})`).join('\n') || 'Nessuna immagine background disponibile'}
 
 IMMAGINI SPECIFICHE RICHIESTE DAL CLIENTE:
 ${specificImages.length > 0 
-  ? specificImages.map((img, i) => `${i+1}. ${img.url} (per: ${img.requestDescription}, categoria: ${img.category})`).join('\n')
+  ? specificImages.map((img, i) => `${i+1}. ${getImageUrl(img)} (per: ${img.requestDescription}, categoria: ${img.category})`).join('\n')
   : 'Nessuna immagine specifica richiesta'
 }
 
