@@ -27,7 +27,20 @@ router.post('/generate', async (req, res) => {
     console.log('📋 Business:', { businessName, businessType, businessDescription });
     
     // 🎭 MODALITÀ GENERAZIONE: creative | professional
-    const generationMode = mode.toLowerCase();
+    // 🤖 AUTO-DETECTION se mode non specificato
+    let generationMode = mode.toLowerCase();
+    
+    if (mode === 'creative' && businessType) {
+      // Business professionali = mode professional automatico
+      const professionalTypes = ['consulenza', 'avvocato', 'medico', 'dentista', 'commercialista', 
+                                'agenzia', 'studio', 'clinica', 'banca', 'assicurazione', 'contabilità'];
+      
+      if (professionalTypes.some(type => businessType.toLowerCase().includes(type))) {
+        generationMode = 'professional';
+        console.log('🤖 AUTO-DETECTED: Professional mode per business type');
+      }
+    }
+    
     console.log('🎭 Mode:', generationMode.toUpperCase());
 
     // �️ RECUPERO IMMAGINI DA UNSPLASH
@@ -42,14 +55,22 @@ router.post('/generate', async (req, res) => {
     // 🎭 TEMPERATURA DINAMICA BASATA SU MODALITÀ
     const temperature = generationMode === 'professional' ? 0.3 : 0.9;
 
-    // �🔥 PROMPT CLAUDE MASSIMA CREATIVITÀ
-    const claudePrompt = `SEI UN WEB DESIGNER GENIALE E COMPLETAMENTE LIBERO!
+    // 🔥 PROMPT CLAUDE BASATO SU DESCRIZIONE UTENTE
+    const claudePrompt = `SEI UN WEB DESIGNER ESPERTO CHE SEGUE SEMPRE LE SPECIFICHE DEL CLIENTE!
 
-Crea un sito web STRAORDINARIO per: ${businessName} (${businessType || 'business'})
+Crea un sito web PERFETTO per: ${businessName} (${businessType || 'business'})
 
-DESCRIZIONE: ${businessDescription || 'Business innovativo'}
+🎯 DESCRIZIONE E RICHIESTE SPECIFICHE DEL CLIENTE:
+${businessDescription || 'Business innovativo'}
 
-🖼️ IMMAGINI DISPONIBILI PER IL SITO:
+� IMPORTANTISSIMO: SEGUI ESATTAMENTE LE RICHIESTE DELLA DESCRIZIONE SOPRA!
+- Se il cliente chiede sezioni specifiche, creale esattamente come richiesto
+- Se chiede funzionalità particolari (filtri, categorie, ecc.), includile nel design
+- Se specifica stili o colori, rispettali
+- Se richiede elementi specifici, non inventarne altri
+- La creatività deve RISPETTARE sempre le specifiche del cliente
+
+�🖼️ IMMAGINI DISPONIBILI PER IL SITO:
 HERO IMAGES (per header/hero section):
 ${businessImages.hero.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).join('\n')}
 
@@ -59,80 +80,80 @@ ${businessImages.services.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).joi
 BACKGROUND IMAGES (per sfondi sezioni):
 ${businessImages.backgrounds.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).join('\n')}
 
-🎨 DIVERSITÀ ESTREMA OBBLIGATORIA:
-- CAMBIA COMPLETAMENTE lo stile da qualsiasi sito precedente
-- Inventa nomi di servizi FOLLI e MAI SENTITI PRIMA
-- USA COLORI che nessuno si aspetta per questo settore
-- Scrivi con PERSONALITÀ UNICA (formale/informale/poetico/aggressivo)
-- ROMPI LE CONVENZIONI del settore!
-
-🎯 ISPIRAZIONE CASUALE:
-- Mescola stili: ${['Minimalista Nordico', 'Cyberpunk Neon', 'Vintage Anni 70', 'Brutalista Moderno', 'Art Deco Luxury', 'Kawaii Giapponese', 'Industrial Grunge', 'Organic Nature'][Math.floor(Math.random() * 8)]}
-- Personalità: ${['Steve Jobs visionario', 'Gordon Ramsay aggressivo', 'David Attenborough narratore', 'Elon Musk futuristico', 'Wes Anderson estetico', 'Banksy ribelle'][Math.floor(Math.random() * 6)]}
+🎨 LINEE GUIDA DESIGN:
+- Modalità: ${generationMode === 'professional' ? 'PROFESSIONALE (elegante, pulito, tradizionale)' : 'CREATIVO (audace, colorato, originale)'}
+- Rispecchia il settore: ${businessType || 'business'}
+- Tono: Adatto al target del business
 
 STRUTTURA JSON ESATTA:
 {
-  "title": "TITOLO SITO INCREDIBILE",
-  "description": "Descrizione che fa sognare",
+  "title": "Titolo sito appropriato al business",
+  "description": "Descrizione professionale del business",
   "sections": [
     {
       "id": "hero",
       "type": "hero",
-      "title": "TITOLO HERO CHE SPACCA",
+      "title": "Titolo hero che riflette il business",
       "image": "URL_HERO_IMAGE_DA_LISTA_SOPRA",
       "content": {
-        "subtitle": "Sottotitolo magnetico",
-        "description": "Storia epica in HTML con grassetti e corsivi"
+        "subtitle": "Sottotitolo rilevante",
+        "description": "Descrizione che rispecchia la richiesta del cliente"
       }
     },
     {
-      "id": "services",
-      "type": "services", 
-      "title": "SERVIZI DAI NOMI CREATIVI",
+      "id": "services", 
+      "type": "services",
+      "title": "Titolo sezione servizi/prodotti COME RICHIESTO dal cliente",
       "backgroundImage": "URL_BACKGROUND_IMAGE_DA_LISTA_SOPRA",
       "content": {
-        "subtitle": "Sottotitolo che incuriosisce",
-        "description": "Descrizione coinvolgente",
+        "subtitle": "Sottotitolo pertinente",
+        "description": "Descrizione dei servizi/prodotti",
         "items": [
           {
-            "title": "SERVIZIO CON NOME FOLLE",
-            "description": "Descrizione che fa sognare",
+            "title": "Nome prodotto/servizio REALE richiesto dal cliente",
+            "description": "Descrizione accurata del prodotto/servizio",
             "image": "URL_SERVICE_IMAGE_DA_LISTA_SOPRA"
           }
         ]
       }
-    }
     },
     {
       "id": "about",
-      "type": "about",
-      "title": "LA NOSTRA LEGGENDA EPICA", 
+      "type": "about", 
+      "title": "Chi siamo / La nostra storia",
       "backgroundImage": "URL_BACKGROUND_IMAGE_DA_LISTA_SOPRA",
       "content": {
-        "subtitle": "Come è nata la magia",
-        "description": "Storia coinvolgente con passione e visione del futuro"
+        "subtitle": "La nostra missione",
+        "description": "Storia aziendale professionale"
       }
     },
     {
       "id": "contact",
       "type": "contact",
-      "title": "INIZIA LA TUA AVVENTURA",
+      "title": "Contattaci",
       "content": {
-        "subtitle": "Il futuro ti aspetta",
-        "description": "Call to action che non si può rifiutare",
-        "cta": "TRASFORMA I TUOI SOGNI"
+        "subtitle": "Richiedi informazioni",
+        "description": "Invito al contatto professionale",
+        "cta": "Call to action appropriata"
       }
     }
   ],
   "design": {
-    "primaryColor": "COLORE PRINCIPALE SORPRENDENTE che rifletta la personalità unica",
-    "secondaryColor": "COLORE SECONDARIO in armonia ma inaspettato", 
-    "accentColor": "COLORE ACCENTO che fa POP!",
-    "backgroundColor": "SFONDO che supporta l'atmosfera (bianco/nero/colorato)",
-    "textColor": "TESTO leggibile ma caratteristico",
-    "dynamicCSS": "CSS MAGICO con animazioni STRAORDINARIE! Crea effetti visivi UNICI per questo business specifico: gradienti personalizzati, animazioni tematiche, hover effects creativi, tipografia caratteristica. INTEGRA PERFETTAMENTE con le immagini: usa gradienti overlay, filtri CSS, blend-modes creativi. Le immagini devono VALORIZZARE il design, non rovinarlo! RENDI QUESTO SITO INCONFONDIBILE!"
+    "primaryColor": "Colore principale adatto al settore e richieste",
+    "secondaryColor": "Colore secondario complementare", 
+    "accentColor": "Colore accento per evidenziare",
+    "backgroundColor": "Sfondo professionale (bianco/grigio chiaro per business, più colorato per creativi)",
+    "textColor": "Testo leggibile e professionale",
+    "dynamicCSS": "CSS ottimizzato per il business specifico: stile professionale per aziende business, più creativo per settori artistici. Integra perfettamente le immagini con il design. Crea un'esperienza coerente con le richieste del cliente."
   }
 }
+
+🎯 ESEMPI DI SETTORI SPECIFICI:
+- AUTOMOBILI: Crea sezioni per "Auto Nuove", "Auto Usate", "Furgoni Commerciali" con filtri di ricerca (alimentazione, cilindrata, tipo veicolo)
+- RISTORANTI: Menu, specialità, prenotazioni, delivery
+- IMMOBILIARE: Proprietà in vendita, affitto, servizi immobiliari
+- MODA: Collezioni, catalogo prodotti, lookbook
+- SERVIZI: Pacchetti servizi, consulenze, portfolio lavori
 
 🖼️ ISTRUZIONI IMMAGINI:
 - USA LE IMMAGINI dalla lista fornita sopra
