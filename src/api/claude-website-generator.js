@@ -87,6 +87,38 @@ router.post('/generate', async (req, res) => {
     
     console.log(`Retrieved ${businessImages.total} generic + ${specificImages.length} specific images`);
 
+    // 🆔 Genera ID univoco per il website (per tracking immagini)
+    const websiteId = `${businessName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}`;
+    console.log(`🆔 Website ID: ${websiteId}`);
+
+    // 🔗 Collega immagini al website se sono state scaricate localmente
+    if (businessImages.useLocal && businessImages.localImages && businessImages.localImages.imageIds) {
+      try {
+        const imageFileNames = [];
+        
+        // Raccogli tutti i nomi file dalle immagini scaricate
+        ['hero', 'services', 'backgrounds'].forEach(category => {
+          if (businessImages.localImages[category]) {
+            businessImages.localImages[category].forEach(img => {
+              imageFileNames.push(img.fileName);
+            });
+          }
+        });
+
+        if (imageFileNames.length > 0) {
+          const imageDownloadService = require('../services/image-download-service');
+          const linkedCount = imageDownloadService.linkImagesToWebsite(
+            websiteId, 
+            imageFileNames, 
+            'claude_website_generation'
+          );
+          console.log(`🔗 Linked ${linkedCount} images to website ${websiteId}`);
+        }
+      } catch (linkError) {
+        console.warn('⚠️  Failed to link images to website:', linkError.message);
+      }
+    }
+
     // 🔧 HELPER FUNCTION per ottenere URL immagini (locale o esterna)
     const getImageUrl = (img, fallbackKey = 'url') => {
       // Se abbiamo immagini locali, usa quelle

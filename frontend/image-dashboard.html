@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🖼️ Image Management Dashboard - AI Trainer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .dashboard {
+            padding: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border-left: 4px solid;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card.primary { border-left-color: #3498db; }
+        .stat-card.success { border-left-color: #27ae60; }
+        .stat-card.warning { border-left-color: #f39c12; }
+        .stat-card.danger { border-left-color: #e74c3c; }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary { background: #3498db; color: white; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .table th {
+            background: #e9ecef;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        .sync-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .sync-status.in-sync {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .sync-status.out-of-sync {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🖼️ Image Management Dashboard</h1>
+            <p>AI Trainer - Sistema di gestione immagini locale</p>
+        </div>
+
+        <div class="dashboard">
+            <!-- Statistiche Principali -->
+            <div class="stats-grid" id="mainStats">
+                <div class="stat-card primary">
+                    <div class="stat-value" id="totalImages">-</div>
+                    <div class="stat-label">Immagini Totali</div>
+                </div>
+                
+                <div class="stat-card success">
+                    <div class="stat-value" id="activeImages">-</div>
+                    <div class="stat-label">Immagini Attive</div>
+                </div>
+                
+                <div class="stat-card warning">
+                    <div class="stat-value" id="orphanImages">-</div>
+                    <div class="stat-label">Immagini Orfane</div>
+                </div>
+                
+                <div class="stat-card danger">
+                    <div class="stat-value" id="totalSize">-</div>
+                    <div class="stat-label">Spazio Occupato (MB)</div>
+                </div>
+            </div>
+
+            <!-- Controlli -->
+            <div class="section">
+                <h3>🛠️ Controlli</h3>
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="refreshStats()">🔄 Aggiorna Statistiche</button>
+                    <button class="btn btn-success" onclick="searchImages()">🔍 Cerca Immagini</button>
+                    <button class="btn btn-warning" onclick="cleanupOrphans()">🧹 Pulisci Orfane</button>
+                    <button class="btn btn-danger" onclick="forceCleanup()">⚠️ Pulizia Forzata</button>
+                </div>
+                
+                <div id="actionResult"></div>
+            </div>
+
+            <!-- Stato Sincronizzazione -->
+            <div class="section">
+                <h3>📊 Stato Sincronizzazione Database vs File System</h3>
+                <div id="syncStatus">
+                    <div class="loading">Caricamento stato...</div>
+                </div>
+            </div>
+
+            <!-- Breakdown per Business Type -->
+            <div class="section">
+                <h3>🏢 Breakdown per Business Type</h3>
+                <table class="table" id="businessTable">
+                    <thead>
+                        <tr>
+                            <th>Business Type</th>
+                            <th>Immagini</th>
+                            <th>Dimensione (MB)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="businessTableBody">
+                        <tr><td colspan="3" class="loading">Caricamento...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Breakdown per Categoria -->
+            <div class="section">
+                <h3>📂 Breakdown per Categoria</h3>
+                <table class="table" id="categoryTable">
+                    <thead>
+                        <tr>
+                            <th>Categoria</th>
+                            <th>Immagini</th>
+                            <th>Dimensione (MB)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoryTableBody">
+                        <tr><td colspan="3" class="loading">Caricamento...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Ricerca Immagini -->
+            <div class="section" id="searchSection" style="display: none;">
+                <h3>🔍 Risultati Ricerca</h3>
+                <div id="searchResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStats = null;
+
+        // Carica statistiche al caricamento pagina
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshStats();
+        });
+
+        async function refreshStats() {
+            try {
+                showLoading('Caricamento statistiche...');
+                
+                const response = await fetch('/api/images/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentStats = data;
+                    updateMainStats(data.summary);
+                    updateSyncStatus(data.stats);
+                    updateBreakdownTables(data.stats.database);
+                    showSuccess('Statistiche aggiornate con successo!');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                showError('Errore caricamento statistiche: ' + error.message);
+            }
+        }
+
+        function updateMainStats(summary) {
+            document.getElementById('totalImages').textContent = summary.totalImages || 0;
+            document.getElementById('activeImages').textContent = summary.activeImages || 0;
+            document.getElementById('orphanImages').textContent = summary.orphanImages || 0;
+            document.getElementById('totalSize').textContent = summary.totalSizeMB || 0;
+        }
+
+        function updateSyncStatus(stats) {
+            const syncDiv = document.getElementById('syncStatus');
+            const sync = stats.sync?.dbVsPhysical;
+            
+            if (sync) {
+                const statusClass = sync.difference === 0 ? 'in-sync' : 'out-of-sync';
+                const statusText = sync.difference === 0 ? 'Sincronizzato' : 'Non sincronizzato';
+                
+                syncDiv.innerHTML = `
+                    <p><strong>Database:</strong> ${sync.dbActive} immagini attive</p>
+                    <p><strong>File System:</strong> ${sync.physicalFiles} file fisici</p>
+                    <p><strong>Differenza:</strong> ${sync.difference}</p>
+                    <p><strong>Stato:</strong> <span class="sync-status ${statusClass}">${statusText}</span></p>
+                `;
+            }
+        }
+
+        function updateBreakdownTables(dbStats) {
+            // Business Type Table
+            const businessTableBody = document.getElementById('businessTableBody');
+            if (dbStats?.byBusinessType?.length > 0) {
+                businessTableBody.innerHTML = dbStats.byBusinessType.map(item => `
+                    <tr>
+                        <td>${item.business_type}</td>
+                        <td>${item.images_count}</td>
+                        <td>${item.size_mb}</td>
+                    </tr>
+                `).join('');
+            } else {
+                businessTableBody.innerHTML = '<tr><td colspan="3">Nessun dato disponibile</td></tr>';
+            }
+
+            // Category Table
+            const categoryTableBody = document.getElementById('categoryTableBody');
+            if (dbStats?.byCategory?.length > 0) {
+                categoryTableBody.innerHTML = dbStats.byCategory.map(item => `
+                    <tr>
+                        <td>${item.category}</td>
+                        <td>${item.images_count}</td>
+                        <td>${item.size_mb}</td>
+                    </tr>
+                `).join('');
+            } else {
+                categoryTableBody.innerHTML = '<tr><td colspan="3">Nessun dato disponibile</td></tr>';
+            }
+        }
+
+        async function cleanupOrphans() {
+            if (!confirm('Vuoi eliminare tutte le immagini orfane più vecchie di 24 ore?')) {
+                return;
+            }
+
+            try {
+                showLoading('Pulizia immagini orfane in corso...');
+                
+                const response = await fetch('/api/images/cleanup?maxAge=24', {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess(data.message);
+                    refreshStats(); // Aggiorna le statistiche
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                showError('Errore pulizia: ' + error.message);
+            }
+        }
+
+        async function forceCleanup() {
+            if (!confirm('ATTENZIONE: Questa operazione eliminerà TUTTE le immagini orfane. Continuare?')) {
+                return;
+            }
+
+            try {
+                showLoading('Pulizia forzata in corso...');
+                
+                const response = await fetch('/api/images/cleanup?maxAge=1', {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess(data.message);
+                    refreshStats();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                showError('Errore pulizia forzata: ' + error.message);
+            }
+        }
+
+        async function searchImages() {
+            try {
+                const response = await fetch('/api/images/search?orphanOnly=true&limit=20');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displaySearchResults(data.results);
+                    document.getElementById('searchSection').style.display = 'block';
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                showError('Errore ricerca: ' + error.message);
+            }
+        }
+
+        function displaySearchResults(results) {
+            const searchDiv = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                searchDiv.innerHTML = '<p>Nessuna immagine orfana trovata.</p>';
+                return;
+            }
+
+            searchDiv.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>Business Type</th>
+                            <th>Categoria</th>
+                            <th>Dimensione</th>
+                            <th>Ultimo Uso</th>
+                            <th>Collegamenti</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${results.map(img => `
+                            <tr>
+                                <td>${img.file_name}</td>
+                                <td>${img.business_type}</td>
+                                <td>${img.category}</td>
+                                <td>${(img.file_size / 1024).toFixed(1)} KB</td>
+                                <td>${new Date(img.last_used).toLocaleString()}</td>
+                                <td>${img.website_links || 0}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function showLoading(message) {
+            document.getElementById('actionResult').innerHTML = `<div class="loading">${message}</div>`;
+        }
+
+        function showSuccess(message) {
+            document.getElementById('actionResult').innerHTML = `<div class="success">${message}</div>`;
+            setTimeout(() => {
+                document.getElementById('actionResult').innerHTML = '';
+            }, 5000);
+        }
+
+        function showError(message) {
+            document.getElementById('actionResult').innerHTML = `<div class="error">${message}</div>`;
+            setTimeout(() => {
+                document.getElementById('actionResult').innerHTML = '';
+            }, 8000);
+        }
+    </script>
+</body>
+</html>

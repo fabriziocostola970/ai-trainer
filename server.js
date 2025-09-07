@@ -58,7 +58,7 @@ app.use('/images', express.static(path.join(__dirname, 'uploads', 'images'), {
   }
 }));
 
-// 📊 Endpoint per statistiche immagini
+// 📊 Endpoint per statistiche immagini AVANZATE
 app.get('/api/images/stats', async (req, res) => {
   try {
     const unifiedImageService = require('./src/services/unified-image-service');
@@ -67,7 +67,16 @@ app.get('/api/images/stats', async (req, res) => {
     res.json({
       success: true,
       stats: stats,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      summary: {
+        totalImages: stats.database?.general?.total_images || 0,
+        activeImages: stats.database?.general?.active_images || 0,
+        linkedImages: stats.database?.linkage?.linked_images || 0,
+        orphanImages: stats.database?.linkage?.orphan_images || 0,
+        totalSizeMB: stats.database?.general?.total_size_mb || 0,
+        physicalFiles: stats.physical?.totalFiles || 0,
+        syncStatus: stats.sync?.dbVsPhysical?.difference === 0 ? 'in_sync' : 'out_of_sync'
+      }
     });
   } catch (error) {
     console.error('❌ Errore statistiche immagini:', error);
@@ -78,17 +87,58 @@ app.get('/api/images/stats', async (req, res) => {
   }
 });
 
-// 🧹 Endpoint per pulizia cache immagini
+// 🔍 Endpoint per ricerca immagini
+app.get('/api/images/search', async (req, res) => {
+  try {
+    const { 
+      businessType, 
+      businessName, 
+      category, 
+      linkedOnly, 
+      orphanOnly, 
+      limit = 50 
+    } = req.query;
+
+    const imageDownloadService = require('./src/services/image-download-service');
+    const results = imageDownloadService.searchImages({
+      businessType,
+      businessName,
+      category,
+      linkedOnly: linkedOnly === 'true',
+      orphanOnly: orphanOnly === 'true',
+      limit: parseInt(limit)
+    });
+
+    res.json({
+      success: true,
+      results: results,
+      count: results.length,
+      query: req.query,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ Errore ricerca immagini:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// 🧹 Endpoint per pulizia cache immagini SMART
 app.delete('/api/images/cleanup', async (req, res) => {
   try {
-    const unifiedImageService = require('./src/services/unified-image-service');
+    const imageDownloadService = require('./src/services/image-download-service');
     const maxAgeHours = req.query.maxAge || 24;
     
-    await unifiedImageService.cleanupLocalImages(maxAgeHours);
+    const result = await imageDownloadService.smartCleanupOrphanImages(maxAgeHours);
     
     res.json({
       success: true,
-      message: `Cleanup completed for images older than ${maxAgeHours} hours`,
+      message: `Smart cleanup completed: ${result.deleted} deleted, ${result.errors} errors`,
+      details: result,
+      maxAgeHours: maxAgeHours,
       timestamp: new Date().toISOString()
     });
   } catch (error) {

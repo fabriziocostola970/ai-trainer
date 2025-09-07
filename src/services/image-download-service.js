@@ -7,12 +7,16 @@ const fs = require('fs').promises;
 const path = require('path');
 const axios = require('axios');
 const crypto = require('crypto');
+const ImageDatabaseService = require('./image-database-service');
 
 class ImageDownloadService {
     constructor() {
         // Directory per le immagini scaricate
         this.imagesDir = path.join(process.cwd(), 'uploads', 'images');
         this.businessImagesDir = path.join(this.imagesDir, 'business');
+        
+        // Database service per tracking
+        this.dbService = new ImageDatabaseService();
         
         // Formati supportati
         this.supportedFormats = ['.jpg', '.jpeg', '.png', '.webp'];
@@ -66,7 +70,7 @@ class ImageDownloadService {
     /**
      * Download di una singola immagine
      */
-    async downloadImage(imageUrl, businessType, category = 'general') {
+    async downloadImage(imageUrl, businessType, category = 'general', businessName = null) {
         try {
             console.log(`📥 Download immagine: ${imageUrl}`);
 
@@ -100,10 +104,25 @@ class ImageDownloadService {
             // Genera URL relativo per il serving
             const relativeUrl = `/images/business/${fileName}`;
 
+            // 📊 Registra nel database
+            const imageData = {
+                fileName: fileName,
+                originalUrl: imageUrl,
+                localPath: filePath,
+                businessType: businessType,
+                businessName: businessName,
+                category: category,
+                size: response.data.length,
+                contentType: contentType
+            };
+
+            const imageId = this.dbService.registerDownloadedImage(imageData);
+
             console.log(`✅ Immagine salvata: ${fileName}`);
 
             return {
                 success: true,
+                imageId: imageId,
                 localPath: filePath,
                 fileName: fileName,
                 url: relativeUrl,
@@ -125,8 +144,8 @@ class ImageDownloadService {
     /**
      * Download di multiple immagini per un business
      */
-    async downloadBusinessImages(imageData, businessType) {
-        console.log(`🚀 Inizio download immagini per business: ${businessType}`);
+    async downloadBusinessImages(imageData, businessType, businessName = null) {
+        console.log(`🚀 Inizio download immagini per business: ${businessType} (${businessName || 'senza nome'})`);
         
         const results = [];
         const downloadPromises = [];
@@ -147,7 +166,7 @@ class ImageDownloadService {
                 const imageUrl = image.webformatURL || image.download_url || image.url;
                 
                 if (imageUrl) {
-                    const promise = this.downloadImage(imageUrl, businessType, `${category}_${i+1}`)
+                    const promise = this.downloadImage(imageUrl, businessType, `${category}_${i+1}`, businessName)
                         .then(result => ({
                             ...result,
                             category: category,
@@ -168,6 +187,7 @@ class ImageDownloadService {
             hero: [],
             services: [],
             backgrounds: [],
+            imageIds: [], // ID dal database per linking
             stats: {
                 total: downloadPromises.length,
                 success: 0,
@@ -181,13 +201,15 @@ class ImageDownloadService {
                 
                 if (downloadResult.success) {
                     processedResults.stats.success++;
+                    processedResults.imageIds.push(downloadResult.imageId);
                     processedResults[downloadResult.category].push({
                         url: downloadResult.url,
                         fileName: downloadResult.fileName,
                         localPath: downloadResult.localPath,
                         originalUrl: downloadResult.originalUrl,
                         size: downloadResult.size,
-                        contentType: downloadResult.contentType
+                        contentType: downloadResult.contentType,
+                        imageId: downloadResult.imageId
                     });
                 } else {
                     processedResults.stats.failed++;
@@ -205,58 +227,133 @@ class ImageDownloadService {
     }
 
     /**
-     * Pulizia periodica delle immagini vecchie
+     * Pulizia intelligente basata su collegamenti database
      */
-    async cleanupOldImages(maxAgeHours = 24) {
+    async smartCleanupOrphanImages(maxAgeHours = 24) {
         try {
-            const files = await fs.readdir(this.businessImagesDir);
-            const now = Date.now();
+            console.log(`🧹 Smart cleanup: rimozione immagini orfane più vecchie di ${maxAgeHours}h`);
+
+            // Trova immagini orfane nel database
+            const orphanImages = this.dbService.findOrphanImages(maxAgeHours);
+            
+            if (orphanImages.length === 0) {
+                console.log('✅ Nessuna immagine orfana trovata');
+                return { deleted: 0, errors: 0 };
+            }
+
             let deletedCount = 0;
+            let errorCount = 0;
 
-            for (const file of files) {
-                const filePath = path.join(this.businessImagesDir, file);
-                const stats = await fs.stat(filePath);
-                const ageHours = (now - stats.mtime.getTime()) / (1000 * 60 * 60);
-
-                if (ageHours > maxAgeHours) {
-                    await fs.unlink(filePath);
+            // Elimina file fisici e marca come inattivi nel database
+            for (const image of orphanImages) {
+                try {
+                    // Verifica che il file esista
+                    await fs.access(image.local_path);
+                    
+                    // Elimina il file fisico
+                    await fs.unlink(image.local_path);
+                    
+                    // Marca come inattivo nel database
+                    this.dbService.markImagesInactive([image.id]);
+                    
                     deletedCount++;
+                    console.log(`🗑️  Rimossa immagine orfana: ${image.file_name}`);
+                    
+                } catch (fileError) {
+                    console.warn(`⚠️  File già rimosso o non accessibile: ${image.file_name}`);
+                    // Marca comunque come inattivo nel database
+                    this.dbService.markImagesInactive([image.id]);
+                    errorCount++;
                 }
             }
 
-            if (deletedCount > 0) {
-                console.log(`🧹 Pulite ${deletedCount} immagini vecchie`);
-            }
+            console.log(`✅ Smart cleanup completato: ${deletedCount} eliminati, ${errorCount} errori`);
+            return { deleted: deletedCount, errors: errorCount };
 
         } catch (error) {
-            console.error('❌ Errore pulizia immagini:', error);
+            console.error('❌ Errore smart cleanup:', error);
+            return { deleted: 0, errors: 1 };
         }
     }
 
     /**
-     * Ottieni statistiche storage
+     * Pulizia periodica delle immagini vecchie (DEPRECATED - usa smartCleanupOrphanImages)
+     */
+    async cleanupOldImages(maxAgeHours = 24) {
+        console.log('⚠️  cleanupOldImages is deprecated. Use smartCleanupOrphanImages instead.');
+        return this.smartCleanupOrphanImages(maxAgeHours);
+    }
+
+    /**
+     * Ottieni statistiche storage avanzate
      */
     async getStorageStats() {
         try {
+            // Statistiche dal database
+            const dbStats = this.dbService.getDetailedStats();
+            
+            // Statistiche fisiche directory
             const files = await fs.readdir(this.businessImagesDir);
             let totalSize = 0;
+            let physicalFiles = 0;
 
             for (const file of files) {
-                const filePath = path.join(this.businessImagesDir, file);
-                const stats = await fs.stat(filePath);
-                totalSize += stats.size;
+                try {
+                    const filePath = path.join(this.businessImagesDir, file);
+                    const stats = await fs.stat(filePath);
+                    totalSize += stats.size;
+                    physicalFiles++;
+                } catch (error) {
+                    // File non accessibile, ignora
+                }
             }
 
             return {
-                totalFiles: files.length,
-                totalSizeMB: (totalSize / 1024 / 1024).toFixed(2),
-                directory: this.businessImagesDir
+                database: dbStats,
+                physical: {
+                    totalFiles: physicalFiles,
+                    totalSizeMB: (totalSize / 1024 / 1024).toFixed(2),
+                    directory: this.businessImagesDir
+                },
+                sync: {
+                    dbVsPhysical: {
+                        dbActive: dbStats?.general?.active_images || 0,
+                        physicalFiles: physicalFiles,
+                        difference: physicalFiles - (dbStats?.general?.active_images || 0)
+                    }
+                },
+                timestamp: new Date().toISOString()
             };
 
         } catch (error) {
             console.error('❌ Errore statistiche storage:', error);
-            return { totalFiles: 0, totalSizeMB: 0 };
+            return { 
+                database: null, 
+                physical: { totalFiles: 0, totalSizeMB: 0 },
+                error: error.message 
+            };
         }
+    }
+
+    /**
+     * 🔗 Collega immagini a un website (per tracking lifecycle)
+     */
+    linkImagesToWebsite(websiteId, imageFileNames, usageContext = 'claude_generation') {
+        return this.dbService.linkImagesToWebsite(websiteId, imageFileNames, usageContext);
+    }
+
+    /**
+     * 🗑️ Scollega immagini quando un website viene rimosso
+     */
+    unlinkWebsiteImages(websiteId) {
+        return this.dbService.unlinkWebsiteImages(websiteId);
+    }
+
+    /**
+     * 🔍 Cerca immagini nel database
+     */
+    searchImages(criteria) {
+        return this.dbService.searchImages(criteria);
     }
 }
 
