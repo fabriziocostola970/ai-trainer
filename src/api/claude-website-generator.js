@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
-const UnsplashService = require('../services/unsplash-service.js');
+const UnifiedImageService = require('../services/unified-image-service.js');
 const BusinessPreProcessor = require('../services/business-preprocessor.js');
 
 // CLAUDE SONNET 4 - SMART PREPROCESSING SYSTEM
@@ -57,11 +57,11 @@ router.post('/generate', async (req, res) => {
       designContext: preProcessedData.designContext.style
     });
 
-    // RECUPERO IMMAGINI DA UNSPLASH - SMART SELECTION
-    console.log('Fetching images from Unsplash with smart selection...');
+    // RECUPERO IMMAGINI CON SISTEMA UNIFICATO - Pexels → Unsplash fallback
+    console.log('Fetching images with unified service (Pexels → Unsplash)...');
     
     // Immagini generiche per il business
-    const businessImages = await UnsplashService.getBusinessImages(
+    const businessImages = await UnifiedImageService.getBusinessImages(
       businessType || 'business', 
       businessName, 
       3
@@ -72,10 +72,10 @@ router.post('/generate', async (req, res) => {
     for (const request of preProcessedData.imageRequests) {
       try {
         console.log(`Searching for: ${request.searchKeywords}`);
-        const specificImage = await UnsplashService.searchSpecificImage(request.searchKeywords);
-        if (specificImage) {
+        const specificImageResults = await UnifiedImageService.searchImages(request.searchKeywords, 1);
+        if (specificImageResults && specificImageResults.length > 0) {
           specificImages.push({
-            ...specificImage,
+            ...specificImageResults[0],
             requestDescription: request.description,
             category: request.category
           });

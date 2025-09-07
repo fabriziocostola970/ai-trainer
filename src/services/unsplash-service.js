@@ -5,11 +5,12 @@ const { createApi } = require('unsplash-js');
 
 class UnsplashService {
   constructor() {
-    this.unsplash = createApi({
-      accessKey: process.env.UNSPLASH_ACCESS_KEY,
-    });
+    // METODO CORRETTO: fetch con headers Authorization
+    this.apiKey = process.env.UNSPLASH_ACCESS_KEY;
+    this.baseUrl = 'https://api.unsplash.com';
     
-    console.log('🖼️ Unsplash Service initialized');
+    console.log('🖼️ Unsplash Service initialized with fetch method');
+    console.log('🔑 API Key loaded:', this.apiKey ? 'YES' : 'NO');
   }
 
   /**
@@ -63,27 +64,43 @@ class UnsplashService {
   }
 
   /**
-   * 🔍 Cerca immagini per keyword specifica
+   * 🔍 Cerca immagini per keyword specifica - METODO FETCH CORRETTO
    */
   async searchImages(query, count = 2) {
     try {
-      const result = await this.unsplash.search.getPhotos({
+      const url = `${this.baseUrl}/search/photos?` + new URLSearchParams({
         query: query,
-        page: 1,
-        perPage: count,
+        page: '1',
+        per_page: count.toString(),
         orientation: 'landscape',
-        orderBy: 'relevant'
+        order_by: 'relevant'
       });
 
-      if (result.errors) {
-        console.error('Unsplash search errors:', result.errors);
-        return [];
+      console.log(`🔍 Searching: ${query}`);
+      console.log(`🔗 URL: ${url}`);
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Client-ID ${this.apiKey}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error(`❌ HTTP ${response.status}:`, error);
+        console.log(`⚠️  Unsplash Demo mode detected - switching to placeholder images`);
+        return this.getPlaceholderImages(query, count);
       }
 
-      return result.response.results || [];
+      const data = await response.json();
+      console.log(`✅ Found ${data.results?.length || 0} images for "${query}"`);
+      
+      return data.results || [];
     } catch (error) {
       console.error(`❌ Search error for "${query}":`, error);
-      return [];
+      console.log(`⚠️  Network error - switching to placeholder images`);
+      return this.getPlaceholderImages(query, count);
     }
   }
 
@@ -93,22 +110,34 @@ class UnsplashService {
   formatImageData(photo, type) {
     return {
       id: photo.id,
-      url: photo.urls.regular,
-      urlSmall: photo.urls.small,
-      urlThumb: photo.urls.thumb,
+      urls: {
+        regular: photo.urls.regular,
+        small: photo.urls.small,
+        thumb: photo.urls.thumb
+      },
+      url: photo.urls.regular, // Backward compatibility
+      urlSmall: photo.urls.small, // Backward compatibility
+      urlThumb: photo.urls.thumb, // Backward compatibility
       alt: photo.alt_description || `${type} image`,
       description: photo.description || photo.alt_description || '',
       width: photo.width,
       height: photo.height,
-      photographer: photo.user.name,
-      photographerUrl: photo.user.links.html,
+      user: {
+        name: photo.user.name,
+        links: {
+          html: photo.user.links.html
+        }
+      },
+      photographer: photo.user.name, // Backward compatibility
+      photographerUrl: photo.user.links.html, // Backward compatibility
       downloadUrl: photo.links.download_location,
-      type: type
+      type: type,
+      source: 'unsplash'
     };
   }
 
   /**
-   * 🎯 Cerca un'immagine specifica basata su keywords
+   * 🎯 Cerca un'immagine specifica basata su keywords - METODO FETCH CORRETTO
    * @param {string} keywords - Keywords specifiche per la ricerca
    * @returns {Promise<Object>} Immagine specifica o null
    */
@@ -121,19 +150,28 @@ class UnsplashService {
       
       console.log(`🔍 Searching specific image for: "${cleanKeywords}"`);
       
-      const result = await this.unsplash.search.getPhotos({
+      const url = `${this.baseUrl}/search/photos?` + new URLSearchParams({
         query: cleanKeywords,
-        page: 1,
-        perPage: 3,
+        page: '1',
+        per_page: '3',
         orientation: 'landscape'
       });
 
-      if (result.errors) {
-        console.error('🚨 Unsplash specific search error:', result.errors);
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Client-ID ${this.apiKey}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.error('🚨 HTTP error:', response.status, response.statusText);
         return null;
       }
 
-      const photos = result.response.results;
+      const data = await response.json();
+      const photos = data.results;
+      
       if (photos && photos.length > 0) {
         // Prendi la prima immagine più rilevante
         const photo = photos[0];
@@ -183,6 +221,44 @@ class UnsplashService {
     };
 
     return baseKeywords[businessType.toLowerCase()] || baseKeywords['default'];
+  }
+
+  /**
+   * 🖼️ Genera immagini placeholder per modalità Demo di Unsplash
+   */
+  getPlaceholderImages(query, count) {
+    console.log(`🎨 Generating ${count} placeholder images for: "${query}"`);
+    
+    const placeholderImages = [];
+    for (let i = 0; i < count; i++) {
+      const seed = `${query}-${i}`.replace(/\s+/g, '-').toLowerCase();
+      const imageId = `placeholder-${seed}-${Date.now()}`;
+      
+      placeholderImages.push({
+        id: imageId,
+        urls: {
+          regular: `https://picsum.photos/800/600?random=${seed}`,
+          small: `https://picsum.photos/400/300?random=${seed}`,
+          thumb: `https://picsum.photos/200/150?random=${seed}`
+        },
+        width: 800,
+        height: 600,
+        alt_description: `${query} placeholder image`,
+        description: `High-quality ${query} image placeholder`,
+        user: {
+          name: 'Lorem Picsum',
+          links: {
+            html: 'https://picsum.photos'
+          }
+        },
+        links: {
+          download_location: `https://picsum.photos/800/600?random=${seed}`
+        }
+      });
+    }
+    
+    console.log(`✅ Generated ${placeholderImages.length} placeholder images`);
+    return placeholderImages;
   }
 }
 
