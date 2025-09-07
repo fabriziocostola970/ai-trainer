@@ -123,7 +123,7 @@ STRUTTURA JSON ESATTA:
     "accentColor": "COLORE ACCENTO che fa POP!",
     "backgroundColor": "SFONDO che supporta l'atmosfera (bianco/nero/colorato)",
     "textColor": "TESTO leggibile ma caratteristico",
-    "dynamicCSS": "CSS MAGICO con animazioni STRAORDINARIE! Crea effetti visivi UNICI per questo business specifico: gradienti personalizzati, animazioni tematiche, hover effects creativi, tipografia caratteristica. RENDI QUESTO SITO INCONFONDIBILE!"
+    "dynamicCSS": "CSS MAGICO con animazioni STRAORDINARIE! Crea effetti visivi UNICI per questo business specifico: gradienti personalizzati, animazioni tematiche, hover effects creativi, tipografia caratteristica. INTEGRA PERFETTAMENTE con le immagini: usa gradienti overlay, filtri CSS, blend-modes creativi. Le immagini devono VALORIZZARE il design, non rovinarlo! RENDI QUESTO SITO INCONFONDIBILE!"
   }
 }
 
