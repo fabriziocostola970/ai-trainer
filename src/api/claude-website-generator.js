@@ -131,10 +131,29 @@ RISPONDI SOLO CON IL JSON - NIENTE ALTRO! SENZA BACKTICKS O FORMATTAZIONE!`;
     console.log('✅ Claude Response Length:', claudeResponseText.length);
     console.log('📄 Claude Response Preview:', claudeResponseText.substring(0, 500) + '...');
 
-    // 🔍 PARSING RESPONSE CLAUDE
+    // 🧹 PULIZIA RESPONSE CLAUDE - RIMUOVI BACKTICKS E FORMATTAZIONE
+    let cleanedResponse = claudeResponseText;
+    
+    // Rimuovi ```json all'inizio
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/^```json\s*/, '');
+    }
+    
+    // Rimuovi ``` alla fine
+    if (cleanedResponse.endsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/\s*```$/, '');
+    }
+    
+    // Rimuovi eventuali backticks sparsi
+    cleanedResponse = cleanedResponse.replace(/```/g, '');
+    
+    console.log('🧹 Cleaned Response Length:', cleanedResponse.length);
+    console.log('🧹 Cleaned Preview:', cleanedResponse.substring(0, 300) + '...');
+
+    // 🔍 PARSING RESPONSE CLAUDE PULITA
     let websiteData;
     try {
-      websiteData = JSON.parse(claudeResponseText);
+      websiteData = JSON.parse(cleanedResponse);
       console.log('✅ CLAUDE SUCCESS - REAL AI CONTENT GENERATED');
       console.log('🎯 Title:', websiteData.title);
       console.log('📱 Sections:', websiteData.sections?.length || 0);
@@ -146,8 +165,13 @@ RISPONDI SOLO CON IL JSON - NIENTE ALTRO! SENZA BACKTICKS O FORMATTAZIONE!`;
       
     } catch (parseError) {
       console.error('❌ Claude JSON Parse Error:', parseError.message);
-      console.log('🔍 Raw Response:', claudeResponseText);
-      throw new Error('Failed to parse Claude response as JSON');
+      console.log('🔍 Original Response Length:', claudeResponseText.length);
+      console.log('🔍 Cleaned Response Length:', cleanedResponse.length);
+      console.log('🔍 Original Preview:', claudeResponseText.substring(0, 500) + '...');
+      console.log('🔍 Cleaned Preview:', cleanedResponse.substring(0, 500) + '...');
+      console.log('🔍 Parse Error Position:', parseError.message);
+      
+      throw new Error(`Failed to parse Claude JSON: ${parseError.message}`);
     }
 
     // 🎉 SUCCESS RESPONSE
