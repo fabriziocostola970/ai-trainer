@@ -52,8 +52,8 @@ class PexelsService {
       const result = {
         total: heroImages.length + serviceImages.length + backgroundImages.length,
         hero: heroImages.map(img => this.formatImageData(img, 'hero')),
-        service: serviceImages.map(img => this.formatImageData(img, 'service')),
-        background: backgroundImages.map(img => this.formatImageData(img, 'background')),
+        services: serviceImages.map(img => this.formatImageData(img, 'service')),
+        backgrounds: backgroundImages.map(img => this.formatImageData(img, 'background')),
         keywords: keywords,
         businessType,
         businessName
@@ -134,8 +134,8 @@ class PexelsService {
     return {
       total: 0,
       hero: [],
-      service: [],
-      background: [],
+      services: [],
+      backgrounds: [],
       keywords: [],
       businessType: 'unknown',
       businessName: 'unknown',

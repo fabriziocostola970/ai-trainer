@@ -110,13 +110,13 @@ IMPORTANTISSIMO: SEGUI ESATTAMENTE LE RICHIESTE DELLA DESCRIZIONE SOPRA!
 
 IMMAGINI DISPONIBILI PER IL SITO:
 HERO IMAGES (per header/hero section):
-${businessImages.hero.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).join('\n')}
+${businessImages.hero?.map((img, i) => `${i+1}. ${img.urls?.regular || img.url} (${img.alt})`).join('\n') || 'Nessuna immagine hero disponibile'}
 
 SERVICE IMAGES (per servizi/prodotti):  
-${businessImages.services.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).join('\n')}
+${(businessImages.services || businessImages.service)?.map((img, i) => `${i+1}. ${img.urls?.regular || img.url} (${img.alt})`).join('\n') || 'Nessuna immagine servizi disponibile'}
 
 BACKGROUND IMAGES (per sfondi sezioni):
-${businessImages.backgrounds.map((img, i) => `${i+1}. ${img.url} (${img.alt})`).join('\n')}
+${(businessImages.backgrounds || businessImages.background)?.map((img, i) => `${i+1}. ${img.urls?.regular || img.url} (${img.alt})`).join('\n') || 'Nessuna immagine background disponibile'}
 
 IMMAGINI SPECIFICHE RICHIESTE DAL CLIENTE:
 ${specificImages.length > 0 
