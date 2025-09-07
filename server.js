@@ -93,6 +93,10 @@ app.get('/api/design/extraction-stats', (req, res) => {
   });
 });
 
+// 🎨 CLAUDE WEBSITE GENERATOR ROUTES
+const claudeRouter = require('./src/api/claude-website-generator');
+app.use('/api/claude', claudeRouter);
+
 // Basic root endpoint
 app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'frontend', 'index.html');
