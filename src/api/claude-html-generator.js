@@ -3,6 +3,7 @@ const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const UnifiedImageService = require('../services/unified-image-service.js');
 const { Pool } = require('pg');
+const jwt = require('jsonwebtoken');
 
 // CLAUDE SONNET 4 - GENERAZIONE HTML DIRETTA
 const anthropic = new Anthropic({
@@ -23,7 +24,40 @@ const pool = new Pool({
  * Segue i prompt ottimali suggeriti dall'utente
  */
 router.post('/generate-html', async (req, res) => {
+  // Variabili dichiarate all'inizio per essere accessibili ovunque
+  let businessId, websiteId, ownerId;
+
   try {
+    // 🔑 ESTRAI OWNER ID DAL TOKEN JWT
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
+
+    try {
+      const decoded = jwt.decode(token);
+      ownerId = decoded?.userId || decoded?.id || decoded?.sub;
+      console.log('🔑 Extracted ownerId from token:', ownerId);
+      
+      if (!ownerId) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid token - no user ID found'
+        });
+      }
+    } catch (jwtError) {
+      console.error('❌ JWT decode error:', jwtError);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid token'
+      });
+    }
+
     const { 
       businessName, 
       businessType, 
@@ -210,9 +244,11 @@ IMPORTANTE:
 
     // 💾 SALVA NELLA TABELLA WEBSITES ESISTENTE
     try {
-      // Prima creo/aggiorno il business se necessario
-      const businessId = `biz_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Genera IDs univoci
+      businessId = `biz_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      websiteId = `site_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
+      // Prima creo/aggiorno il business con l'ownerId reale del token
       const businessQuery = `
         INSERT INTO businesses (id, "ownerId", name, type, description, "createdAt", "updatedAt")
         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
@@ -224,21 +260,17 @@ IMPORTANTE:
         RETURNING id;
       `;
       
-      // Uso un ownerId temporaneo - dovrà essere collegato all'utente reale
-      const ownerIdTemp = 'temp_user_ai_generated';
-      
       await pool.query(businessQuery, [
         businessId,
-        ownerIdTemp,
+        ownerId, // ← Usa l'ownerId reale dal token
         businessName,
         businessType || 'general',
         businessDescription || ''
       ]);
       
-      console.log(`💼 Business created/updated: ${businessId}`);
+      console.log(`💼 Business created/updated: ${businessId} for owner: ${ownerId}`);
       
-      // Ora salvo il website nella tabella websites
-      const websiteId = `site_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Ora salvo il website nella tabella websites (websiteId già definito sopra)
       
       const websiteQuery = `
         INSERT INTO websites (id, "businessId", content, design, status, version, "createdAt", "updatedAt")
