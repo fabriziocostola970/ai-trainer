@@ -209,6 +209,10 @@ app.use('/api/claude', claudeRouter);
 const claudeHtmlRouter = require('./src/api/claude-html-generator');
 app.use('/api/claude', claudeHtmlRouter);
 
+// 🌐 PREVIEW ROUTES (Static HTML Sites)
+const previewRouter = require('./src/api/preview');
+app.use('/api/preview', previewRouter);
+
 // Basic root endpoint
 app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'frontend', 'index.html');
