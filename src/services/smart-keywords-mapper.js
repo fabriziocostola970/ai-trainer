@@ -10,7 +10,8 @@ class SmartKeywordsMapper {
    */
   static getBusinessKeywords(businessType, businessName, businessDescription) {
     const businessTypeLower = (businessType || '').toLowerCase();
-    const descriptionWords = (businessDescription || '').toLowerCase();
+    const businessDescStr = typeof businessDescription === 'string' ? businessDescription : '';
+    const descriptionWords = businessDescStr.toLowerCase();
     
     // 🌸 FIORERIA / GARDEN CENTER
     if (businessTypeLower.includes('fioreria') || 
