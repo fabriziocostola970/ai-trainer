@@ -14,36 +14,29 @@ class PexelsService {
    * 🎯 Recupera immagini per business specifico
    * @param {string} businessType - Tipo di business (ristorante, estetica, etc.)
    * @param {string} businessName - Nome del business
+   * @param {string} businessDescription - Descrizione del business  
    * @param {number} count - Numero di immagini da recuperare
    * @returns {Promise<Object>} Oggetto con immagini categorizzate
    */
-  async getBusinessImages(businessType, businessName, count = 6) {
+  async getBusinessImages(businessType, businessName, businessDescription = '', count = 6) {
     try {
-      console.log(`🔍 Searching Pexels images for: ${businessType} - ${businessName}`);
+      console.log(`🔍 Searching Pexels images for: ${businessName} - ${businessType}`);
       
-      // 🎨 KEYWORD MAPPING per business types
-      const keywordMap = {
-        'ristorante': ['restaurant', 'food', 'dining', 'cuisine', 'chef', 'kitchen'],
-        'pizzeria': ['pizza', 'italian food', 'restaurant', 'dining', 'chef'],
-        'fioraio': ['flowers', 'florist', 'bouquet', 'roses', 'garden', 'bloom'],
-        'bar': ['bar', 'cocktails', 'drinks', 'nightlife', 'bartender'],
-        'centro estetico': ['beauty', 'spa', 'wellness', 'skincare', 'massage'],
-        'parrucchiere': ['hairdresser', 'salon', 'beauty', 'styling', 'hair'],
-        'palestra': ['gym', 'fitness', 'workout', 'exercise', 'health'],
-        'abbigliamento': ['fashion', 'clothing', 'style', 'boutique', 'shopping'],
-        'tecnologia': ['technology', 'digital', 'computer', 'innovation', 'tech'],
-        'consulenza': ['business', 'office', 'consulting', 'professional', 'meeting'],
-        'automotive': ['cars', 'automotive', 'garage', 'mechanic', 'vehicles'],
-        'default': ['business', 'professional', 'modern', 'quality', 'service']
-      };
-
-      const keywords = keywordMap[businessType.toLowerCase()] || keywordMap['default'];
+      // � SMART KEYWORDS usando il nuovo mapper
+      const SmartKeywordsMapper = require('./smart-keywords-mapper');
+      const smartKeywords = SmartKeywordsMapper.getBusinessKeywords(businessType, businessName, businessDescription);
       
-      // 🚀 RICERCA IMMAGINI PARALLELA
+      console.log('🏷️ Smart keywords:', {
+        hero: smartKeywords.hero[0],
+        services: smartKeywords.services[0], 
+        backgrounds: smartKeywords.backgrounds[0]
+      });
+      
+      // 🚀 RICERCA IMMAGINI PARALLELA con Smart Keywords
       const searches = await Promise.all([
-        this.searchImages(keywords[0], 2), // Hero images
-        this.searchImages(keywords[1], 2), // Service images  
-        this.searchImages(keywords[2], 2), // Background images
+        this.searchImages(smartKeywords.hero[0], 2), // Hero images
+        this.searchImages(smartKeywords.services[0], 2), // Service images  
+        this.searchImages(smartKeywords.backgrounds[0], 2), // Background images
       ]);
 
       const [heroImages, serviceImages, backgroundImages] = searches;
@@ -54,7 +47,7 @@ class PexelsService {
         hero: heroImages.map(img => this.formatImageData(img, 'hero')),
         services: serviceImages.map(img => this.formatImageData(img, 'service')),
         backgrounds: backgroundImages.map(img => this.formatImageData(img, 'background')),
-        keywords: keywords,
+        keywords: smartKeywords,
         businessType,
         businessName
       };

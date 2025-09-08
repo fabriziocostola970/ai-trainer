@@ -24,14 +24,14 @@ class UnifiedImageService {
    * 🎯 Recupera immagini con fallback automatico
    * Strategia: Pexels prima, Unsplash come backup
    */
-  async getBusinessImages(businessType, businessName, count = 6) {
+  async getBusinessImages(businessType, businessName, businessDescription = '', count = 6) {
     let result = null;
     let errors = [];
 
     // 🥇 TENTATIVO 1: Pexels (primary)
     try {
       console.log('🔵 Trying Pexels first...');
-      result = await this.pexels.getBusinessImages(businessType, businessName, count);
+      result = await this.pexels.getBusinessImages(businessType, businessName, businessDescription, count);
       
       if (result && result.total > 0) {
         console.log(`✅ SUCCESS with Pexels! Found ${result.total} images`);
@@ -65,7 +65,7 @@ class UnifiedImageService {
     // 🥈 TENTATIVO 2: Unsplash (fallback)
     try {
       console.log('🟡 Falling back to Unsplash...');
-      result = await this.unsplash.getBusinessImages(businessType, businessName, count);
+      result = await this.unsplash.getBusinessImages(businessType, businessName, businessDescription, count);
       
       if (result && result.total > 0) {
         console.log(`✅ SUCCESS with Unsplash fallback! Found ${result.total} images`);
