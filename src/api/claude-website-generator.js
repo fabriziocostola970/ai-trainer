@@ -100,101 +100,91 @@ router.post('/generate', async (req, res) => {
       console.log('Hero images:', businessImages.hero.map(img => getImageUrl(img)));
     }
 
-    // 🎨 PROMPT CLAUDE COMPLETAMENTE CREATIVO E LIBERO
-    const claudePrompt = `SEI UN WEB DESIGNER ESPERTO E ALTAMENTE CREATIVO!
+    // 🎨 PROMPT CLAUDE OTTIMALE PER HTML DIRETTO BELLISSIMO
+    const claudePrompt = `SEI UN WEB DESIGNER ESPERTO CHE CREA SITI WEB UNICI E MODERNI!
 
-Crea un sito web COMPLETO per: ${businessName}
-Settore: ${businessType || 'business'}
+Devi creare una pagina HTML COMPLETA E FUNZIONALE per "${businessName}" (${businessType}), evitando design generici o template standard.
 
-RICHIESTA COMPLETA DEL CLIENTE:
+BRIEF DETTAGLIATO:
 ${businessDescription}
 
-ISTRUZIONI IMPORTANTI:
-- Analizza ATTENTAMENTE la richiesta del cliente sopra
-- Implementa OGNI singolo elemento richiesto (sezioni, funzionalità, filtri, ecc.)
-- Se il cliente chiede FILTRI di ricerca, creali funzionanti con JavaScript
-- Se chiede specifiche categorie di prodotti, organizzale nel layout
-- Mantieni lo stile richiesto (aggressivo/colorato/professionale/ecc.)
-- Sii CREATIVO nella struttura e nel design, ma RISPETTA ogni richiesta
+RICHIESTE TECNICHE SPECIFICHE - CREA UN DESIGN CHE INCLUDA:
+✅ Layout moderno e responsive con Tailwind CSS
+✅ Animazioni fluide e hover effects creativi
+✅ Sezioni specifiche con immagini appropriate  
+✅ Filtri interattivi FUNZIONANTI con JavaScript
+✅ Elementi visuali creativi (gradients, shadows, transforms)
+✅ Tipografia accattivante con Google Fonts
+✅ Call-to-action evidenti e styled
+✅ Micro-interazioni e effects (hover, scale, rotate)
+✅ Icons Font Awesome per ogni sezione
+✅ Sezioni hero impattanti con gradients
+
+NON LIMITARTI A DESIGN SEMPLICI - SII CREATIVO CON:
+🎨 Colori e combinazioni cromatiche audaci
+🎨 Layout asimmetrici o creativi  
+🎨 Elementi grafici decorativi
+🎨 Sezioni alternate con sfondi colorati
+🎨 Cards con shadows e transforms
+🎨 Animazioni CSS personalizzate
 
 IMMAGINI DISPONIBILI (usa queste URL esatte):
 ${businessImages.hero?.map((img, i) => `HERO ${i+1}: ${getImageUrl(img)}`).join('\n') || 'Nessuna immagine hero'}
 ${(businessImages.services || []).map((img, i) => `CONTENT ${i+1}: ${getImageUrl(img)}`).join('\n') || 'Nessuna immagine content'}
 ${(businessImages.backgrounds || []).map((img, i) => `BACKGROUND ${i+1}: ${getImageUrl(img)}`).join('\n') || 'Nessuna immagine background'}
 
-IMPORTANTE: Usa SOLO le immagini elencate sopra con le loro URL esatte!
-
-CREATIVITÀ TOTALE PERMESSA:
-- Design layout innovativo e accattivante
-- Usa colori, animazioni, effetti creativi 
-- Struttura creativa delle sezioni
-- Typography moderna e impattante
-- Interazioni JavaScript creative
-- Layout responsive e moderno
-
-PERO' RISPETTA SEMPRE:
-- Ogni richiesta specifica del cliente
-- Sezioni e funzionalità richieste
-- Stile generale indicato dal cliente
-- Filtri o funzionalità specifiche menzionate
-
-REGOLE RIGIDE PER CONTATTI E SPECIFICHE:
-- Se il cliente fornisce INDIRIZZO, TELEFONO, WHATSAPP, ORARI - usali ESATTAMENTE
-- Se specifica SEZIONI precise (es: "Alberi da Frutta", "Giardinaggio Casalingo") - creale con QUESTI NOMI ESATTI
-- Se elenca PRODOTTI specifici (orchidee, rose rosse, piante ornamentali) - scrivili nel contenuto
-- NO template generici quando il cliente è specifico
-- SI a ogni singolo dettaglio richiesto nella descrizione
-
-STOP AL RAGGRUPPAMENTO GENERICO:
-- NON raggruppare tutto in "I Nostri Servizi" o "Servizi"
-- Se il cliente chiede 4 sezioni separate, crea 4 sezioni separate
+FRAMEWORK STILISTICO RICHIESTO:
+- Gradienti colorati e moderni
+- Hover effects e animazioni fluide
+- Layout asimmetrico e creativo
+- Cards con shadows e transforms  
+- Sezioni alternate con sfondi colorati
+- Tipografia elegante con font pairing
+- Filtri interattivi funzionanti
+- Elementi decorativi (forme geometriche, patterns)
 - Ogni sezione deve avere il suo ID univoco e il titolo esatto richiesto
 - Esempio: se chiede "Alberi da Frutta" + "Giardinaggio Casalingo" = 2 sezioni separate, non 1 sezione "Servizi"
 
 REGOLE ASSOLUTE:
 1. RISPETTA OGNI SINGOLA RICHIESTA della descrizione cliente
-2. USA le immagini fornite con le URL esatte
-3. CREA sezioni separate se richieste separate
-4. NON inventare contatti se non forniti
-5. SFRUTTA tutta la creatività per design e layout
-6. OUTPUT: SOLO JSON valido, nessun testo extra
+ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[BUSINESS NAME] | [TAGLINE CREATIVO]</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=[FONT_PAIRING]" rel="stylesheet">
+    <style>
+        /* STILI PERSONALIZZATI CREATIVI */
+        .gradient-bg { background: linear-gradient(135deg, [COLORI APPROPRIATI]); }
+        /* ANIMAZIONI, HOVER EFFECTS, CREATIVITÀ */
+    </style>
+</head>
+<body>
+    <!-- HERO SECTION IMPATTANTE -->
+    <!-- SEZIONI SPECIFICHE RICHIESTE -->
+    <!-- FILTRI INTERATTIVI SE RICHIESTI -->
+    <!-- CONTATTI E FOOTER -->
+    
+    <script>
+        /* JAVASCRIPT FUNZIONANTE PER FILTRI E INTERAZIONI */
+    </script>
+</body>
+</html>
 
-STRUTTURA JSON:
-{
-  "website": {
-    "name": "${businessName}",
-    "title": "Titolo creativo basato sulla richiesta",
-    "description": "Meta description SEO",
-    "sections": [
-      {
-        "id": "hero",
-        "type": "hero", 
-        "title": "Hero Title",
-        "content": "Hero content",
-        "image": "URL_HERO_IMAGE",
-        "backgroundColor": "#HEX_COLOR",
-        "textColor": "#FFFFFF"
-      }
-      // ... altre sezioni richieste dal cliente
-    ],
-    "contact": {
-      "phone": "SOLO se specificato dal cliente",
-      "email": "SOLO se specificato dal cliente", 
-      "address": "SOLO se specificato dal cliente",
-      "whatsapp": "SOLO se specificato dal cliente",
-      "hours": "SOLO se specificato dal cliente"
-    },
-    "colors": {
-      "primary": "#colore_principale",
-      "secondary": "#colore_secondario", 
-      "accent": "#colore_accento"
-    },
-    "fonts": {
-      "heading": "Font moderno per titoli",
-      "body": "Font leggibile per testo"
-    }
-  }
-}`;
+IMPORTANTE - OUTPUT:
+- Genera SOLO codice HTML completo, niente altro
+- Includi tutto in un singolo file HTML
+- JavaScript funzionante incluso
+- CSS personalizzato per creatività massima
+- Usa le immagini fornite con URL esatte
+- Design completamente responsive
+- Stile moderno e professionale ma creativo
+
+INIZIA SUBITO CON <!DOCTYPE html>:`;
 
     console.log('🎨 Calling Claude Sonnet 4 with CREATIVE freedom...');
     
@@ -211,25 +201,34 @@ STRUTTURA JSON:
       ]
     });
 
-    const responseText = claudeResponse.content[0].text;
-    console.log('✅ Claude response received');
+    let htmlContent = claudeResponse.content[0].text;
+    console.log('✅ Claude HTML response received');
     
-    // PARSE JSON RESPONSE
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No valid JSON found in Claude response');
+    // PULIZIA HTML (rimuove eventuali wrapper di markdown)
+    if (htmlContent.includes('```html')) {
+      const htmlMatch = htmlContent.match(/```html\n([\s\S]*?)\n```/) || 
+                       htmlContent.match(/```html([\s\S]*?)```/) ||
+                       htmlContent.match(/<html[\s\S]*<\/html>/i);
+      
+      if (htmlMatch) {
+        htmlContent = htmlMatch[1] || htmlMatch[0];
+      }
     }
-
-    const website = JSON.parse(jsonMatch[0]);
-    console.log(`🏗️  Website generated with ${website.website.sections.length} sections`);
+    
+    // VERIFICA CHE SIA HTML VALIDO
+    if (!htmlContent.includes('<!DOCTYPE html>') && !htmlContent.includes('<html')) {
+      throw new Error('Generated content is not valid HTML');
+    }
+    
+    console.log(`🏗️ HTML website generated (${Math.round(htmlContent.length / 1024)}KB)`);
 
     // 🔍 VALIDAZIONE POST-GENERAZIONE CON REQUIREMENT VALIDATOR
-    console.log('🔍 Validating generated website against client requirements...');
+    console.log('🔍 Validating generated HTML against client requirements...');
     
     const validator = new RequirementValidator();
     const clientRequirements = validator.extractRequirements(businessDescription);
     const validationResult = validator.validateGeneratedHTML(
-      JSON.stringify(website), 
+      htmlContent, 
       clientRequirements
     );
 
@@ -237,35 +236,12 @@ STRUTTURA JSON:
     console.log('✅ Requirements satisfied:', validationResult.satisfied.length);
     console.log('❌ Requirements missing:', validationResult.missing.length);
 
-    // 🚨 SE CI SONO REQUISITI MANCANTI, COMPLETA AUTOMATICAMENTE
+    // ✅ VALIDAZIONE COMPLETATA (HTML generation is self-contained)
     if (validationResult.missing.length > 0) {
-      console.log('🔧 Auto-completing missing requirements...');
-      
-      const completionPrompt = validator.generateCompletionPrompt(
-        website, 
-        validationResult.missing
-      );
-
-      const completionResponse = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        temperature: 0.7,
-        messages: [
-          {
-            role: 'user',
-            content: completionPrompt
-          }
-        ]
-      });
-
-      const completionText = completionResponse.content[0].text;
-      const completionMatch = completionText.match(/\{[\s\S]*\}/);
-      
-      if (completionMatch) {
-        const completedWebsite = JSON.parse(completionMatch[0]);
-        website.website = completedWebsite.website;
-        console.log('✅ Website completed with missing requirements');
-      }
+      console.log('⚠️  Some requirements might be missing, but HTML generation is complete');
+      console.log('Missing items:', validationResult.missing.map(m => m.type).join(', '));
+    } else {
+      console.log('🎉 All requirements satisfied in generated HTML!');
     }
 
     // 💾 SALVA NEL DATABASE POSTGRESQL
@@ -304,12 +280,12 @@ STRUTTURA JSON:
         businessName,
         businessType || 'general',
         businessDescription || '',
-        JSON.stringify(website.website), // Salva il website JSON completo
+        htmlContent, // Salva l'HTML completo generato
         'moderno', // style_preference default
         'professionale', // color_mood default  
         'generale', // target_audience default
         JSON.stringify(metadata),
-        JSON.stringify(website.website).length,
+        htmlContent.length,
         businessImages.total || 0,
         0 // generation_time_ms - da implementare
       ];
@@ -322,11 +298,13 @@ STRUTTURA JSON:
       // Non blocchiamo la response se il DB fallisce
     }
 
-    // RESPONSE
+    // RESPONSE CON HTML BELLISSIMO
     res.json({
       success: true,
-      website: website.website,
+      html: htmlContent,
       metadata: {
+        website_id: websiteId,
+        generation_type: 'direct_html',
         creative_mode: true,
         requirements_validation: {
           total_requirements: clientRequirements.length,
@@ -338,8 +316,8 @@ STRUTTURA JSON:
           content: (businessImages.services || []).length,
           backgrounds: (businessImages.backgrounds || []).length
         },
-        website_id: websiteId,
-        creative_system: 'v2.0 - Post-validation requirements'
+        content_length: htmlContent.length,
+        creative_system: 'v3.0 - Direct HTML Creative Generation'
       }
     });
 

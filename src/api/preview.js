@@ -328,20 +328,24 @@ router.get('/site/:websiteId', async (req, res) => {
     
     let htmlContent = website.html_content;
     
-    // Se il contenuto è un JSON (dal sistema principale), estraiamo l'HTML
-    try {
-      const parsed = JSON.parse(htmlContent);
-      if (parsed.html) {
-        htmlContent = parsed.html;
-        console.log('🔄 Converted JSON website to HTML');
-      } else if (parsed.sections) {
-        // Questo è il formato del sistema principale - generiamo HTML
-        htmlContent = convertWebsiteJsonToHTML(parsed);
-        console.log('🔄 Converted website sections to HTML');
+    // Controlla se è già HTML puro o JSON
+    if (htmlContent.trim().startsWith('<!DOCTYPE html>') || htmlContent.trim().startsWith('<html')) {
+      // È già HTML puro - sistema nuovo
+      console.log('📄 Direct HTML content detected (new system)');
+    } else {
+      // Prova a parsare come JSON - sistema vecchio
+      try {
+        const parsed = JSON.parse(htmlContent);
+        if (parsed.html) {
+          htmlContent = parsed.html;
+          console.log('🔄 Converted JSON website to HTML (old system)');
+        } else if (parsed.sections) {
+          htmlContent = convertWebsiteJsonToHTML(parsed);
+          console.log('🔄 Converted website sections to HTML (old system)');
+        }
+      } catch (e) {
+        console.log('⚠️ Content is neither HTML nor valid JSON, serving as-is');
       }
-    } catch (e) {
-      // Se non è JSON, assumiamo sia già HTML puro
-      console.log('📄 Direct HTML content detected');
     }
     
     // Serve l'HTML
