@@ -225,13 +225,28 @@ IMPORTANTE:
 
     // ESTRAI IL CODICE HTML (potrebbe essere wrappato in ```html)
     let cleanHTML = htmlContent;
-    const htmlMatch = htmlContent.match(/```html\n([\s\S]*?)\n```/) || 
-                      htmlContent.match(/```\n([\s\S]*?)\n```/) ||
-                      htmlContent.match(/<html[\s\S]*<\/html>/i);
     
-    if (htmlMatch) {
-      cleanHTML = htmlMatch[1] || htmlMatch[0];
+    // Più pattern di pulizia per catturare tutti i casi
+    const htmlPatterns = [
+      /```html\n([\s\S]*?)\n```/,           // ```html ... ```
+      /```html([\s\S]*?)```/,               // ```html...``` (senza newline)
+      /```\n([\s\S]*?)\n```/,               // ``` ... ```
+      /```([\s\S]*?)```/,                   // ```...``` (senza newline)
+      /<html[\s\S]*<\/html>/i               // Direct HTML match
+    ];
+    
+    for (const pattern of htmlPatterns) {
+      const match = htmlContent.match(pattern);
+      if (match) {
+        cleanHTML = match[1] || match[0];
+        break;
+      }
     }
+    
+    // Rimuovi eventuali wrapper markdown rimanenti
+    cleanHTML = cleanHTML.replace(/^```html\n?/gm, '').replace(/\n?```$/gm, '');
+    
+    console.log(`🧹 HTML cleaning: Original length: ${htmlContent.length}, Clean length: ${cleanHTML.length}`);
 
     // VERIFICA CHE SIA HTML VALIDO
     if (!cleanHTML.includes('<!DOCTYPE html>') && !cleanHTML.includes('<html')) {
