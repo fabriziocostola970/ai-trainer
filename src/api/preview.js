@@ -11,9 +11,69 @@ const pool = new Pool({
 });
 
 /**
- * 🌐 SERVE SITI HTML GENERATI STATICAMENTE
+ * 🌐 SERVE SITI HTML GENERATI STATICAMENTE  
  * Endpoint per visualizzare i siti web generati
  */
+
+// Funzione per convertire JSON website del sistema principale in HTML
+function convertWebsiteJsonToHTML(websiteJson) {
+  try {
+    console.log('🔧 Converting website JSON to HTML...');
+    
+    // Estrai le sezioni dal JSON
+    const sections = websiteJson.sections || [];
+    const businessName = websiteJson.businessName || 'Business';
+    const businessType = websiteJson.businessType || 'general';
+    
+    // Genera HTML di base
+    let html = `<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${businessName}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-shadow { box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-gray-50">`;
+
+    // Converti ogni sezione
+    sections.forEach((section, index) => {
+      const sectionId = section.type?.toLowerCase() || `section-${index}`;
+      
+      html += `
+    <section id="${sectionId}" class="py-16 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+        <div class="max-w-6xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">
+                ${section.title || section.type || 'Sezione'}
+            </h2>`;
+      
+      if (section.content) {
+        html += `<div class="text-lg text-gray-600 leading-relaxed">
+                    ${Array.isArray(section.content) ? section.content.join('<br>') : section.content}
+                 </div>`;
+      }
+      
+      html += `
+        </div>
+    </section>`;
+    });
+
+    html += `
+</body>
+</html>`;
+
+    return html;
+    
+  } catch (error) {
+    console.error('Error converting JSON to HTML:', error);
+    return `<html><body><h1>Error converting website</h1><p>${error.message}</p></body></html>`;
+  }
+}
 
 // Funzione per estrarre HTML pulito dal JSON
 function extractCleanHTML(jsonFilePath) {
@@ -224,9 +284,9 @@ router.get('/', (req, res) => {
 });
 
 /**
- * 🌐 PREVIEW DINAMICO DAL DATABASE
- * GET /api/preview/site/:websiteId
- * Legge i siti generati dal database PostgreSQL
+ * 🌐 PREVIEW UNIVERSALE: File + Database
+ * GET /api/preview/site/:websiteId  
+ * Cerca prima nei file locali, poi nel database
  */
 router.get('/site/:websiteId', async (req, res) => {
   try {
@@ -254,7 +314,7 @@ router.get('/site/:websiteId', async (req, res) => {
             <p>Il sito con ID "${websiteId}" non esiste nel database.</p>
             <div class="info">
               <p>🔧 <strong>Per generare un nuovo sito:</strong></p>
-              <p>POST https://ai-trainer-production-8fd9.up.railway.app/api/claude/generate-html</p>
+              <p>POST https://ai-trainer-production-8fd9.up.railway.app/api/claude/generate</p>
             </div>
             <a href="/api/preview/">← Torna alla lista</a>
           </body>
@@ -266,9 +326,27 @@ router.get('/site/:websiteId', async (req, res) => {
     console.log(`✅ Website found: ${website.business_name} (${website.business_type})`);
     console.log(`📏 HTML length: ${website.html_content.length} characters`);
     
-    // Serve l'HTML direttamente dal database
+    let htmlContent = website.html_content;
+    
+    // Se il contenuto è un JSON (dal sistema principale), estraiamo l'HTML
+    try {
+      const parsed = JSON.parse(htmlContent);
+      if (parsed.html) {
+        htmlContent = parsed.html;
+        console.log('🔄 Converted JSON website to HTML');
+      } else if (parsed.sections) {
+        // Questo è il formato del sistema principale - generiamo HTML
+        htmlContent = convertWebsiteJsonToHTML(parsed);
+        console.log('🔄 Converted website sections to HTML');
+      }
+    } catch (e) {
+      // Se non è JSON, assumiamo sia già HTML puro
+      console.log('📄 Direct HTML content detected');
+    }
+    
+    // Serve l'HTML
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(website.html_content);
+    res.send(htmlContent);
     
   } catch (error) {
     console.error('Database preview error:', error);

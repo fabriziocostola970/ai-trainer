@@ -3,10 +3,17 @@ const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const UnifiedImageService = require('../services/unified-image-service.js');
 const RequirementValidator = require('../services/requirement-validator.js');
+const { Pool } = require('pg');
 
 // CLAUDE SONNET 4 - CREATIVE GENERATION + REQUIREMENT VALIDATION
 const anthropic = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY,
+});
+
+// 🗄️ DATABASE CONNECTION
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 /**
@@ -259,6 +266,60 @@ STRUTTURA JSON:
         website.website = completedWebsite.website;
         console.log('✅ Website completed with missing requirements');
       }
+    }
+
+    // 💾 SALVA NEL DATABASE POSTGRESQL
+    try {
+      const insertQuery = `
+        INSERT INTO generated_websites (
+          website_id, business_name, business_type, business_description,
+          html_content, style_preference, color_mood, target_audience,
+          generation_metadata, content_length, images_count, generation_time_ms
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ON CONFLICT (website_id) DO UPDATE SET
+          html_content = EXCLUDED.html_content,
+          generation_metadata = EXCLUDED.generation_metadata,
+          updated_at = CURRENT_TIMESTAMP
+        RETURNING id;
+      `;
+      
+      const metadata = {
+        website_id: websiteId,
+        creative_mode: true,
+        requirements_validation: {
+          total_requirements: clientRequirements.length,
+          satisfied: validationResult.satisfied.length,
+          missing_auto_completed: validationResult.missing.length
+        },
+        images_used: {
+          hero: businessImages.hero?.length || 0,
+          content: (businessImages.services || []).length,
+          backgrounds: (businessImages.backgrounds || []).length
+        },
+        creative_system: 'v2.0 - Post-validation requirements'
+      };
+
+      const values = [
+        websiteId,
+        businessName,
+        businessType || 'general',
+        businessDescription || '',
+        JSON.stringify(website.website), // Salva il website JSON completo
+        'moderno', // style_preference default
+        'professionale', // color_mood default  
+        'generale', // target_audience default
+        JSON.stringify(metadata),
+        JSON.stringify(website.website).length,
+        businessImages.total || 0,
+        0 // generation_time_ms - da implementare
+      ];
+
+      const dbResult = await pool.query(insertQuery, values);
+      console.log(`💾 Website saved to database with ID: ${dbResult.rows[0].id}`);
+      
+    } catch (dbError) {
+      console.error('❌ Database save error:', dbError.message);
+      // Non blocchiamo la response se il DB fallisce
     }
 
     // RESPONSE
