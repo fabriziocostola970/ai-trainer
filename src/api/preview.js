@@ -2,6 +2,13 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
+const { Pool } = require('pg');
+
+// 🗄️ DATABASE CONNECTION
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 /**
  * 🌐 SERVE SITI HTML GENERATI STATICAMENTE
@@ -214,6 +221,108 @@ router.get('/', (req, res) => {
     </body>
     </html>
   `);
+});
+
+/**
+ * 🌐 PREVIEW DINAMICO DAL DATABASE
+ * GET /api/preview/site/:websiteId
+ * Legge i siti generati dal database PostgreSQL
+ */
+router.get('/site/:websiteId', async (req, res) => {
+  try {
+    const { websiteId } = req.params;
+    
+    console.log(`🔍 Searching for website: ${websiteId}`);
+    
+    // Query dal database
+    const query = 'SELECT * FROM generated_websites WHERE website_id = $1 ORDER BY created_at DESC LIMIT 1';
+    const result = await pool.query(query, [websiteId]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).send(`
+        <html>
+          <head>
+            <title>Sito Non Trovato</title>
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+              .error { color: #e74c3c; }
+              .info { color: #3498db; margin: 20px 0; }
+            </style>
+          </head>
+          <body>
+            <h1 class="error">❌ Sito Non Trovato</h1>
+            <p>Il sito con ID "${websiteId}" non esiste nel database.</p>
+            <div class="info">
+              <p>🔧 <strong>Per generare un nuovo sito:</strong></p>
+              <p>POST https://ai-trainer-production-8fd9.up.railway.app/api/claude/generate-html</p>
+            </div>
+            <a href="/api/preview/">← Torna alla lista</a>
+          </body>
+        </html>
+      `);
+    }
+    
+    const website = result.rows[0];
+    console.log(`✅ Website found: ${website.business_name} (${website.business_type})`);
+    console.log(`📏 HTML length: ${website.html_content.length} characters`);
+    
+    // Serve l'HTML direttamente dal database
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(website.html_content);
+    
+  } catch (error) {
+    console.error('Database preview error:', error);
+    res.status(500).send(`
+      <html>
+        <body>
+          <h1>❌ Errore Database</h1>
+          <p>Errore nel recupero del sito: ${error.message}</p>
+        </body>
+      </html>
+    `);
+  }
+});
+
+/**
+ * 📋 LISTA SITI GENERATI DAL DATABASE  
+ * GET /api/preview/list
+ */
+router.get('/list', async (req, res) => {
+  try {
+    const query = `
+      SELECT website_id, business_name, business_type, business_description, 
+             content_length, images_count, created_at, generation_metadata
+      FROM generated_websites 
+      ORDER BY created_at DESC 
+      LIMIT 20
+    `;
+    
+    const result = await pool.query(query);
+    
+    const sites = result.rows.map(site => ({
+      id: site.website_id,
+      name: site.business_name,
+      type: site.business_type,
+      description: site.business_description?.substring(0, 100) + '...',
+      size: `${Math.round(site.content_length / 1024)}KB`,
+      images: site.images_count,
+      created: new Date(site.created_at).toLocaleDateString('it-IT'),
+      preview_url: `/api/preview/site/${site.website_id}`
+    }));
+    
+    res.json({
+      success: true,
+      total: sites.length,
+      sites: sites
+    });
+    
+  } catch (error) {
+    console.error('Database list error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 module.exports = router;

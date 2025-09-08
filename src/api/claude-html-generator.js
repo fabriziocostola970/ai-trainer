@@ -2,10 +2,17 @@ const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const UnifiedImageService = require('../services/unified-image-service.js');
+const { Pool } = require('pg');
 
 // CLAUDE SONNET 4 - GENERAZIONE HTML DIRETTA
 const anthropic = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY,
+});
+
+// 🗄️ DATABASE CONNECTION
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 /**
@@ -199,6 +206,59 @@ IMPORTANTE:
     // VERIFICA CHE SIA HTML VALIDO
     if (!cleanHTML.includes('<!DOCTYPE html>') && !cleanHTML.includes('<html')) {
       throw new Error('Generated content is not valid HTML');
+    }
+
+    // 💾 SALVA NEL DATABASE POSTGRESQL
+    const generationEndTime = Date.now();
+    const generationTime = generationEndTime - Date.now(); // Dovremmo tracciare il tempo reale
+    
+    try {
+      const insertQuery = `
+        INSERT INTO generated_websites (
+          website_id, business_name, business_type, business_description,
+          html_content, style_preference, color_mood, target_audience,
+          generation_metadata, content_length, images_count, generation_time_ms
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ON CONFLICT (website_id) DO UPDATE SET
+          html_content = EXCLUDED.html_content,
+          generation_metadata = EXCLUDED.generation_metadata,
+          updated_at = CURRENT_TIMESTAMP
+        RETURNING id;
+      `;
+      
+      const metadata = {
+        website_id: websiteId,
+        generation_type: 'direct_html',
+        creative_mode: true,
+        images_used: {
+          hero: businessImages.hero?.length || 0,
+          content: (businessImages.services || []).length,
+          backgrounds: (businessImages.backgrounds || []).length
+        },
+        claude_system: 'v3.0 - Direct HTML Creative Generation'
+      };
+
+      const values = [
+        websiteId,
+        businessName,
+        businessType,
+        businessDescription,
+        cleanHTML,
+        stylePreference,
+        colorMood,
+        targetAudience,
+        JSON.stringify(metadata),
+        cleanHTML.length,
+        businessImages.total || 0,
+        generationTime
+      ];
+
+      const dbResult = await pool.query(insertQuery, values);
+      console.log(`💾 Website saved to database with ID: ${dbResult.rows[0].id}`);
+      
+    } catch (dbError) {
+      console.error('❌ Database save error:', dbError.message);
+      // Non blocchiamo la response se il DB fallisce
     }
 
     // RESPONSE
