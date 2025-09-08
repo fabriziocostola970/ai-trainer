@@ -31,22 +31,29 @@ async function testFlowerShopHTML() {
     return;
   }
   
-  const result = await response.text(); // HTML response
+  const result = await response.json(); // JSON response with HTML inside
+  
+  if (!result.success || !result.html) {
+    console.error('❌ Invalid response format');
+    return;
+  }
+  
+  const htmlContent = result.html;
   
   console.log('✅ HTML Generated successfully!');
-  console.log(`📏 HTML Size: ${result.length} characters`);
+  console.log(`📏 HTML Size: ${htmlContent.length} characters`);
   
   // Verifica che contenga elementi moderni
   const checks = {
-    'Tailwind CSS': result.includes('tailwindcss'),
-    'Font Awesome': result.includes('font-awesome'),
-    'Gradients': result.includes('gradient'),
-    'Hover Effects': result.includes('hover:'),
-    'Responsive': result.includes('md:') || result.includes('lg:'),
-    'Animations': result.includes('transition') || result.includes('transform'),
-    'Business Name': result.includes('Fioreria Balduina'),
-    'Contact Info': result.includes('06.55.99.26.47'),
-    'Sezioni Richieste': result.includes('Alberi da Frutta') && result.includes('Giardinaggio'),
+    'Tailwind CSS': htmlContent.includes('tailwindcss'),
+    'Font Awesome': htmlContent.includes('font-awesome'),
+    'Gradients': htmlContent.includes('gradient'),
+    'Hover Effects': htmlContent.includes('hover:'),
+    'Responsive': htmlContent.includes('md:') || htmlContent.includes('lg:'),
+    'Animations': htmlContent.includes('transition') || htmlContent.includes('transform'),
+    'Business Name': htmlContent.includes('Fioreria Balduina'),
+    'Contact Info': htmlContent.includes('06.55.99.26.47'),
+    'Sezioni Richieste': htmlContent.includes('Alberi da Frutta') && htmlContent.includes('Giardinaggio'),
   };
   
   console.log('\n🔍 ANALISI QUALITÀ HTML:');
@@ -56,7 +63,7 @@ async function testFlowerShopHTML() {
   
   // Salva HTML per preview
   const fs = require('fs');
-  fs.writeFileSync('./generated-fioreria.html', result);
+  fs.writeFileSync('./generated-fioreria.html', htmlContent);
   console.log('\n💾 HTML salvato in: generated-fioreria.html');
   
   return result;
@@ -85,20 +92,27 @@ async function testAutoDealerHTML() {
     return;
   }
   
-  const result = await response.text();
+  const result = await response.json();
+  
+  if (!result.success || !result.html) {
+    console.error('❌ Invalid response format');
+    return;
+  }
+  
+  const htmlContent = result.html;
   
   console.log('✅ HTML Generated successfully!');
-  console.log(`📏 HTML Size: ${result.length} characters`);
+  console.log(`📏 HTML Size: ${htmlContent.length} characters`);
   
   // Verifica filtri automotive specifici
   const automotiveChecks = {
-    'Filtri Tipo Auto': result.includes('berlina') && result.includes('SUV'),
-    'Filtri Carburante': result.includes('benzina') && result.includes('elettrico'),
-    'Filtri Uso': result.includes('commerciale') && result.includes('privato'),
-    'Sezioni Auto': result.includes('Auto Nuove') && result.includes('Auto Usate'),
-    'Contatti Torino': result.includes('Torino') && result.includes('011-555-0123'),
-    'WhatsApp': result.includes('347-555-0123'),
-    'Stile Aggressivo': result.includes('gradient') || result.includes('bold'),
+    'Filtri Tipo Auto': htmlContent.includes('berlina') && htmlContent.includes('SUV'),
+    'Filtri Carburante': htmlContent.includes('benzina') && htmlContent.includes('elettrico'),
+    'Filtri Uso': htmlContent.includes('commerciale') && htmlContent.includes('privato'),
+    'Sezioni Auto': htmlContent.includes('Auto Nuove') && htmlContent.includes('Auto Usate'),
+    'Contatti Torino': htmlContent.includes('Torino') && htmlContent.includes('011-555-0123'),
+    'WhatsApp': htmlContent.includes('347-555-0123'),
+    'Stile Aggressivo': htmlContent.includes('gradient') || htmlContent.includes('bold'),
   };
   
   console.log('\n🔍 ANALISI AUTOMOTIVE:');
@@ -108,7 +122,7 @@ async function testAutoDealerHTML() {
   
   // Salva HTML
   const fs = require('fs');
-  fs.writeFileSync('./generated-automotive.html', result);
+  fs.writeFileSync('./generated-automotive.html', htmlContent);
   console.log('💾 HTML salvato in: generated-automotive.html');
   
   return result;
