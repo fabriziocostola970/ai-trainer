@@ -3,7 +3,6 @@ const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const UnifiedImageService = require('../services/unified-image-service.js');
 const { Pool } = require('pg');
-const jwt = require('jsonwebtoken');
 
 // CLAUDE SONNET 4 - GENERAZIONE HTML DIRETTA
 const anthropic = new Anthropic({
@@ -28,37 +27,27 @@ router.post('/generate-html', async (req, res) => {
   let businessId, websiteId, ownerId;
 
   try {
-    // 🔑 ESTRAI OWNER ID DAL TOKEN JWT
+    // 🔑 API KEY AUTHENTICATION (like other AI-Trainer endpoints)
     const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    const expectedKey = process.env.AI_TRAINER_API_KEY;
     
-    if (!token) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
-        error: 'Authentication required'
+        error: 'Missing or invalid authorization header'
+      });
+    }
+    
+    const token = authHeader.substring(7);
+    if (!expectedKey || token !== expectedKey) {
+      return res.status(403).json({
+        success: false,
+        error: 'Invalid API key'
       });
     }
 
-    try {
-      const decoded = jwt.decode(token);
-      ownerId = decoded?.userId || decoded?.id || decoded?.sub;
-      console.log('🔑 Extracted ownerId from token:', ownerId);
-      
-      if (!ownerId) {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid token - no user ID found'
-        });
-      }
-    } catch (jwtError) {
-      console.error('❌ JWT decode error:', jwtError);
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid token'
-      });
-    }
-
-    const { 
+    const {
+      ownerId, // ← Passiamo l'ownerId dal bridge VendiOnline 
       businessName, 
       businessType, 
       businessDescription, 
