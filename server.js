@@ -13,6 +13,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
+const { initializeDatabase } = require('./src/services/database-init');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
@@ -213,6 +214,28 @@ app.use('/api/claude', claudeHtmlRouter);
 const previewRouter = require('./src/api/preview');
 app.use('/api/preview', previewRouter);
 
+// 🔗 BRIDGE: Frontend chiama /api/ai/generate-website → /api/claude/generate
+app.post('/api/ai/generate-website', (req, res) => {
+  console.log('🔗 Bridge: /api/ai/generate-website → /api/claude/generate');
+  
+  // Trasforma il payload del frontend nel formato che si aspetta il generatore Claude
+  const frontendData = req.body.businessData || req.body;
+  
+  const claudePayload = {
+    businessName: frontendData.name || frontendData.businessName || 'Business',
+    businessType: frontendData.type || frontendData.businessType || 'general',  
+    businessDescription: frontendData.description || frontendData.businessDescription || ''
+  };
+  
+  console.log('🔧 Converted payload:', claudePayload);
+  
+  // Forward al generatore Claude
+  req.body = claudePayload;
+  claudeRouter.handle(req, res, () => {
+    console.log('🔗 Bridge completed');
+  });
+});
+
 // Basic root endpoint
 app.get('/', (req, res) => {
   const filePath = path.join(__dirname, 'frontend', 'index.html');
@@ -232,10 +255,14 @@ console.log('📊 Process Info:', {
   memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🤖 AI-Trainer server running on port ${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`🌐 Web Interface: http://localhost:${PORT}/`);
+  
+  // Inizializza il database
+  await initializeDatabase();
+  
   console.log('🎉 Server startup completed successfully!');
 });
 
