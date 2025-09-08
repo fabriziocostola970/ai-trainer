@@ -4,7 +4,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const UnifiedImageService = require('../services/unified-image-service.js');
 const { Pool } = require('pg');
 
-// CLAUDE SONNET 4 - GENERAZIONE HTML DIRETTA
+// CLAUDE SONNET 4 - GENERAZIONE HTML DIRETTA (FIXED AUTH)
 const anthropic = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY,
 });
