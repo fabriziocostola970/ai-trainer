@@ -294,9 +294,16 @@ router.get('/site/:websiteId', async (req, res) => {
     
     console.log(`🔍 Searching for website: ${websiteId}`);
     
-    // Query dal database
-    const query = 'SELECT * FROM generated_websites WHERE website_id = $1 ORDER BY created_at DESC LIMIT 1';
-    const result = await pool.query(query, [websiteId]);
+    // Query dal database usando schema VendiOnline-EU
+    const query = `
+      SELECT w.*, b.name as business_name, b.type as business_type, b.description as business_description
+      FROM "websites" w
+      JOIN "businesses" b ON w."businessId" = b."id"
+      WHERE b."id" = $1 OR w."id" LIKE $2
+      ORDER BY w."createdAt" DESC 
+      LIMIT 1
+    `;
+    const result = await pool.query(query, [websiteId, websiteId + '%']);
     
     if (result.rows.length === 0) {
       return res.status(404).send(`
@@ -324,11 +331,23 @@ router.get('/site/:websiteId', async (req, res) => {
     
     const website = result.rows[0];
     console.log(`✅ Website found: ${website.business_name} (${website.business_type})`);
-    console.log(`📏 HTML length: ${website.html_content.length} characters`);
     
-    let htmlContent = website.html_content;
+    // Estrai l'HTML dal content JSONB
+    let htmlContent;
+    try {
+      const content = website.content; // PostgreSQL restituisce già parsed JSONB
+      if (content && content.html_content) {
+        htmlContent = content.html_content;
+        console.log(`📏 HTML length: ${htmlContent.length} characters`);
+      } else {
+        throw new Error('No html_content found in website content');
+      }
+    } catch (error) {
+      console.error('❌ Error extracting HTML from content:', error);
+      return res.status(500).send('Error reading website content');
+    }
     
-    // Controlla se è già HTML puro o JSON
+    // Controlla se è già HTML puro
     if (htmlContent.trim().startsWith('<!DOCTYPE html>') || htmlContent.trim().startsWith('<html')) {
       // È già HTML puro - sistema nuovo
       console.log('📄 Direct HTML content detected (new system)');
@@ -372,25 +391,32 @@ router.get('/site/:websiteId', async (req, res) => {
 router.get('/list', async (req, res) => {
   try {
     const query = `
-      SELECT website_id, business_name, business_type, business_description, 
-             content_length, images_count, created_at, generation_metadata
-      FROM generated_websites 
-      ORDER BY created_at DESC 
+      SELECT w."id", w."businessId", w."content", w."design", w."status", w."createdAt",
+             b."name", b."type", b."description"
+      FROM "websites" w
+      JOIN "businesses" b ON w."businessId" = b."id"
+      ORDER BY w."createdAt" DESC 
       LIMIT 20
     `;
     
     const result = await pool.query(query);
     
-    const sites = result.rows.map(site => ({
-      id: site.website_id,
-      name: site.business_name,
-      type: site.business_type,
-      description: site.business_description?.substring(0, 100) + '...',
-      size: `${Math.round(site.content_length / 1024)}KB`,
-      images: site.images_count,
-      created: new Date(site.created_at).toLocaleDateString('it-IT'),
-      preview_url: `/api/preview/site/${site.website_id}`
-    }));
+    const sites = result.rows.map(site => {
+      const contentLength = JSON.stringify(site.content).length;
+      const imagesCount = site.content?.generation_metadata?.images_used ? 
+        Object.values(site.content.generation_metadata.images_used).reduce((a, b) => a + b, 0) : 0;
+      
+      return {
+        id: site.businessId,
+        name: site.name,
+        type: site.type,
+        description: site.description?.substring(0, 100) + '...',
+        size: `${Math.round(contentLength / 1024)}KB`,
+        images: imagesCount,
+        created: new Date(site.createdAt).toLocaleDateString('it-IT'),
+        preview_url: `/api/preview/site/${site.businessId}`
+      };
+    });
     
     res.json({
       success: true,

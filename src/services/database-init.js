@@ -14,36 +14,46 @@ async function initializeDatabase() {
   try {
     console.log('🗄️ Initializing database tables...');
     
-    // Crea la tabella generated_websites se non esiste
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS generated_websites (
-        id SERIAL PRIMARY KEY,
-        website_id VARCHAR(255) UNIQUE NOT NULL,
-        business_name VARCHAR(255) NOT NULL,
-        business_type VARCHAR(100) NOT NULL,
-        business_description TEXT,
-        html_content TEXT NOT NULL,
-        style_preference VARCHAR(100) DEFAULT 'moderno',
-        color_mood VARCHAR(100) DEFAULT 'professionale',
-        target_audience VARCHAR(100) DEFAULT 'generale',
-        generation_metadata JSONB,
-        content_length INTEGER,
-        images_count INTEGER DEFAULT 0,
-        claude_model VARCHAR(50) DEFAULT 'claude-3-sonnet',
-        generation_time_ms INTEGER,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    // Crea le tabelle usando lo schema VendiOnline-EU
+    const createBusinessesTable = `
+      CREATE TABLE IF NOT EXISTS "businesses" (
+        "id" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "type" TEXT NOT NULL,
+        "description" TEXT,
+        "stylePreference" TEXT,
+        "contactInfo" JSONB,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "businesses_pkey" PRIMARY KEY ("id")
       );
     `;
     
-    await pool.query(createTableQuery);
-    console.log('✅ generated_websites table ready');
+    const createWebsitesTable = `
+      CREATE TABLE IF NOT EXISTS "websites" (
+        "id" TEXT NOT NULL,
+        "businessId" TEXT NOT NULL,
+        "content" JSONB NOT NULL,
+        "design" JSONB NOT NULL,
+        "status" TEXT NOT NULL DEFAULT 'generated',
+        "version" INTEGER NOT NULL DEFAULT 1,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "websites_pkey" PRIMARY KEY ("id"),
+        CONSTRAINT "websites_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "businesses"("id") ON DELETE CASCADE ON UPDATE CASCADE
+      );
+    `;
+    
+    await pool.query(createBusinessesTable);
+    await pool.query(createWebsitesTable);
+    console.log('✅ businesses and websites tables ready');
     
     // Crea gli indici se non esistono
     const createIndexes = `
-      CREATE INDEX IF NOT EXISTS idx_generated_websites_business_type ON generated_websites(business_type);
-      CREATE INDEX IF NOT EXISTS idx_generated_websites_created_at ON generated_websites(created_at);
-      CREATE INDEX IF NOT EXISTS idx_generated_websites_website_id ON generated_websites(website_id);
+      CREATE INDEX IF NOT EXISTS "websites_businessId_idx" ON "websites"("businessId");
+      CREATE INDEX IF NOT EXISTS "websites_status_idx" ON "websites"("status");
+      CREATE INDEX IF NOT EXISTS "websites_createdAt_idx" ON "websites"("createdAt");
+      CREATE INDEX IF NOT EXISTS "businesses_type_idx" ON "businesses"("type");
     `;
     
     await pool.query(createIndexes);

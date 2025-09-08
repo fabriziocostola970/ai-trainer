@@ -208,63 +208,88 @@ IMPORTANTE:
       throw new Error('Generated content is not valid HTML');
     }
 
-    // 💾 SALVA NEL DATABASE POSTGRESQL
-    const generationEndTime = Date.now();
-    const generationTime = generationEndTime - Date.now(); // Dovremmo tracciare il tempo reale
-    
+    // 💾 SALVA NELLA TABELLA WEBSITES ESISTENTE
     try {
-      const insertQuery = `
-        INSERT INTO generated_websites (
-          website_id, business_name, business_type, business_description,
-          html_content, style_preference, color_mood, target_audience,
-          generation_metadata, content_length, images_count, generation_time_ms
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        ON CONFLICT (website_id) DO UPDATE SET
-          html_content = EXCLUDED.html_content,
-          generation_metadata = EXCLUDED.generation_metadata,
-          updated_at = CURRENT_TIMESTAMP
+      // Prima creo/aggiorno il business se necessario
+      const businessId = `biz_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const businessQuery = `
+        INSERT INTO businesses (id, "ownerId", name, type, description, "createdAt", "updatedAt")
+        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name,
+          type = EXCLUDED.type,
+          description = EXCLUDED.description,
+          "updatedAt" = NOW()
         RETURNING id;
       `;
       
-      const metadata = {
-        website_id: websiteId,
-        generation_type: 'direct_html',
-        creative_mode: true,
+      // Uso un ownerId temporaneo - dovrà essere collegato all'utente reale
+      const ownerIdTemp = 'temp_user_ai_generated';
+      
+      await pool.query(businessQuery, [
+        businessId,
+        ownerIdTemp,
+        businessName,
+        businessType || 'general',
+        businessDescription || ''
+      ]);
+      
+      console.log(`💼 Business created/updated: ${businessId}`);
+      
+      // Ora salvo il website nella tabella websites
+      const websiteId = `site_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const websiteQuery = `
+        INSERT INTO websites (id, "businessId", content, design, status, version, "createdAt", "updatedAt")
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          content = EXCLUDED.content,
+          design = EXCLUDED.design,
+          "updatedAt" = NOW()
+        RETURNING id;
+      `;
+      
+      // Content = HTML completo di Claude
+      const content = cleanHTML;
+      
+      // Design = metadata e stili
+      const design = {
+        generation_type: 'claude_html_direct',
+        claude_model: 'sonnet-4',
         images_used: {
           hero: businessImages.hero?.length || 0,
-          content: (businessImages.services || []).length,
+          services: (businessImages.services || []).length,
           backgrounds: (businessImages.backgrounds || []).length
         },
-        claude_system: 'v3.0 - Direct HTML Creative Generation'
+        style_preference: stylePreference || 'moderno',
+        color_mood: colorMood || 'professionale',
+        target_audience: targetAudience || 'generale'
       };
 
-      const values = [
+      const websiteResult = await pool.query(websiteQuery, [
         websiteId,
-        businessName,
-        businessType,
-        businessDescription,
-        cleanHTML,
-        stylePreference,
-        colorMood,
-        targetAudience,
-        JSON.stringify(metadata),
-        cleanHTML.length,
-        businessImages.total || 0,
-        generationTime
-      ];
-
-      const dbResult = await pool.query(insertQuery, values);
-      console.log(`💾 Website saved to database with ID: ${dbResult.rows[0].id}`);
+        businessId,
+        content,  // ← HTML completo di Claude va qui
+        JSON.stringify(design),
+        'generated',
+        1
+      ]);
+      
+      console.log(`🌐 Website saved: ${websiteId} for business: ${businessId}`);
       
     } catch (dbError) {
       console.error('❌ Database save error:', dbError.message);
       // Non blocchiamo la response se il DB fallisce
     }
 
-    // RESPONSE
+    // RESPONSE CON HTML E METADATA
     res.json({
       success: true,
       html: cleanHTML,
+      websiteId: websiteId,
+      businessId: businessId,
+      savedToDatabase: true,
       metadata: {
         website_id: websiteId,
         generation_type: 'direct_html',

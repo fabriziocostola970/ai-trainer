@@ -175,34 +175,6 @@ CREATE TRIGGER update_generated_layouts_updated_at BEFORE UPDATE ON generated_la
 CREATE TRIGGER update_ai_design_patterns_updated_at BEFORE UPDATE ON ai_design_patterns FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_system_settings_updated_at BEFORE UPDATE ON system_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- 🌐 Generated Websites Table (for Railway deployment)
-CREATE TABLE IF NOT EXISTS generated_websites (
-    id SERIAL PRIMARY KEY,
-    website_id VARCHAR(255) UNIQUE NOT NULL,
-    business_name VARCHAR(255) NOT NULL,
-    business_type VARCHAR(100) NOT NULL,
-    business_description TEXT,
-    html_content TEXT NOT NULL,
-    style_preference VARCHAR(100) DEFAULT 'moderno',
-    color_mood VARCHAR(100) DEFAULT 'professionale',
-    target_audience VARCHAR(100) DEFAULT 'generale',
-    generation_metadata JSONB,
-    content_length INTEGER,
-    images_count INTEGER DEFAULT 0,
-    claude_model VARCHAR(50) DEFAULT 'claude-3-sonnet',
-    generation_time_ms INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Index per performance
-CREATE INDEX IF NOT EXISTS idx_generated_websites_business_type ON generated_websites(business_type);
-CREATE INDEX IF NOT EXISTS idx_generated_websites_created_at ON generated_websites(created_at);
-CREATE INDEX IF NOT EXISTS idx_generated_websites_website_id ON generated_websites(website_id);
-
--- Trigger per updated_at
-CREATE TRIGGER update_generated_websites_updated_at BEFORE UPDATE ON generated_websites FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 -- 📊 Sample Data
 INSERT INTO system_settings (setting_key, setting_value, description) VALUES
 ('ai_trainer_version', '"1.0.0"', 'Current AI Trainer version'),

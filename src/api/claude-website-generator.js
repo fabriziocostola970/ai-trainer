@@ -244,53 +244,79 @@ INIZIA SUBITO CON <!DOCTYPE html>:`;
       console.log('🎉 All requirements satisfied in generated HTML!');
     }
 
-    // 💾 SALVA NEL DATABASE POSTGRESQL
+    // 💾 SALVA NEL DATABASE POSTGRESQL usando schema VendiOnline-EU
     try {
-      const insertQuery = `
-        INSERT INTO generated_websites (
-          website_id, business_name, business_type, business_description,
-          html_content, style_preference, color_mood, target_audience,
-          generation_metadata, content_length, images_count, generation_time_ms
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        ON CONFLICT (website_id) DO UPDATE SET
-          html_content = EXCLUDED.html_content,
-          generation_metadata = EXCLUDED.generation_metadata,
-          updated_at = CURRENT_TIMESTAMP
-        RETURNING id;
+      // Prima crea il business se non esiste
+      const businessId = websiteId; // Usa websiteId come businessId per semplicità
+      
+      const insertBusinessQuery = `
+        INSERT INTO "businesses" ("id", "name", "type", "description", "stylePreference")
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT ("id") DO UPDATE SET
+          "name" = EXCLUDED."name",
+          "description" = EXCLUDED."description",
+          "updatedAt" = CURRENT_TIMESTAMP;
       `;
       
-      const metadata = {
-        website_id: websiteId,
-        creative_mode: true,
-        requirements_validation: {
-          total_requirements: clientRequirements.length,
-          satisfied: validationResult.satisfied.length,
-          missing_auto_completed: validationResult.missing.length
+      await pool.query(insertBusinessQuery, [
+        businessId,
+        businessName,
+        businessType,
+        businessDescription,
+        stylePreference || 'moderno'
+      ]);
+      
+      // Poi crea il website collegato al business
+      const insertWebsiteQuery = `
+        INSERT INTO "websites" ("id", "businessId", "content", "design", "status")
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT ("id") DO UPDATE SET
+          "content" = EXCLUDED."content",
+          "design" = EXCLUDED."design",
+          "updatedAt" = CURRENT_TIMESTAMP
+        RETURNING "id";
+      `;
+      
+      const websiteContent = {
+        html_content: htmlContent,
+        business_info: {
+          name: businessName,
+          type: businessType,
+          description: businessDescription
         },
-        images_used: {
-          hero: businessImages.hero?.length || 0,
-          content: (businessImages.services || []).length,
-          backgrounds: (businessImages.backgrounds || []).length
-        },
-        creative_system: 'v2.0 - Post-validation requirements'
+        generation_metadata: {
+          website_id: websiteId,
+          creative_mode: true,
+          requirements_validation: {
+            total_requirements: clientRequirements.length,
+            satisfied: validationResult.satisfied.length,
+            missing_auto_completed: validationResult.missing.length
+          },
+          images_used: {
+            hero: businessImages.hero?.length || 0,
+            content: (businessImages.services || []).length,
+            backgrounds: (businessImages.backgrounds || []).length
+          },
+          creative_system: 'v2.0 - Post-validation requirements'
+        }
       };
 
-      const values = [
-        websiteId,
-        businessName,
-        businessType || 'general',
-        businessDescription || '',
-        htmlContent, // Salva l'HTML completo generato
-        'moderno', // style_preference default
-        'professionale', // color_mood default  
-        'generale', // target_audience default
-        JSON.stringify(metadata),
-        htmlContent.length,
-        businessImages.total || 0,
-        0 // generation_time_ms - da implementare
+      const designData = {
+        style_preference: stylePreference || 'moderno',
+        color_mood: colorMood || 'professionale',
+        target_audience: targetAudience || 'generale',
+        generation_time_ms: generationTime
+      };
+
+      const websiteValues = [
+        websiteId + '_website', // ID univoco per il website
+        businessId, // businessId collegato
+        JSON.stringify(websiteContent), // content JSONB
+        JSON.stringify(designData), // design JSONB
+        'generated' // status
       ];
 
-      const dbResult = await pool.query(insertQuery, values);
+      const dbResult = await pool.query(insertWebsiteQuery, websiteValues);
       console.log(`💾 Website saved to database with ID: ${dbResult.rows[0].id}`);
       
     } catch (dbError) {
