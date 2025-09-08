@@ -63,6 +63,13 @@ router.post('/generate-html', async (req, res) => {
       });
     }
 
+    if (!ownerId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing ownerId - required for database save'
+      });
+    }
+
     console.log('🎨 CLAUDE HTML GENERATION - Direct Creative Mode');
     console.log('Business:', { businessName, businessType, businessDescription });
     console.log('Style:', { stylePreference, colorMood, targetAudience });
@@ -271,28 +278,42 @@ IMPORTANTE:
         RETURNING id;
       `;
       
-      // Content = HTML completo di Claude
-      const content = cleanHTML;
-      
-      // Design = metadata e stili
-      const design = {
-        generation_type: 'claude_html_direct',
-        claude_model: 'sonnet-4',
-        images_used: {
-          hero: businessImages.hero?.length || 0,
-          services: (businessImages.services || []).length,
-          backgrounds: (businessImages.backgrounds || []).length
+      // Design = metadata e stili completi
+      const websiteDesign = {
+        taskId: `website_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        ownerId: ownerId,
+        metadata: {
+          website_id: websiteId,
+          generation_type: 'direct_html',
+          creative_mode: true,
+          style: {
+            preference: stylePreference,
+            color_mood: colorMood,
+            target_audience: targetAudience
+          },
+          images_used: {
+            hero: businessImages.hero?.length || 0,
+            content: (businessImages.services || []).length,
+            backgrounds: (businessImages.backgrounds || []).length
+          },
+          content_length: cleanHTML.length,
+          claude_system: 'v3.0 - Direct HTML Creative Generation'
         },
-        style_preference: stylePreference || 'moderno',
-        color_mood: colorMood || 'professionale',
-        target_audience: targetAudience || 'generale'
+        createdAt: new Date().toISOString(),
+        generator: 'ai-trainer-claude-html',
+        businessType: businessType || 'general',
+        generation_type: 'claude_html_direct',
+        savedToDatabase: true,
+        primaryColor: '#3B82F6',
+        secondaryColor: '#10B981',
+        accentColor: '#F59E0B'
       };
 
       const websiteResult = await pool.query(websiteQuery, [
         websiteId,
         businessId,
-        content,  // ← HTML completo di Claude va qui
-        JSON.stringify(design),
+        cleanHTML,  // ← HTML completo di Claude va qui
+        JSON.stringify(websiteDesign),
         'generated',
         1
       ]);
