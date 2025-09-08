@@ -34,43 +34,42 @@ function extractCleanHTML(jsonFilePath) {
  */
 router.get('/fioreria', (req, res) => {
   try {
+    const cleanFilePath = path.join(__dirname, '../../fioreria-clean.html');
     const jsonFilePath = path.join(__dirname, '../../generated-fioreria.html');
     
-    if (!fs.existsSync(jsonFilePath)) {
-      return res.status(404).send(`
-        <html>
-          <body>
-            <h1>❌ File non trovato</h1>
-            <p>Il file generated-fioreria.html non esiste.</p>
-            <p>Genera prima il sito con il sistema Claude HTML.</p>
-          </body>
-        </html>
-      `);
+    // Prima prova a leggere il file HTML pulito
+    if (fs.existsSync(cleanFilePath)) {
+      const cleanHTML = fs.readFileSync(cleanFilePath, 'utf8');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.send(cleanHTML);
     }
     
-    const cleanHTML = extractCleanHTML(jsonFilePath);
-    
-    if (!cleanHTML) {
-      return res.status(500).send(`
-        <html>
-          <body>
-            <h1>❌ Errore estrazione HTML</h1>
-            <p>Impossibile estrarre HTML dal file JSON.</p>
-          </body>
-        </html>
-      `);
+    // Se non esiste, prova a estrarre dal JSON
+    if (fs.existsSync(jsonFilePath)) {
+      const cleanHTML = extractCleanHTML(jsonFilePath);
+      if (cleanHTML) {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.send(cleanHTML);
+      }
     }
     
-    res.setHeader('Content-Type', 'text/html');
-    res.send(cleanHTML);
-    
+    // Se niente funziona, errore 404
+    return res.status(404).send(`
+      <html>
+        <body>
+          <h1>❌ Sito non trovato</h1>
+          <p>La fioreria non è ancora stata generata.</p>
+          <p>Genera il sito con il sistema Claude HTML.</p>
+        </body>
+      </html>
+    `);
   } catch (error) {
-    console.error('Error serving fioreria:', error);
+    console.error('Preview fioreria error:', error);
     res.status(500).send(`
       <html>
         <body>
           <h1>❌ Errore del server</h1>
-          <p>${error.message}</p>
+          <p>Errore: ${error.message}</p>
         </body>
       </html>
     `);

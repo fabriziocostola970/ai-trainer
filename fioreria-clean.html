@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fioreria Balduina | Tradizione Floreale dal 1895</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        .font-playfair { font-family: 'Playfair Display', serif; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 25%, #6ee7b7 50%, #10b981 100%);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #059669, #10b981, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .floating {
+            animation: floating 6s ease-in-out infinite;
+        }
+        
+        .scale-hover:hover {
+            transform: scale(1.05) rotate(2deg);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .slide-up {
+            animation: slideUp 0.8s ease-out forwards;
+        }
+        
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(2deg); }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .leaf-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.1'%3E%3Cpath d='M30 30c0-16.569 13.431-30 30-30v30H30zM0 30c0-16.569 13.431-30 30-30v30H0z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        .card-shadow {
+            box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.25);
+        }
+        
+        .filter-btn.active {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="font-inter text-gray-900">
+    <!-- HEADER FISSO CON EFFETTO GLASS -->
+    <header class="fixed top-0 w-full z-50 glass-effect">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-seedling text-3xl text-green-600"></i>
+                    <span class="font-playfair text-2xl font-bold gradient-text">Fioreria Balduina</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#home" class="text-gray-700 hover:text-green-600 transition-colors font-medium">Home</a>
+                    <a href="#products" class="text-gray-700 hover:text-green-600 transition-colors font-medium">Prodotti</a>
+                    <a href="#about" class="text-gray-700 hover:text-green-600 transition-colors font-medium">Chi Siamo</a>
+                    <a href="#contact" class="text-gray-700 hover:text-green-600 transition-colors font-medium">Contatti</a>
+                    <button class="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all">
+                        <i class="fas fa-phone mr-2"></i>Chiama Ora
+                    </button>
+                </div>
+                <button class="md:hidden text-gray-700">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- HERO SECTION CON GRADIENT E ANIMAZIONI -->
+    <section id="home" class="relative min-h-screen flex items-center overflow-hidden">
+        <div class="absolute inset-0 gradient-bg"></div>
+        <div class="absolute inset-0 opacity-30">
+            <img src="https://images.pexels.com/photos/3184416/pexels-photo-3184416.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" 
+                 alt="Fioreria" class="w-full h-full object-cover">
+        </div>
+        
+        <!-- Elementi decorativi flottanti -->
+        <div class="absolute top-20 left-10 floating">
+            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <i class="fas fa-leaf text-2xl text-white"></i>
+            </div>
+        </div>
+        <div class="absolute bottom-20 right-10 floating" style="animation-delay: -3s;">
+            <div class="w-20 h-20 bg-white bg-opacity-15 rounded-full flex items-center justify-center">
+                <i class="fas fa-flower text-3xl text-white"></i>
+            </div>
+        </div>
+        
+        <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+            <h1 class="font-playfair text-5xl md:text-7xl font-bold mb-6 slide-up">
+                Tradizione <span class="italic">Floreale</span><br>
+                <span class="text-4xl md:text-6xl opacity-90">dal 1895</span>
+            </h1>
+            <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-95 slide-up" style="animation-delay: 0.2s;">
+                Un'antica famiglia che da generazioni importa le migliori piante da tutto il mondo, 
+                creando composizioni uniche per i momenti più speciali della vita.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center slide-up" style="animation-delay: 0.4s;">
+                <button class="bg-white text-green-600 px-8 py-4 rounded-full font-semibold text-lg hover:shadow-2xl transform hover:scale-105 transition-all">
+                    <i class="fas fa-shopping-cart mr-2"></i>Scopri i Prodotti
+                </button>
+                <button class="border-2 border-white text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white hover:text-green-600 transition-all">
+                    <i class="fas fa-phone mr-2"></i>06.55.99.26.47
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEZIONE FILTRI E PRODOTTI -->
+    <section id="products" class="py-20 leaf-pattern">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Intestazione sezione -->
+            <div class="text-center mb-16">
+                <h2 class="font-playfair text-4xl md:text-5xl font-bold mb-6">
+                    Le Nostre <span class="gradient-text">Specialità</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Dalla cura del giardino alle cerimonie più eleganti, 
+                    offriamo soluzioni complete per ogni esigenza floreale
+                </p>
+            </div>
+
+            <!-- FILTRI INTERATTIVI -->
+            <div class="flex flex-wrap justify-center gap-4 mb-12">
+                <button class="filter-btn active px-6 py-3 rounded-full border-2 border-green-500 text-green-600 font-medium transition-all hover:shadow-lg" data-filter="all">
+                    <i class="fas fa-th-large mr-2"></i>Tutti
+                </button>
+                <button class="filter-btn px-6 py-3 rounded-full border-2 border-green-500 text-green-600 font-medium transition-all hover:shadow-lg" data-filter="alberi">
+                    <i class="fas fa-tree mr-2"></i>Alberi da Frutta
+                </button>
+                <button class="filter-btn px-6 py-3 rounded-full border-2 border-green-500 text-green-600 font-medium transition-all hover:shadow-lg" data-filter="giardinaggio">
+                    <i class="fas fa-seedling mr-2"></i>Giardinaggio Casalingo
+                </button>
+                <button class="filter-btn px-6 py-3 rounded-full border-2 border-green-500 text-green-600 font-medium transition-all hover:shadow-lg" data-filter="ornamentali">
+                    <i class="fas fa-leaf mr-2"></i>Piante Ornamentali
+                </button>
+                <button class="filter-btn px-6 py-3 rounded-full border-2 border-green-500 text-green-600 font-medium transition-all hover:shadow-lg" data-filter="cerimonie">
+                    <i class="fas fa-heart mr-2"></i>Cerimonie
+                </button>
+            </div>
+
+            <!-- GRIGLIA PRODOTTI -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Card 1 - Alberi da Frutta -->
+                <div class="product-card bg-white rounded-3xl overflow-hidden card-shadow scale-hover" data-category="alberi">
+                    <div class="relative h-64 overflow-hidden">
+                        <img src="https://images.pexels.com/photos/2381069/pexels-photo-2381069.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" 
+                             alt="Alberi da Frutta" class="w-full h-full object-cover transition-transform hover:scale-110">
+                        <div class="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            Stagionale
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="font-playfair text-2xl font-bold mb-3">Alberi da Frutta</h3>
+                        <p class="text-gray-600 mb-6">Selezioni pregiate di alberi da frutto, dalle varietà antiche a quelle moderne, per il tuo giardino produttivo.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-green-600 font-bold text-lg">Da €45</span>
+                            <button class="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all">
+                                Scopri
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2 - Giardinaggio -->
+                <div class="product-card bg-white rounded-3xl overflow-hidden card-shadow scale-hover" data-category="giardinaggio">
+                    <div class="relative h-64 overflow-hidden">
+                        <img src="https://images.pexels.com/photos/3184405/pexels-photo-3184405.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" 
+                             alt="Giardinaggio" class="w-full h-full object-cover transition-transform hover:scale-110">
+                        <div class="absolute top-4 right-4 bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            Popolare
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="font-playfair text-2xl font-bold mb-3">Giardinaggio Casalingo</h3>
+                        <p class="text-gray-600 mb-6">Tutto per il tuo verde domestico: piante da appartamento, vasi designer, attrezzi professionali.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-green-600 font-bold text-lg">Da €15</span>
+                            <button class="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all">
+                                Scopri
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3 - Ornamentali -->
+                <div class="product-card bg-white rounded-3xl overflow-hidden card-shadow scale-hover" data-category="ornamentali">
+                    <div class="relative h-64 overflow-hidden">
+                        <img src="https://images.pexels.com/photos/2116721/pexels-photo-2116721.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" 
+                             alt="Piante Ornamentali" class="w-full h-full object-cover transition-transform hover:scale-110">
+                        <div class="absolute top-4 right-4 bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            Esclusivo
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="font-playfair text-2xl font-bold mb-3">Piante Ornamentali</h3>
+                        <p class="text-gray-600 mb-6">Collezioni esclusive importate direttamente dai migliori coltivatori internazionali.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-green-600 font-bold text-lg">Da €25</span>
+                            <button class="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all">
+                                Scopri
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4 - Cerimonie -->
+                <div class="product-card bg-white rounded-3xl overflow-hidden card-shadow scale-hover" data-category="cerimonie">
+                    <div class="relative h-64 overflow-hidden">
+                        <img src="https://images.pexels.com/photos/911758/pexels-photo-911758.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" 
+                             alt="Cerimonie" class="w-full h-full object-cover transition-transform hover:scale-110">
+                        <div class="absolute top-4 right-4 bg-pink-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            Premium
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="font-playfair text-2xl font-bold mb-3">Cerimonie</h3>
+                        <p class="text-gray-600 mb-6">Composizioni uniche per matrimoni, comunioni, anniversari. Ogni creazione è un'opera d'arte.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-green-600 font-bold text-lg">Da €80</span>
+                            <button class="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all">
+                                Scopri
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5 - Consulenza -->
+                <div class="product-card bg-white rounded-3xl overflow-hidden card-shadow scale-hover" data-category="giardinaggio">
+                    <div class="relative h-64 overflow-hidden bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                        <i class="fas fa-user-tie text-6xl text-white opacity-80"></i>
+                        <div class="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            Nuovo
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="font-playfair text-2xl font-bold mb-3">Consulenza Specializzata</h3>
+                        <p class="text-gray-600 mb-6">Progettazione giardini, consigli di coltivazione, assistenza personalizzata per ogni esigenza.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-green-600 font-bold text-lg">€50/h</span>
+                            <button class="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all">
+                                Prenota
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 6 - Servizi -->
+                <div class="product-card bg-white rounded-3xl overflow-hidden card-shadow scale-hover" data-category="cerimonie ornamentali">
+                    <div class="relative h-64 overflow-hidden">
+                        <img src="https://images.pexels.com/photos/325185/pexels-photo-325185.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" 
+                             alt="Servizi Speciali" class="w-full h-full object-cover transition-transform hover:scale-110">
+                        <div class="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            24/7
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="font-playfair text-2xl font-bold mb-3">Servizi Speciali</h3>
+                        <p class="text-gray-600 mb-6">Consegna express, manutenzione giardini, allestimenti eventi, servizio h24 per emergenze.</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-green-600 font-bold text-lg">Su misura</span>
+                            <button class="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all">
+                                Contatti
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CHI SIAMO CON DESIGN ALTERNATO -->
+    <section id="about" class="py-20 bg-gradient-to-br from-gray-50 to-green-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div class="order-2 lg:order-1">
+                    <div class="relative">
+                        <img src="https://images.pexels.com/photos/3184416/pexels-photo-3184416.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" 
+                             alt="La nostra storia" class="rounded-3xl shadow-2xl">
+                        <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-gradient-to-br from-green-500 to-green-600 rounded-3xl flex items-center justify-center shadow-xl">
+                            <div class="text-center text-white">
+                                <div class="font-bold text-2xl">125+</div>
+                                <div class="text-sm">Anni</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="order-1 lg:order-2">
+                    <h2 class="font-playfair text-4xl md:text-5xl font-bold mb-6">
+                        Una Storia di <span class="gradient-text">Passione</span>
+                    </h2>
+                    <p class="text-xl text-gray-600 mb-8 leading-relaxed">
+                        Dal 1895, la famiglia Balduina coltiva l'arte del verde con dedizione e maestria. 
+                        Attraverso generazioni, abbiamo costruito rapporti diretti con i migliori coltivatori 
+                        del mondo, garantendo sempre la massima qualità.
+                    </p>
+                    
+                    <div class="space-y-6 mb-8">
+                        <div class="flex items-start space-x-4">
+                            <div class="bg-green-100 p-3 rounded-full">
+                                <i class="fas fa-globe text-green-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-lg mb-2">Importazioni Dirette</h3>
+                                <p class="text-gray-600">Selezioniamo personalmente le migliori varietà da tutto il mondo</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start space-x-4">
+                            <div class="bg-green-100 p-3 rounded-full">
+                                <i class="fas fa-handshake text-green-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-lg mb-2">Rapporti Esclusivi</h3>
+                                <p class="text-gray-600">Partnership consolidate con i coltivatori più esperti</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start space-x-4">
+                            <div class="bg-green-100 p-3 rounded-full">
+                                <i class="fas fa-award text-green-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-lg mb-2">Qualità Garantita</h3>
+                                <p class="text-gray-600">Ogni pianta è certificata e curata con attenzione maniacale</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="bg-gradient-to-r from-green-600 to-green-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-xl transform hover:scale-105 transition-all">
+                        <i class="fas fa-history mr-2"></i>Scopri la Nostra Storia
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTATTI STILIZZATI -->
+    <section id="contact" class="py-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-green-600 via-green-500 to-emerald-500"></div>
+        <div class="absolute inset-0 leaf-pattern opacity-20"></div>
+        
+        <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="font-playfair text-4xl md:text-5xl font-bold text-white mb-6">
+                    Vieni a Trovarci
+                </h2>
+                <p class="text-xl text-green-100 max-w-3xl mx-auto">
+                    La nostra fioreria ti aspetta nel cuore della Balduina, 
+                    dove potrai toccare con mano la qualità delle nostre piante
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Info Contatti -->
+                <div class="lg:col-span-1 space-y-8">
+                    <div class="bg-white bg-opacity-15 backdrop-blur-lg rounded-3xl p-8 border border-white border-opacity-20">
+                        <div class="flex items-center space-x-4 mb-6">
+                            <div class="bg-white bg-opacity-20 p-4 rounded-full">
+                                <i class="fas fa-map-marker-alt text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-white text-lg">Indirizzo</h3>
+                                <p class="text-green-100">Via della Balduina 123<br>Roma, Italia</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white bg-opacity-15 backdrop-blur-lg rounded-3xl p-8 border border-white border-opacity-20">
+                        <div class="flex items-center space-x-4 mb-6">
+                            <div class="bg-white bg-opacity-20 p-4 rounded-full">
+                                <i class="fas fa-phone text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-white text-lg">Telefono</h3>
+                                <p class="text-green-100">06.55.99.26.47</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white bg-opacity-15 backdrop-blur-lg rounded-3xl p-8 border border-white border-opacity-20">
+                        <div class="flex items-center space-x-4 mb-6">
+                            <div class="bg-white bg-opacity-20 p-4 rounded-full">
+                                <i class="fas fa-clock text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-white text-lg">Orari</h3>
+                                <p class="text-green-100">Lun-Sab: 8:00-19:00<br>Dom: 9:00-13:00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Contatti -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white bg-opacity-15 backdrop-blur-lg rounded-3xl p-8 border border-white border-opacity-20">
+                        <h3 class="font-playfair text-2xl font-bold text-white mb-8">Inviaci un Messaggio</h3>
+                        
+                        <form class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <input type="text" placeholder="Nome" 
+                                           class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent">
+                                </div>
+                                <div>
+                                    <input type="email" placeholder="Email" 
+                                           class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <input type="tel" placeholder="Telefono" 
+                                       class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-green-100 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent">
+                            </div>
+                            
+                            <div>
+                                <select class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 border border-white border-opacity-30 text-white focus:outline-
