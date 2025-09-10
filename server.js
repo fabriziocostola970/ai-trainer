@@ -1,8 +1,9 @@
 // Global error handlers for diagnostics
 process.on('uncaughtException', (err, origin) => {
   console.error(`\n\nFATAL: Uncaught Exception\nERROR: ${err.stack || err}\nORIGIN: ${origin}\n`);
-  process.exit(1);
-});
+  process.exit(1)// 🎨 CLAUDE PAGE GENERATOR ROUTES (Multi-Page System with Style DNA) - v1.1
+const claudePageRouter = require('./src/api/claude-page-generator');
+app.use('/api/claude', claudePageRouter);});
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error(`\n\nFATAL: Unhandled Rejection\nPROMISE: ${promise}\nREASON: ${reason.stack || reason}\n`);
