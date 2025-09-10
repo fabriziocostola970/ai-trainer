@@ -209,7 +209,11 @@ app.use('/api/claude', claudeRouter);
 const claudeHtmlRouter = require('./src/api/claude-html-generator');
 app.use('/api/claude', claudeHtmlRouter);
 
-// 🌐 PREVIEW ROUTES (Static HTML Sites)
+// � CLAUDE PAGE GENERATOR ROUTES (Multi-Page System with Style DNA)
+const claudePageRouter = require('./src/api/claude-page-generator');
+app.use('/api/claude', claudePageRouter);
+
+// �🌐 PREVIEW ROUTES (Static HTML Sites)
 const previewRouter = require('./src/api/preview');
 app.use('/api/preview', previewRouter);
 

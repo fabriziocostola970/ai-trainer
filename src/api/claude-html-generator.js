@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const UnifiedImageService = require('../services/unified-image-service.js');
+const ImageDownloadService = require('../services/image-download-service.js');
 const { Pool } = require('pg');
 
 // CLAUDE SONNET 4 - GENERAZIONE HTML DIRETTA (FIXED AUTH)
