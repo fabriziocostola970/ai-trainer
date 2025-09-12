@@ -43,7 +43,8 @@ router.post('/generate-page', async (req, res) => {
       styleDNA,
       stylePreference = 'moderno',
       colorMood = 'professionale',
-      targetAudience = 'generale' 
+      targetAudience = 'generale',
+      generationMode = 'economico' // 🆕 Modalità generazione
     } = req.body;
 
     if (!businessName || !pageType || !styleDNA) {
@@ -257,12 +258,24 @@ IMPORTANTE:
 - Rendi tutto responsive e moderno`;
 
     console.log('🎨 Calling Claude Sonnet 4 for page generation...');
+    console.log(`💰 Generation mode: ${generationMode}`);
+
+    // 🎛️ CONFIGURE CLAUDE BASED ON GENERATION MODE
+    const claudeConfig = generationMode === 'economico' 
+      ? {
+          max_tokens: 3500,  // Economico: meno token
+          temperature: 0.3   // Economico: più deterministico
+        }
+      : {
+          max_tokens: 6000,  // Sviluppo: più token per contenuti dettagliati
+          temperature: 0.6   // Sviluppo: più creativo
+        };
     
-    // CHIAMATA A CLAUDE SONNET 4 - OTTIMIZZATA PER COSTI
+    // CHIAMATA A CLAUDE SONNET 4 - CONFIGURAZIONE DINAMICA
     const claudeResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4500, // ⬇️ Ridotto da 8000 per risparmiare
-      temperature: 0.4, // ⬇️ Ridotto da 0.7 per più consistenza
+      max_tokens: claudeConfig.max_tokens,
+      temperature: claudeConfig.temperature,
       messages: [
         {
           role: 'user',
@@ -272,8 +285,34 @@ IMPORTANTE:
     });
 
     const htmlContent = claudeResponse.content[0].text;
+    
+    // 💰 EXTRACT COST INFORMATION FROM CLAUDE RESPONSE
+    const usage = claudeResponse.usage;
+    const inputTokens = usage?.input_tokens || 0;
+    const outputTokens = usage?.output_tokens || 0;
+    
+    // 💰 CALCULATE COSTS (Claude Sonnet 4 pricing as of Sept 2025)
+    // Input: $3.00 per 1M tokens, Output: $15.00 per 1M tokens
+    const inputCost = (inputTokens / 1000000) * 3.00;
+    const outputCost = (outputTokens / 1000000) * 15.00;
+    const totalCost = inputCost + outputCost;
+    
+    const costInfo = {
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      inputCost,
+      outputCost,
+      totalCost,
+      generationMode,
+      model: 'claude-sonnet-4-20250514',
+      timestamp: new Date().toISOString()
+    };
+
     console.log('✅ Claude page response received');
     console.log(`📄 Generated page HTML length: ${htmlContent.length} characters`);
+    console.log(`💰 Usage: ${inputTokens} input + ${outputTokens} output = ${inputTokens + outputTokens} total tokens`);
+    console.log(`💰 Cost: $${totalCost.toFixed(4)} (mode: ${generationMode})`);
 
     // ESTRAI IL CODICE HTML
     let cleanHTML = htmlContent;
@@ -307,12 +346,13 @@ IMPORTANTE:
       throw new Error('Generated content is not valid HTML');
     }
 
-    // RESPONSE OTTIMIZZATA PER VENDIONLINE
+    // RESPONSE OTTIMIZZATA PER VENDIONLINE CON COST TRACKING
     res.json({
       success: true,
       htmlContent: cleanHTML, // ← Campo che si aspetta VendiOnline
       pageType: pageType,
       styleDNA: styleDNA,
+      costInfo: costInfo, // 🆕 Informazioni sui costi
       metadata: {
         generated_at: new Date().toISOString(),
         page_type: pageType,
@@ -322,7 +362,9 @@ IMPORTANTE:
         colors_used: styleDNA.colors?.brandColors?.length || 0,
         fonts_used: Object.keys(styleDNA.typography?.fonts || {}).length,
         claude_model: 'claude-sonnet-4-20250514',
-        temperature: 0.7
+        generation_mode: generationMode,
+        temperature: claudeConfig.temperature,
+        max_tokens: claudeConfig.max_tokens
       }
     });
 
