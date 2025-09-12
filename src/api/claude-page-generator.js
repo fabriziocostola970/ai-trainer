@@ -258,11 +258,11 @@ IMPORTANTE:
 
     console.log('🎨 Calling Claude Sonnet 4 for page generation...');
     
-    // CHIAMATA A CLAUDE SONNET 4
+    // CHIAMATA A CLAUDE SONNET 4 - OTTIMIZZATA PER COSTI
     const claudeResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 8000,
-      temperature: 0.7, // Bilanciato per coerenza + creatività
+      max_tokens: 4500, // ⬇️ Ridotto da 8000 per risparmiare
+      temperature: 0.4, // ⬇️ Ridotto da 0.7 per più consistenza
       messages: [
         {
           role: 'user',
