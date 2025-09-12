@@ -327,11 +327,40 @@ IMPORTANTE:
     });
 
   } catch (error) {
-    console.error('Claude page generation error:', error);
-    res.status(500).json({
+    console.error('❌ Claude page generation error:', error);
+    
+    // 💰 SPECIFIC CLAUDE API ERROR HANDLING
+    let errorMessage = error.message;
+    let statusCode = 500;
+    
+    if (error.type === 'invalid_request_error') {
+      if (error.error?.code === 'insufficient_quota') {
+        errorMessage = 'Claude API credits exhausted. Please check billing.';
+        statusCode = 402; // Payment Required
+      } else if (error.error?.code === 'rate_limit_exceeded') {
+        errorMessage = 'Claude API rate limit exceeded. Try again later.';
+        statusCode = 429; // Too Many Requests
+      }
+    } else if (error.status === 401) {
+      errorMessage = 'Claude API authentication failed. Check API key.';
+      statusCode = 401;
+    } else if (error.status === 403) {
+      errorMessage = 'Claude API access forbidden. Check permissions.';
+      statusCode = 403;
+    }
+    
+    console.error(`💰 Claude API Error Details:
+    - Type: ${error.type}
+    - Status: ${error.status}
+    - Code: ${error.error?.code}
+    - Message: ${errorMessage}`);
+    
+    res.status(statusCode).json({
       success: false,
-      error: error.message,
-      details: 'Claude page generation failed'
+      error: errorMessage,
+      details: 'Claude page generation failed',
+      error_type: error.type,
+      error_code: error.error?.code || 'unknown'
     });
   }
 });
