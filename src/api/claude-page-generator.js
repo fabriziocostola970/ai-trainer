@@ -44,7 +44,8 @@ router.post('/generate-page', async (req, res) => {
       stylePreference = 'moderno',
       colorMood = 'professionale',
       targetAudience = 'generale',
-      generationMode = 'economico' // 🆕 Modalità generazione
+      generationMode = 'economico', // 🆕 Modalità generazione
+      designConventions = null // 🆕 Convenzioni di design dalla homepage
     } = req.body;
 
     if (!businessName || !pageType || !styleDNA) {
@@ -62,12 +63,40 @@ router.post('/generate-page', async (req, res) => {
       extractionScore: styleDNA.extractionScore 
     });
 
-    // 🎯 PROMPT SPECIFICO PER TIPO DI PAGINA
+    // 🎯 PROMPT SPECIFICO PER TIPO DI PAGINA CON DESIGN CONVENTIONS
     const pagePrompts = {
       about: `Crea una bellissima pagina "CHI SIAMO" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
 
+${designConventions ? `
+🎨 CONVENZIONI DI DESIGN DALLA HOMEPAGE:
+- NAVBAR HTML: ${designConventions.navbarHtml ? 'Disponibile - usa la stessa struttura esatta' : 'Non disponibile'}
+- NAVBAR STYLE: ${designConventions.navbarStyle || 'Standard'}
+- LAYOUT PATTERN: ${designConventions.layoutPattern || 'standard'}
+- DESIGN STYLE: ${designConventions.designStyle || 'professional'}
+- CSS FRAMEWORK: ${designConventions.cssFramework || 'custom'}
+
+🎯 BRAND CONTEXT:
+- Brand Personality: ${designConventions.brandPersonality || 'professional'}
+- Target Audience: ${designConventions.targetAudience || 'general'}
+- Business Context: ${designConventions.businessContext || businessType}
+
+🎨 COLOR SCHEME (da homepage):
+${designConventions.colorScheme ? `
+- Colori principali: ${Array.isArray(designConventions.colorScheme.colors) ? designConventions.colorScheme.colors.slice(0, 5).join(', ') : 'Da determinare'}
+- Colore primario: ${designConventions.colorScheme.primary || 'Da homepage'}
+- Colore secondario: ${designConventions.colorScheme.secondary || 'Da homepage'}` : 'Usa colori coerenti con la homepage'}
+
+🔤 TYPOGRAPHY (da homepage):
+${designConventions.typography ? `
+- Font principale: ${designConventions.typography.headingFont || 'Inter'}
+- Font del corpo: ${designConventions.typography.bodyFont || 'Inter'}
+- Font aggiuntivi: ${Array.isArray(designConventions.typography.fonts) ? designConventions.typography.fonts.join(', ') : 'Sistema'}` : 'Usa font coerenti con la homepage'}
+
+IMPORTANTE: Mantieni ESATTA coerenza visiva con questi elementi della homepage.
+` : ''}
+
 REQUISITI DI COERENZA:
-- NAVBAR: Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile
+- NAVBAR: ${designConventions?.navbarHtml ? 'Usa ESATTAMENTE la struttura HTML fornita nelle convenzioni di design' : 'Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile'}
 - NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
 - FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
@@ -80,11 +109,16 @@ CONTENUTO DA INCLUDERE:
 - Team (se appropriato)
 - Punti di forza distintivi
 
-STILE DA MANTENERE (Style DNA):
+STILE DA MANTENERE:
+${designConventions ? `
+- Design Style: ${designConventions.designStyle}
+- Layout Pattern: ${designConventions.layoutPattern}
+- CSS Framework: ${designConventions.cssFramework}
+- Brand Personality: ${designConventions.brandPersonality}` : `
 - Colori primari: ${styleDNA.colors?.primary}, ${styleDNA.colors?.secondary}
 - Colori brand: ${styleDNA.colors?.brandColors?.slice(0, 4).join(', ') || 'Moderni'}
 - Font principale: ${styleDNA.typography?.primaryFont || 'Inter'}
-- Font secondario: ${styleDNA.typography?.secondaryFont || 'Playfair Display'}
+- Font secondario: ${styleDNA.typography?.secondaryFont || 'Playfair Display'}`}
 
 DESIGN REQUIREMENTS:
 - Layout responsive con Tailwind CSS
@@ -96,8 +130,25 @@ DESIGN REQUIREMENTS:
 
       services: `Crea una bellissima pagina "SERVIZI" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
 
+${designConventions ? `
+🎨 CONVENZIONI DI DESIGN DALLA HOMEPAGE:
+- NAVBAR HTML: ${designConventions.navbarHtml ? 'Disponibile - usa la stessa struttura esatta' : 'Non disponibile'}
+- LAYOUT PATTERN: ${designConventions.layoutPattern || 'standard'}
+- DESIGN STYLE: ${designConventions.designStyle || 'professional'}
+- CSS FRAMEWORK: ${designConventions.cssFramework || 'custom'}
+- BRAND PERSONALITY: ${designConventions.brandPersonality || 'professional'}
+
+🎨 COLOR SCHEME: ${designConventions.colorScheme ? 
+`Usa i colori: ${Array.isArray(designConventions.colorScheme.colors) ? designConventions.colorScheme.colors.slice(0, 5).join(', ') : 'Da homepage'}` : 
+'Mantieni coerenza con homepage'}
+
+🔤 TYPOGRAPHY: ${designConventions.typography ? 
+`Font: ${designConventions.typography.headingFont || 'Inter'}, ${designConventions.typography.bodyFont || 'Inter'}` : 
+'Usa font della homepage'}
+` : ''}
+
 REQUISITI DI COERENZA:
-- NAVBAR: Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile
+- NAVBAR: ${designConventions?.navbarHtml ? 'Usa ESATTAMENTE la struttura HTML fornita nelle convenzioni' : 'Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile'}
 - NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
 - FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
@@ -110,11 +161,15 @@ CONTENUTO DA INCLUDERE:
 - Vantaggi e benefici
 - Call-to-action per contatti
 
-STILE DA MANTENERE (Style DNA):
+STILE DA MANTENERE:
+${designConventions ? `
+- Design Style: ${designConventions.designStyle}
+- Layout Pattern: ${designConventions.layoutPattern}
+- CSS Framework: ${designConventions.cssFramework}` : `
 - Colori primari: ${styleDNA.colors?.primary}, ${styleDNA.colors?.secondary}
 - Colori brand: ${styleDNA.colors?.brandColors?.slice(0, 4).join(', ') || 'Moderni'}
 - Font principale: ${styleDNA.typography?.primaryFont || 'Inter'}
-- Font secondario: ${styleDNA.typography?.secondaryFont || 'Playfair Display'}
+- Font secondario: ${styleDNA.typography?.secondaryFont || 'Playfair Display'}`}
 
 DESIGN REQUIREMENTS:
 - Grid di servizi responsive
@@ -125,8 +180,25 @@ DESIGN REQUIREMENTS:
 
       contact: `Crea una bellissima pagina "CONTATTI" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
 
+${designConventions ? `
+🎨 CONVENZIONI DI DESIGN DALLA HOMEPAGE:
+- NAVBAR HTML: ${designConventions.navbarHtml ? 'Disponibile - usa la stessa struttura esatta' : 'Non disponibile'}
+- LAYOUT PATTERN: ${designConventions.layoutPattern || 'standard'}
+- DESIGN STYLE: ${designConventions.designStyle || 'professional'}
+- CSS FRAMEWORK: ${designConventions.cssFramework || 'custom'}
+- BRAND PERSONALITY: ${designConventions.brandPersonality || 'professional'}
+
+🎨 COLOR SCHEME: ${designConventions.colorScheme ? 
+`Usa i colori: ${Array.isArray(designConventions.colorScheme.colors) ? designConventions.colorScheme.colors.slice(0, 5).join(', ') : 'Da homepage'}` : 
+'Mantieni coerenza con homepage'}
+
+🔤 TYPOGRAPHY: ${designConventions.typography ? 
+`Font: ${designConventions.typography.headingFont || 'Inter'}, ${designConventions.typography.bodyFont || 'Inter'}` : 
+'Usa font della homepage'}
+` : ''}
+
 REQUISITI DI COERENZA:
-- NAVBAR: Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile
+- NAVBAR: ${designConventions?.navbarHtml ? 'Usa ESATTAMENTE la struttura HTML fornita nelle convenzioni' : 'Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile'}
 - NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
 - FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
@@ -139,10 +211,14 @@ CONTENUTO DA INCLUDERE:
 - Orari di apertura
 - Link social (se appropriato)
 
-STILE DA MANTENERE (Style DNA):
+STILE DA MANTENERE:
+${designConventions ? `
+- Design Style: ${designConventions.designStyle}
+- Layout Pattern: ${designConventions.layoutPattern}
+- CSS Framework: ${designConventions.cssFramework}` : `
 - Colori primari: ${styleDNA.colors?.primary}, ${styleDNA.colors?.secondary}
 - Colori brand: ${styleDNA.colors?.brandColors?.slice(0, 4).join(', ') || 'Moderni'}
-- Font principale: ${styleDNA.typography?.primaryFont || 'Inter'}
+- Font principale: ${styleDNA.typography?.primaryFont || 'Inter'}`}
 - Font secondario: ${styleDNA.typography?.secondaryFont || 'Playfair Display'}
 
 DESIGN REQUIREMENTS:
