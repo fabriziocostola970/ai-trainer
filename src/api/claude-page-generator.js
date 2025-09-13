@@ -64,13 +64,18 @@ router.post('/generate-page', async (req, res) => {
 
     // 🎯 PROMPT SPECIFICO PER TIPO DI PAGINA
     const pagePrompts = {
-      about: `Crea una bellissima pagina "CHI SIAMO" per ${businessName}.
+      about: `Crea una bellissima pagina "CHI SIAMO" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
+
+REQUISITI DI COERENZA:
+- NAVBAR: Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile
+- NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
+- FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
 OBIETTIVO: Pagina About aziendale professionale e coinvolgente.
 
 CONTENUTO DA INCLUDERE:
 - Storia dell'azienda e valori
-- Mission e vision
+- Mission e vision  
 - Esperienza e competenze
 - Team (se appropriato)
 - Punti di forza distintivi
@@ -89,7 +94,12 @@ DESIGN REQUIREMENTS:
 - Gradients coerenti con i colori brand
 - Elementi decorativi geometrici`,
 
-      services: `Crea una bellissima pagina "SERVIZI" per ${businessName}.
+      services: `Crea una bellissima pagina "SERVIZI" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
+
+REQUISITI DI COERENZA:
+- NAVBAR: Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile
+- NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
+- FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
 OBIETTIVO: Showcase professionale dei servizi offerti.
 
@@ -113,7 +123,12 @@ DESIGN REQUIREMENTS:
 - Sezioni con sfondi colorati alternati
 - Buttons styled coerenti`,
 
-      contact: `Crea una bellissima pagina "CONTATTI" per ${businessName}.
+      contact: `Crea una bellissima pagina "CONTATTI" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
+
+REQUISITI DI COERENZA:
+- NAVBAR: Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile
+- NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
+- FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
 OBIETTIVO: Facilitare il contatto con l'azienda.
 
@@ -137,7 +152,12 @@ DESIGN REQUIREMENTS:
 - Animazioni micro-interaction
 - Validation JavaScript`,
 
-      portfolio: `Crea una bellissima pagina "PORTFOLIO" per ${businessName}.
+      portfolio: `Crea una bellissima pagina "PORTFOLIO" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
+
+REQUISITI DI COERENZA:
+- NAVBAR: Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile
+- NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
+- FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
 OBIETTIVO: Showcase dei lavori e progetti realizzati.
 
@@ -161,7 +181,12 @@ DESIGN REQUIREMENTS:
 - Hover effects creativi
 - Cards progetti eleganti`,
 
-      blog: `Crea una bellissima pagina "BLOG" per ${businessName}.
+      blog: `Crea una bellissima pagina "BLOG" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
+
+REQUISITI DI COERENZA:
+- NAVBAR: Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile
+- NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
+- FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
 OBIETTIVO: Sezione news, articoli e aggiornamenti.
 
@@ -185,7 +210,12 @@ DESIGN REQUIREMENTS:
 - Sidebar sticky
 - Paginazione elegante`,
 
-      testimonials: `Crea una bellissima pagina "RECENSIONI" per ${businessName}.
+      testimonials: `Crea una bellissima pagina "RECENSIONI" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
+
+REQUISITI DI COERENZA:
+- NAVBAR: Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile
+- NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
+- FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
 OBIETTIVO: Showcase testimonianze e feedback clienti.
 
@@ -218,7 +248,22 @@ DESIGN REQUIREMENTS:
       });
     }
 
-    const fullPrompt = `${selectedPrompt}
+    const fullPrompt = `[CONTESTO PROGETTO]
+SITO_ID: ${ownerId || 'unknown'}_${businessName?.replace(/[^a-zA-Z0-9]/g, '_') || 'website'}
+BUSINESS: ${businessName}
+TIPO_BUSINESS: ${businessType}
+DESCRIZIONE: ${businessDescription}
+
+[CONVENZIONI STABILITE]
+Questo sito mantiene uno stile coerente definito dalla homepage con le seguenti caratteristiche:
+- Nome attività: "${businessName}" (MANTIENI SEMPRE QUESTO NOME ESATTO)
+- Struttura di navigazione: Navbar coerente con menu principale
+- Footer: Layout e contenuti identici per tutte le pagine
+- Palette colori: Definita dal Style DNA allegato
+- Typography: Font coerenti per tutto il sito
+
+[ISTRUZIONI SPECIFICHE]
+${selectedPrompt}
 
 FRAMEWORK TECNICO:
 - HTML5 semantico e accessibile
@@ -242,20 +287,22 @@ STRUTTURA HTML RICHIESTA:
     </style>
 </head>
 <body>
-    <!-- NAVBAR COERENTE CON STYLE DNA -->
+    <!-- NAVBAR COERENTE: Mantieni sempre la stessa struttura di navigazione della homepage -->
     <!-- CONTENUTO PRINCIPALE DELLA PAGINA -->
-    <!-- FOOTER MINIMALE -->
+    <!-- FOOTER COERENTE: Copia esattamente footer e contenuti della homepage -->
     <!-- JAVASCRIPT PER INTERATTIVITÀ -->
 </body>
 </html>
 
-IMPORTANTE:
-- Genera HTML COMPLETO e funzionale
-- Mantieni ASSOLUTA coerenza con Style DNA
-- Usa SOLO i colori e font specificati
-- Crea contenuto realistico e professionale
-- Include micro-animazioni e hover effects
-- Rendi tutto responsive e moderno`;
+REGOLE ASSOLUTE:
+1. NOME ATTIVITÀ: Usa sempre e solo "${businessName}" - mai modificare o interpretare
+2. NAVBAR: Mantieni struttura di navigazione coerente con homepage  
+3. FOOTER: Copia identicamente footer della homepage
+4. COLORI: Usa SOLO i colori specificati nel Style DNA
+5. FONT: Mantieni typography coerente
+6. CONTENUTO: Crea contenuto realistico e professionale
+7. RESPONSIVE: Assicurati che tutto sia mobile-friendly
+8. ANIMAZIONI: Include micro-animazioni e hover effects eleganti`;
 
     console.log('🎨 Calling Claude Sonnet 4 for page generation...');
     console.log(`💰 Generation mode: ${generationMode}`);
