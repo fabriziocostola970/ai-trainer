@@ -124,21 +124,7 @@ router.post('/generate-html', async (req, res) => {
     };
 
     // 🎨 PROMPT CLAUDE OTTIMALE PER HTML DIRETTO
-    const claudePrompt = `❗❗❗ PRIMA REGOLA ASSOLUTA - JAVASCRIPT OBBLIGATORIO ❗❗❗
-OGNI PAGINA HTML DEVE TERMINARE CON QUESTO SCRIPT PRIMA DI </body>:
-
-<script>
-function toggleMobileMenu() {
-    const menu = document.getElementById('mobileMenu');
-    if (menu) {
-        menu.classList.toggle('hidden');
-    }
-}
-</script>
-
-⚠️ SENZA QUESTO SCRIPT IL SITO NON FUNZIONA - INCLUDILO SEMPRE!
-
-SEI UN WEB DESIGNER ESPERTO CHE CREA SITI WEB UNICI E MODERNI!
+    const claudePrompt = `SEI UN WEB DESIGNER ESPERTO CHE CREA SITI WEB UNICI E MODERNI!
 
 Devi creare una pagina HTML COMPLETA E FUNZIONALE per "${businessName}" (${businessType}), evitando design generici o template standard.
 
@@ -185,18 +171,19 @@ FRAMEWORK STILISTICO RICHIESTO:
 - Filtri interattivi funzionanti
 - Elementi decorativi (forme geometriche, patterns)
 
-🍔 NAVBAR REQUIREMENTS + JAVASCRIPT OBBLIGATORIO:
-
-OGNI PAGINA HTML DEVE INCLUDERE:
-1. Navbar hamburger-only (logo + hamburger per tutti i dispositivi)
-2. JavaScript toggleMobileMenu() - SEMPRE OBBLIGATORIO
+🍔 NAVBAR REQUIREMENTS (HAMBURGER-ONLY STRATEGY):
+- Create a MINIMALIST navbar with hamburger menu for all screen sizes
+- DESKTOP (≥768px): Show ONLY logo + hamburger menu (NO visible links)
+- MOBILE (<768px): Show ONLY logo + hamburger menu (NO visible links)
+- Links appear ONLY when hamburger is clicked (dropdown)
+- Consistent behavior across all devices for clean design
 
 CODICE NAVBAR STANDARD:
 <nav class="fixed top-0 w-full bg-white/90 backdrop-blur-sm shadow-lg z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <div class="text-2xl font-bold text-purple-600">${businessName}</div>
-            <button class="text-gray-600 hover:text-purple-600" onclick="toggleMobileMenu()">
+            <button class="text-gray-600 hover:text-purple-600" id="hamburger-btn">
                 <i class="fas fa-bars text-xl"></i>
             </button>
         </div>
@@ -210,16 +197,6 @@ CODICE NAVBAR STANDARD:
         </div>
     </div>
 </nav>
-
-❗❗❗ RICORDA: TERMINA SEMPRE CON QUESTO SCRIPT ❗❗❗
-<script>
-function toggleMobileMenu() {
-    const menu = document.getElementById('mobileMenu');
-    if (menu) {
-        menu.classList.toggle('hidden');
-    }
-}
-</script>
 
 ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
 <!DOCTYPE html>
@@ -243,33 +220,22 @@ ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
     <!-- STORIA/CHI SIAMO CON PARALLAX -->
     <!-- CONTATTI STILIZZATI -->
     
-    <!-- ============================================ -->
-    <!-- QUESTO SCRIPT È OBBLIGATORIO - SEMPRE INCLUDERE -->
-    <!-- ============================================ -->
+    <!-- JavaScript per filtri e interazioni -->
     <script>
-    function toggleMobileMenu() {
-        const menu = document.getElementById('mobileMenu');
-        if (menu) {
-            menu.classList.toggle('hidden');
-        }
-    }
-    
-    // Altri JavaScript per filtri e interazioni
+    // I tuoi JavaScript creativi qui
     </script>
 </body>
 </html>
 
 REGOLE ASSOLUTE:
-1. ❗❗❗ TERMINA SEMPRE CON LO SCRIPT toggleMobileMenu() PRIMA DI </body>
-2. Usa il CODICE NAVBAR STANDARD sopra (senza modifiche)
-3. INCLUDI SEMPRE onclick="toggleMobileMenu()" nel pulsante hamburger
-4. Un solo div mobileMenu con id="mobileMenu" (non duplicare)
-5. Genera HTML COMPLETO dalla DOCTYPE alla chiusura
-6. Usa SOLO le immagini fornite sopra
-7. Implementa JavaScript per filtri e interazioni
-8. Sii ESTREMAMENTE CREATIVO nel design
-9. Mantieni alta qualità visiva e UX
-10. Adatta colori e stile al tipo di business`;
+1. Usa il CODICE NAVBAR STANDARD sopra (senza modifiche)
+2. Un solo div mobileMenu con id="mobileMenu" (non duplicare)
+3. Genera HTML COMPLETO dalla DOCTYPE alla chiusura
+4. Usa SOLO le immagini fornite sopra
+5. Implementa JavaScript per filtri e interazioni
+6. Sii ESTREMAMENTE CREATIVO nel design
+7. Mantieni alta qualità visiva e UX
+8. Adatta colori e stile al tipo di business`;
 
     console.log('🎨 Calling Claude Sonnet 4 for HTML generation...');
     console.log(`🎛️ Generation mode: ${generationMode}`);
@@ -376,16 +342,6 @@ REGOLE ASSOLUTE:
     // 🔧 SOLUZIONE DEFINITIVA: Forza SEMPRE l'aggiornamento con script corretto
     console.log('🔧 [FORCE-UPDATE] Ensuring toggleMobileMenu is present...');
     
-    // Controlla se manca onclick="toggleMobileMenu()" nel pulsante hamburger
-    if (!cleanHTML.includes('onclick="toggleMobileMenu()"')) {
-      console.log('🔧 [FORCE-UPDATE] Adding missing onclick handler...');
-      // Sostituisci qualsiasi pulsante hamburger con la versione corretta
-      cleanHTML = cleanHTML.replace(
-        /<button[^>]*class="[^"]*"[^>]*><i class="fas fa-bars[^>]*><\/i><\/button>/g,
-        '<button class="text-gray-600 hover:text-purple-600" onclick="toggleMobileMenu()"><i class="fas fa-bars text-xl"></i></button>'
-      );
-    }
-
     // Forza sempre la presenza dello script (anche se già presente)
     const forceToggleScript = `
     <script>
@@ -395,17 +351,35 @@ REGOLE ASSOLUTE:
             menu.classList.toggle('hidden');
         }
     }
+    
+    // Auto-attach event listener to hamburger button
+    document.addEventListener('DOMContentLoaded', function() {
+        const hamburgerBtn = document.getElementById('hamburger-btn') || 
+                           document.querySelector('button[onclick*="toggleMobileMenu"]') ||
+                           document.querySelector('button i.fa-bars').parentElement;
+        if (hamburgerBtn) {
+            hamburgerBtn.onclick = toggleMobileMenu;
+        }
+    });
     </script>`;
 
     // Rimuovi eventuali script esistenti duplicati e aggiungi quello nuovo
     cleanHTML = cleanHTML.replace(/<script>[\s\S]*?toggleMobileMenu[\s\S]*?<\/script>/g, '');
     
+    // Assicurati che il pulsante hamburger abbia almeno un id
+    if (!cleanHTML.includes('id="hamburger-btn"') && !cleanHTML.includes('onclick="toggleMobileMenu()"')) {
+      cleanHTML = cleanHTML.replace(
+        /<button([^>]*class="[^"]*"[^>]*)><i class="fas fa-bars/g,
+        '<button$1 id="hamburger-btn"><i class="fas fa-bars'
+      );
+    }
+    
     if (cleanHTML.includes('</body>')) {
       cleanHTML = cleanHTML.replace('</body>', `${forceToggleScript}\n</body>`);
-      console.log('✅ [FORCE-UPDATE] toggleMobileMenu script forcibly added before </body>');
+      console.log('✅ [FORCE-UPDATE] toggleMobileMenu script with auto-attach forcibly added before </body>');
     } else {
       cleanHTML += forceToggleScript;
-      console.log('✅ [FORCE-UPDATE] toggleMobileMenu script forcibly added at end');
+      console.log('✅ [FORCE-UPDATE] toggleMobileMenu script with auto-attach forcibly added at end');
     }
     
     console.log(`🧹 HTML cleaning: Original length: ${htmlContent.length}, Clean length: ${cleanHTML.length}`);

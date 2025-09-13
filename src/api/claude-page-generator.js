@@ -327,21 +327,7 @@ DESIGN REQUIREMENTS:
       });
     }
 
-    const fullPrompt = `❗❗❗ PRIMA REGOLA ASSOLUTA - JAVASCRIPT OBBLIGATORIO ❗❗❗
-OGNI PAGINA HTML DEVE TERMINARE CON QUESTO SCRIPT PRIMA DI </body>:
-
-<script>
-function toggleMobileMenu() {
-    const menu = document.getElementById('mobileMenu');
-    if (menu) {
-        menu.classList.toggle('hidden');
-    }
-}
-</script>
-
-⚠️ SENZA QUESTO SCRIPT IL SITO NON FUNZIONA - INCLUDILO SEMPRE!
-
-[CONTESTO PROGETTO]
+    const fullPrompt = `[CONTESTO PROGETTO]
 SITO_ID: ${ownerId || 'unknown'}_${businessName?.replace(/[^a-zA-Z0-9]/g, '_') || 'website'}
 BUSINESS: ${businessName}
 TIPO_BUSINESS: ${businessType}
@@ -357,16 +343,6 @@ Questo sito mantiene uno stile coerente definito dalla homepage con le seguenti 
 
 [ISTRUZIONI SPECIFICHE]
 ${selectedPrompt}
-
-❗❗❗ RICORDA: TERMINA SEMPRE CON QUESTO SCRIPT ❗❗❗
-<script>
-function toggleMobileMenu() {
-    const menu = document.getElementById('mobileMenu');
-    if (menu) {
-        menu.classList.toggle('hidden');
-    }
-}
-</script>
 
 FRAMEWORK TECNICO:
 - HTML5 semantico e accessibile
@@ -409,27 +385,17 @@ STRUTTURA HTML RICHIESTA:
 </html>
 
 REGOLE ASSOLUTE:
-1. ❗❗❗ TERMINA SEMPRE CON LO SCRIPT toggleMobileMenu() PRIMA DI </body>
-2. NOME ATTIVITÀ: Usa sempre e solo "${businessName}" - mai modificare o interpretare
-3. NAVBAR: Usa il CODICE NAVBAR STANDARD della homepage (identico)
-4. FOOTER: Copia identicamente footer della homepage
-5. COLORI: Usa SOLO i colori specificati nel Style DNA
-6. FONT: Mantieni typography coerente
-7. CONTENUTO: Crea contenuto realistico e professionale
-8. RESPONSIVE: Assicurati che tutto sia mobile-friendly
-9. ANIMAZIONI: Include micro-animazioni e hover effects eleganti
-10. INCLUDI SEMPRE onclick="toggleMobileMenu()" nel pulsante hamburger
-11. Un solo div mobileMenu con id="mobileMenu" (non duplicare)
+1. NOME ATTIVITÀ: Usa sempre e solo "${businessName}" - mai modificare o interpretare
+2. NAVBAR: Usa il CODICE NAVBAR STANDARD della homepage (identico)
+3. FOOTER: Copia identicamente footer della homepage
+4. COLORI: Usa SOLO i colori specificati nel Style DNA
+5. FONT: Mantieni typography coerente
+6. CONTENUTO: Crea contenuto realistico e professionale
+7. RESPONSIVE: Assicurati che tutto sia mobile-friendly
+8. ANIMAZIONI: Include micro-animazioni e hover effects eleganti
+9. Un solo div mobileMenu con id="mobileMenu" (non duplicare)
 
-JAVASCRIPT OBBLIGATORIO - INCLUDI SEMPRE PRIMA DI </body>:
-<script>
-function toggleMobileMenu() {
-    const menu = document.getElementById('mobileMenu');
-    if (menu) {
-        menu.classList.toggle('hidden');
-    }
-}
-</script>
+JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
 </script>
 
 ❗ REGOLA: Ogni sito HTML creato DEVE includere questo JavaScript nel tag <script> prima di </body>`;
@@ -543,16 +509,6 @@ function toggleMobileMenu() {
     // 🔧 SOLUZIONE DEFINITIVA: Forza SEMPRE l'aggiornamento con script corretto
     console.log('🔧 [FORCE-UPDATE-PAGE] Ensuring toggleMobileMenu is present...');
     
-    // Controlla se manca onclick="toggleMobileMenu()" nel pulsante hamburger
-    if (!cleanHTML.includes('onclick="toggleMobileMenu()"')) {
-      console.log('🔧 [FORCE-UPDATE-PAGE] Adding missing onclick handler...');
-      // Sostituisci qualsiasi pulsante hamburger con la versione corretta
-      cleanHTML = cleanHTML.replace(
-        /<button[^>]*class="[^"]*"[^>]*><i class="fas fa-bars[^>]*><\/i><\/button>/g,
-        '<button class="text-gray-600 hover:text-purple-600" onclick="toggleMobileMenu()"><i class="fas fa-bars text-xl"></i></button>'
-      );
-    }
-
     // Forza sempre la presenza dello script (anche se già presente)
     const forceToggleScript = `
     <script>
@@ -562,17 +518,35 @@ function toggleMobileMenu() {
             menu.classList.toggle('hidden');
         }
     }
+    
+    // Auto-attach event listener to hamburger button
+    document.addEventListener('DOMContentLoaded', function() {
+        const hamburgerBtn = document.getElementById('hamburger-btn') || 
+                           document.querySelector('button[onclick*="toggleMobileMenu"]') ||
+                           document.querySelector('button i.fa-bars').parentElement;
+        if (hamburgerBtn) {
+            hamburgerBtn.onclick = toggleMobileMenu;
+        }
+    });
     </script>`;
 
     // Rimuovi eventuali script esistenti duplicati e aggiungi quello nuovo
     cleanHTML = cleanHTML.replace(/<script>[\s\S]*?toggleMobileMenu[\s\S]*?<\/script>/g, '');
     
+    // Assicurati che il pulsante hamburger abbia almeno un id
+    if (!cleanHTML.includes('id="hamburger-btn"') && !cleanHTML.includes('onclick="toggleMobileMenu()"')) {
+      cleanHTML = cleanHTML.replace(
+        /<button([^>]*class="[^"]*"[^>]*)><i class="fas fa-bars/g,
+        '<button$1 id="hamburger-btn"><i class="fas fa-bars'
+      );
+    }
+    
     if (cleanHTML.includes('</body>')) {
       cleanHTML = cleanHTML.replace('</body>', `${forceToggleScript}\n</body>`);
-      console.log('✅ [FORCE-UPDATE-PAGE] toggleMobileMenu script forcibly added before </body>');
+      console.log('✅ [FORCE-UPDATE-PAGE] toggleMobileMenu script with auto-attach forcibly added before </body>');
     } else {
       cleanHTML += forceToggleScript;
-      console.log('✅ [FORCE-UPDATE-PAGE] toggleMobileMenu script forcibly added at end');
+      console.log('✅ [FORCE-UPDATE-PAGE] toggleMobileMenu script with auto-attach forcibly added at end');
     }
 
     console.log('🧹 HTML cleaning: Original length:', htmlContent.length, ', Clean length:', cleanHTML.length);
