@@ -26,7 +26,7 @@ async function generateNavbarFromDatabase(websiteId, businessName) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        // Nota: L'autenticazione sarà gestita lato VendiOnline-EU
+        'X-AI-Trainer-Key': process.env.AI_TRAINER_API_KEY || '',
       }
     });
 

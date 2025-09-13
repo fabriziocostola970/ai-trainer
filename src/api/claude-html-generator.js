@@ -35,6 +35,7 @@ async function generateNavbarFromDatabase(websiteId, businessName) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'X-AI-Trainer-Key': process.env.AI_TRAINER_API_KEY || '',
       }
     });
 
@@ -555,9 +556,9 @@ REGOLE ASSOLUTE:
 
     // 💾 SALVA NELLA TABELLA WEBSITES ESISTENTE
     try {
-      // Genera IDs univoci
-      businessId = `biz_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      websiteId = `site_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Genera IDs univoci per database (diversi da quelli per preview)
+      const dbBusinessId = `biz_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const dbWebsiteId = `site_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       // Prima creo/aggiorno il business con l'ownerId reale del token
       const businessQuery = `
@@ -572,16 +573,16 @@ REGOLE ASSOLUTE:
       `;
       
       await pool.query(businessQuery, [
-        businessId,
+        dbBusinessId,
         ownerId, // ← Usa l'ownerId reale dal token
         businessName,
         businessType || 'general',
         businessDescription || ''
       ]);
       
-      console.log(`💼 Business created/updated: ${businessId} for owner: ${ownerId}`);
+      console.log(`💼 Business created/updated: ${dbBusinessId} for owner: ${ownerId}`);
       
-      // Ora salvo il website nella tabella websites (websiteId già definito sopra)
+      // Ora salvo il website nella tabella websites
       
       const websiteQuery = `
         INSERT INTO websites (id, "businessId", content, design, status, version, "createdAt", "updatedAt")
@@ -598,7 +599,7 @@ REGOLE ASSOLUTE:
         taskId: `website_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         ownerId: ownerId,
         metadata: {
-          website_id: websiteId,
+          website_id: dbWebsiteId,
           generation_type: 'direct_html',
           creative_mode: true,
           style: {
@@ -625,15 +626,19 @@ REGOLE ASSOLUTE:
       };
 
       const websiteResult = await pool.query(websiteQuery, [
-        websiteId,
-        businessId,
+        dbWebsiteId,
+        dbBusinessId,
         cleanHTML,  // ← HTML completo di Claude va qui
         JSON.stringify(websiteDesign),
         'generated',
         1
       ]);
       
-      console.log(`🌐 Website saved: ${websiteId} for business: ${businessId}`);
+      console.log(`🌐 Website saved: ${dbWebsiteId} for business: ${dbBusinessId}`);
+      
+      // Assegna i valori DB alle variabili per la response
+      businessId = dbBusinessId;
+      websiteId = dbWebsiteId;
       
     } catch (dbError) {
       console.error('❌ Database save error:', dbError.message);
