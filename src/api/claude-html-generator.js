@@ -178,6 +178,9 @@ FRAMEWORK STILISTICO RICHIESTO:
 - Links appear ONLY when hamburger is clicked (dropdown)
 - Consistent behavior across all devices for clean design
 
+⚠️ IMPORTANTE: INCLUDI SEMPRE IL JAVASCRIPT NELLA PAGINA HTML
+Il JavaScript per toggleMobileMenu() è OBBLIGATORIO e deve essere incluso in ogni pagina.
+
 ESEMPIO NAVBAR HAMBURGER-ONLY:
 <nav class="fixed top-0 w-full bg-white/90 backdrop-blur-sm shadow-lg z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -214,13 +217,15 @@ ESEMPIO NAVBAR HAMBURGER-ONLY:
     </div>
 </nav>
 
-JAVASCRIPT OBBLIGATORIO PER IL MENU MOBILE:
+JAVASCRIPT DA INCLUDERE SEMPRE:
 <script>
 function toggleMobileMenu() {
     const menu = document.getElementById('mobileMenu');
     menu.classList.toggle('hidden');
 }
 </script>
+
+❗ REGOLA: Ogni sito HTML creato DEVE includere questo JavaScript nel tag <script> prima di </body>
 
 ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
 <!DOCTYPE html>
@@ -265,12 +270,13 @@ REGOLE ASSOLUTE:
 2. INCLUDI SEMPRE lo script toggleMobileMenu() nel body prima di </body>
 3. Il div del menu mobile deve avere id="mobileMenu"
 4. Genera HTML COMPLETO dalla DOCTYPE alla chiusura
-5. INCLUDI SEMPRE la funzione toggleMobileMenu() nel JavaScript finale
+5. INCLUDI SEMPRE la funzione toggleMobileMenu() nel JavaScript finale - SENZA ECCEZIONI
 6. Usa SOLO le immagini fornite sopra
 7. Implementa JavaScript per filtri e interazioni
 8. Sii ESTREMAMENTE CREATIVO nel design
 9. Mantieni alta qualità visiva e UX
-10. Adatta colori e stile al tipo di business`;
+10. Adatta colori e stile al tipo di business
+11. ❗ OGNI PAGINA HTML DEVE AVERE IL JAVASCRIPT toggleMobileMenu() - È OBBLIGATORIO`;
 
     console.log('🎨 Calling Claude Sonnet 4 for HTML generation...');
     console.log(`🎛️ Generation mode: ${generationMode}`);

@@ -396,8 +396,12 @@ REGOLE ASSOLUTE:
 9. USA SEMPRE onclick="toggleMobileMenu()" per il pulsante hamburger
 10. INCLUDI SEMPRE lo script toggleMobileMenu() nel body prima di </body>
 11. Il div del menu mobile deve avere id="mobileMenu"
+12. ❗ OGNI PAGINA HTML DEVE AVERE IL JAVASCRIPT toggleMobileMenu() - È OBBLIGATORIO
 
-JAVASCRIPT OBBLIGATORIO DA INCLUDERE:
+⚠️ IMPORTANTE: INCLUDI SEMPRE IL JAVASCRIPT NELLA PAGINA HTML
+Il JavaScript per toggleMobileMenu() è OBBLIGATORIO e deve essere incluso in ogni pagina.
+
+JAVASCRIPT DA INCLUDERE SEMPRE:
 <script>
 function toggleMobileMenu() {
     const menu = document.getElementById('mobileMenu');
@@ -405,7 +409,9 @@ function toggleMobileMenu() {
         menu.classList.toggle('hidden');
     }
 }
-</script>`;
+</script>
+
+❗ REGOLA: Ogni sito HTML creato DEVE includere questo JavaScript nel tag <script> prima di </body>`;
 
     console.log('🎨 Calling Claude Sonnet 4 for page generation...');
     console.log(`💰 Generation mode: ${generationMode}`);
