@@ -17,6 +17,159 @@ const pool = new Pool({
 });
 
 /**
+ * 🚀 NAVBAR TEMPLATE INJECTION - Genera navbar dinamica da database (HOMEPAGE)
+ */
+async function generateNavbarFromDatabase(websiteId, businessName) {
+  try {
+    console.log('🔧 [NAVBAR-INJECTION-HP] Generazione navbar per websiteId:', websiteId);
+    
+    // Se non abbiamo websiteId, generiamo navbar base
+    if (!websiteId) {
+      console.log('⚠️ [NAVBAR-INJECTION-HP] WebsiteId mancante, usando navbar base');
+      return generateBaseNavbar(businessName);
+    }
+
+    // 🌐 Chiamata API a VendiOnline-EU per ottenere le pagine
+    const vendionlineUrl = process.env.VENDIONLINE_API_URL || 'http://localhost:3001';
+    const response = await fetch(`${vendionlineUrl}/api/website/menu-items?websiteId=${websiteId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      console.warn('⚠️ [NAVBAR-INJECTION-HP] API fallita, usando navbar base');
+      return generateBaseNavbar(businessName);
+    }
+
+    const data = await response.json();
+    if (!data.success || !data.menuItems) {
+      console.warn('⚠️ [NAVBAR-INJECTION-HP] Dati invalidi, usando navbar base');
+      return generateBaseNavbar(businessName);
+    }
+
+    // 🎯 Genera navbar con menu items dinamici
+    const menuItems = data.menuItems;
+    const navbarHtml = `
+    <nav class="bg-white shadow-lg fixed w-full z-50 top-0">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <!-- Logo -->
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <h1 class="text-xl font-bold text-gray-900">${businessName}</h1>
+            </div>
+          </div>
+          
+          <!-- Desktop Menu (nascosto su mobile) -->
+          <div class="hidden md:flex md:items-center md:space-x-8">
+            ${menuItems.map(item => `
+              <a href="${item.href}" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                ${item.name}
+              </a>
+            `).join('')}
+          </div>
+          
+          <!-- Mobile hamburger button -->
+          <div class="md:hidden flex items-center">
+            <button id="hamburger-btn" type="button" class="text-gray-700 hover:text-blue-600 focus:outline-none focus:text-blue-600">
+              <i class="fas fa-bars text-xl"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Mobile menu -->
+      <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-gray-200">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+          ${menuItems.map(item => `
+            <a href="${item.href}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
+              ${item.name}
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    </nav>
+    
+    <!-- Spacer per compensare navbar fixed -->
+    <div class="h-16"></div>`;
+
+    console.log(`✅ [NAVBAR-INJECTION-HP] Navbar generata con ${menuItems.length} menu items`);
+    return navbarHtml;
+
+  } catch (error) {
+    console.error('❌ [NAVBAR-INJECTION-HP] Errore:', error.message);
+    return generateBaseNavbar(businessName);
+  }
+}
+
+/**
+ * 🎯 NAVBAR BASE - Fallback quando non abbiamo dati dal database (HOMEPAGE)
+ */
+function generateBaseNavbar(businessName) {
+  console.log('🔧 [NAVBAR-INJECTION-HP] Generazione navbar base per:', businessName);
+  
+  return `
+  <nav class="bg-white shadow-lg fixed w-full z-50 top-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <!-- Logo -->
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <h1 class="text-xl font-bold text-gray-900">${businessName}</h1>
+          </div>
+        </div>
+        
+        <!-- Desktop Menu Base -->
+        <div class="hidden md:flex md:items-center md:space-x-8">
+          <a href="/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            Home
+          </a>
+          <a href="/chi-siamo" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            Chi Siamo
+          </a>
+          <a href="/servizi" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            Servizi
+          </a>
+          <a href="/contatti" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            Contatti
+          </a>
+        </div>
+        
+        <!-- Mobile hamburger button -->
+        <div class="md:hidden flex items-center">
+          <button id="hamburger-btn" type="button" class="text-gray-700 hover:text-blue-600 focus:outline-none focus:text-blue-600">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mobile menu -->
+    <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-gray-200">
+      <div class="px-2 pt-2 pb-3 space-y-1">
+        <a href="/" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
+          Home
+        </a>
+        <a href="/chi-siamo" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
+          Chi Siamo
+        </a>
+        <a href="/servizi" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
+          Servizi
+        </a>
+        <a href="/contatti" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
+          Contatti
+        </a>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Spacer per compensare navbar fixed -->
+  <div class="h-16"></div>`;
+}
+
+/**
  * 🎨 ENDPOINT GENERAZIONE HTML COMPLETA CON CLAUDE
  * POST /api/claude/generate-html
  * 

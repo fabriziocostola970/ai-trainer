@@ -8,6 +8,160 @@ const anthropic = new Anthropic({
 });
 
 /**
+ * 🚀 NAVBAR TEMPLATE INJECTION - Genera navbar dinamica da database
+ */
+async function generateNavbarFromDatabase(websiteId, businessName) {
+  try {
+    console.log('🔧 [NAVBAR-INJECTION] Generazione navbar per websiteId:', websiteId);
+    
+    // Se non abbiamo websiteId, generiamo navbar base
+    if (!websiteId) {
+      console.log('⚠️ [NAVBAR-INJECTION] WebsiteId mancante, usando navbar base');
+      return generateBaseNavbar(businessName);
+    }
+
+    // 🌐 Chiamata API a VendiOnline-EU per ottenere le pagine
+    const vendionlineUrl = process.env.VENDIONLINE_API_URL || 'http://localhost:3001';
+    const response = await fetch(`${vendionlineUrl}/api/website/menu-items?websiteId=${websiteId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // Nota: L'autenticazione sarà gestita lato VendiOnline-EU
+      }
+    });
+
+    if (!response.ok) {
+      console.warn('⚠️ [NAVBAR-INJECTION] API fallita, usando navbar base');
+      return generateBaseNavbar(businessName);
+    }
+
+    const data = await response.json();
+    if (!data.success || !data.menuItems) {
+      console.warn('⚠️ [NAVBAR-INJECTION] Dati invalidi, usando navbar base');
+      return generateBaseNavbar(businessName);
+    }
+
+    // 🎯 Genera navbar con menu items dinamici
+    const menuItems = data.menuItems;
+    const navbarHtml = `
+    <nav class="bg-white shadow-lg fixed w-full z-50 top-0">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <!-- Logo -->
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <h1 class="text-xl font-bold text-gray-900">${businessName}</h1>
+            </div>
+          </div>
+          
+          <!-- Desktop Menu (nascosto su mobile) -->
+          <div class="hidden md:flex md:items-center md:space-x-8">
+            ${menuItems.map(item => `
+              <a href="${item.href}" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                ${item.name}
+              </a>
+            `).join('')}
+          </div>
+          
+          <!-- Mobile hamburger button -->
+          <div class="md:hidden flex items-center">
+            <button id="hamburger-btn" type="button" class="text-gray-700 hover:text-blue-600 focus:outline-none focus:text-blue-600">
+              <i class="fas fa-bars text-xl"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Mobile menu -->
+      <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-gray-200">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+          ${menuItems.map(item => `
+            <a href="${item.href}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
+              ${item.name}
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    </nav>
+    
+    <!-- Spacer per compensare navbar fixed -->
+    <div class="h-16"></div>`;
+
+    console.log(`✅ [NAVBAR-INJECTION] Navbar generata con ${menuItems.length} menu items`);
+    return navbarHtml;
+
+  } catch (error) {
+    console.error('❌ [NAVBAR-INJECTION] Errore:', error.message);
+    return generateBaseNavbar(businessName);
+  }
+}
+
+/**
+ * 🎯 NAVBAR BASE - Fallback quando non abbiamo dati dal database
+ */
+function generateBaseNavbar(businessName) {
+  console.log('🔧 [NAVBAR-INJECTION] Generazione navbar base per:', businessName);
+  
+  return `
+  <nav class="bg-white shadow-lg fixed w-full z-50 top-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <!-- Logo -->
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <h1 class="text-xl font-bold text-gray-900">${businessName}</h1>
+          </div>
+        </div>
+        
+        <!-- Desktop Menu Base -->
+        <div class="hidden md:flex md:items-center md:space-x-8">
+          <a href="/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            Home
+          </a>
+          <a href="/chi-siamo" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            Chi Siamo
+          </a>
+          <a href="/servizi" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            Servizi
+          </a>
+          <a href="/contatti" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            Contatti
+          </a>
+        </div>
+        
+        <!-- Mobile hamburger button -->
+        <div class="md:hidden flex items-center">
+          <button id="hamburger-btn" type="button" class="text-gray-700 hover:text-blue-600 focus:outline-none focus:text-blue-600">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mobile menu -->
+    <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-gray-200">
+      <div class="px-2 pt-2 pb-3 space-y-1">
+        <a href="/" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
+          Home
+        </a>
+        <a href="/chi-siamo" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
+          Chi Siamo
+        </a>
+        <a href="/servizi" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
+          Servizi
+        </a>
+        <a href="/contatti" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
+          Contatti
+        </a>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Spacer per compensare navbar fixed -->
+  <div class="h-16"></div>`;
+}
+
+/**
  * 🎨 ENDPOINT GENERAZIONE PAGINE SECONDARIE CON STYLE DNA
  * POST /api/claude/generate-page
  * 
@@ -483,7 +637,37 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
       .replace(/^\s*```\s*/gm, '')
       .trim();
 
-    // 🔧 POST-PROCESSING: Aggiungi automaticamente toggleMobileMenu se mancante
+    // � NAVBAR TEMPLATE INJECTION - Sostituisce/aggiunge navbar dinamica
+    console.log('🚀 [NAVBAR-INJECTION] Inizio sostituzione navbar...');
+    
+    try {
+      const dynamicNavbar = await generateNavbarFromDatabase(websiteId, businessName);
+      
+      // Metodo 1: Sostituisci navbar esistente se presente
+      if (cleanHTML.includes('<nav')) {
+        console.log('🔄 [NAVBAR-INJECTION] Sostituzione navbar esistente...');
+        cleanHTML = cleanHTML.replace(/<nav[\s\S]*?<\/nav>/gi, dynamicNavbar);
+      } 
+      // Metodo 2: Inserisci navbar dopo <body> se non presente
+      else if (cleanHTML.includes('<body')) {
+        console.log('🔧 [NAVBAR-INJECTION] Inserimento navbar dopo <body>...');
+        cleanHTML = cleanHTML.replace(/<body([^>]*)>/i, `<body$1>\n${dynamicNavbar}`);
+      }
+      // Metodo 3: Inserisci all'inizio del contenuto
+      else if (cleanHTML.includes('<html')) {
+        console.log('🔧 [NAVBAR-INJECTION] Inserimento navbar all\'inizio...');
+        const insertPoint = cleanHTML.indexOf('>') + 1;
+        cleanHTML = cleanHTML.slice(0, insertPoint) + '\n' + dynamicNavbar + cleanHTML.slice(insertPoint);
+      }
+      
+      console.log('✅ [NAVBAR-INJECTION] Navbar injection completata');
+      
+    } catch (navbarError) {
+      console.error('❌ [NAVBAR-INJECTION] Errore:', navbarError.message);
+      // Continua comunque con l'HTML originale
+    }
+
+    // �🔧 POST-PROCESSING: Aggiungi automaticamente toggleMobileMenu se mancante
     if (!cleanHTML.includes('toggleMobileMenu')) {
       console.log('🔧 [POST-PROCESS-PAGE] Adding missing toggleMobileMenu function...');
       
@@ -507,10 +691,9 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
       console.log('✅ [POST-PROCESS-PAGE] toggleMobileMenu function added automatically');
     }
 
-    // 🔧 SOLUZIONE DEFINITIVA: Forza SEMPRE l'aggiornamento con script corretto
-    console.log('🔧 [FORCE-UPDATE-PAGE] Ensuring toggleMobileMenu is present...');
+    // 🔧 FORCE-UPDATE: Script semplificato per navbar injection
+    console.log('🔧 [FORCE-UPDATE-PAGE] Adding mobile menu toggle script...');
     
-    // Forza sempre la presenza dello script (anche se già presente)
     const forceToggleScript = `
     <script>
     function toggleMobileMenu() {
@@ -520,184 +703,27 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
         }
     }
     
-    // Auto-attach event listener to hamburger button + SMART NAVBAR DETECTION
+    // Auto-attach event listener al pulsante hamburger
     document.addEventListener('DOMContentLoaded', function() {
-        // 🔧 SMART HAMBURGER DETECTION: Cerca il pulsante in vari modi
-        let hamburgerBtn = document.getElementById('hamburger-btn') || 
-                          document.querySelector('button[onclick*="toggleMobileMenu"]') ||
-                          document.querySelector('button i.fa-bars').parentElement;
-        
-        // Se non trova il burger button, cerca nelle navbar generiche
-        if (!hamburgerBtn) {
-            const navbar = document.querySelector('nav') || document.querySelector('header');
-            if (navbar) {
-                const allButtons = navbar.querySelectorAll('button');
-                for (const btn of allButtons) {
-                    if (btn.innerHTML.includes('fa-bars') || btn.innerHTML.includes('☰') || btn.innerHTML.includes('menu')) {
-                        hamburgerBtn = btn;
-                        hamburgerBtn.id = 'hamburger-btn';
-                        break;
-                    }
-                }
-            }
-        }
-        
-        // Attach toggle function
+        const hamburgerBtn = document.getElementById('hamburger-btn');
         if (hamburgerBtn) {
             hamburgerBtn.onclick = toggleMobileMenu;
+            console.log('✅ [NAVBAR] Hamburger menu collegato correttamente');
+        } else {
+            console.warn('⚠️ [NAVBAR] Pulsante hamburger non trovato');
         }
-        
-        // 🔧 SMART MOBILE MENU DETECTION: Se manca il menu mobile, prova a identificarlo
-        let mobileMenu = document.getElementById('mobileMenu');
-        if (!mobileMenu) {
-            // Cerca menu nascosti o con classi simili
-            const possibleMenus = document.querySelectorAll('.mobile-menu, .nav-menu, [class*="mobile"], [class*="menu"]');
-            for (const menu of possibleMenus) {
-                if (menu.style.display === 'none' || menu.classList.contains('hidden')) {
-                    menu.id = 'mobileMenu';
-                    mobileMenu = menu;
-                    break;
-                }
-            }
-        }
-        
-        // 🎯 HYBRID SMART MENU SYSTEM: Carica menu items dinamicamente
-        loadDynamicMenuItems();
     });
-    
-    // 🚀 HYBRID SMART MENU: Auto-populate menu links da database
-    async function loadDynamicMenuItems() {
-        console.log('🚀 [SMART-MENU] Inizio caricamento menu dinamico...');
-        try {
-            // Estrai websiteId dall'URL o da meta tag
-            const websiteId = getWebsiteId();
-            console.log('🔍 [SMART-MENU] WebsiteId trovato:', websiteId);
-            if (!websiteId) {
-                console.log('❌ [SMART-MENU] WebsiteId non trovato, usando menu statico');
-                return;
-            }
-            
-            console.log('📞 [SMART-MENU] Chiamata API:', \`/api/website/menu-items?websiteId=\${websiteId}\`);
-            const response = await fetch(\`/api/website/menu-items?websiteId=\${websiteId}\`);
-            console.log('📡 [SMART-MENU] Response status:', response.status);
-            if (!response.ok) {
-                throw new Error(\`HTTP \${response.status}\`);
-            }
-            
-            const data = await response.json();
-            if (!data.success || !data.menuItems) {
-                throw new Error('Invalid response format');
-            }
-            
-            // 🔧 Trova i container del menu (desktop e mobile)
-            console.log('🔍 [SMART-MENU] Ricerca container menu...');
-            const menuContainers = [
-                document.querySelector('#mobileMenu ul'),
-                document.querySelector('#mobileMenu nav'),
-                document.querySelector('nav ul'),
-                document.querySelector('.mobile-menu ul'),
-                document.querySelector('.nav-menu')
-            ].filter(Boolean);
-            
-            console.log('📋 [SMART-MENU] Container trovati:', menuContainers.length);
-            menuContainers.forEach((container, index) => {
-                console.log(\`📋 [SMART-MENU] Container \${index}:\`, container.tagName, container.className, container.id);
-            });
-            
-            if (menuContainers.length === 0) {
-                console.log('❌ [SMART-MENU] Nessun container menu trovato - elementi disponibili:');
-                console.log('- #mobileMenu:', document.querySelector('#mobileMenu'));
-                console.log('- nav:', document.querySelector('nav'));
-                console.log('- .mobile-menu:', document.querySelector('.mobile-menu'));
-                return;
-            }
-            
-            // 🎯 Rimuovi link dinamici esistenti (se presenti)
-            menuContainers.forEach(container => {
-                const dynamicLinks = container.querySelectorAll('[data-dynamic-menu]');
-                dynamicLinks.forEach(link => link.remove());
-            });
-            
-            // 🚀 Aggiungi i nuovi menu items (escludi homepage)
-            const secondaryPages = data.menuItems.filter(item => !item.isHomepage);
-            
-            menuContainers.forEach(container => {
-                secondaryPages.forEach(page => {
-                    const li = document.createElement('li');
-                    li.setAttribute('data-dynamic-menu', 'true');
-                    li.innerHTML = \`<a href="\${page.href}" class="menu-link block px-4 py-2 text-gray-700 hover:bg-gray-100">\${page.name}</a>\`;
-                    container.appendChild(li);
-                });
-            });
-            
-            console.log(\`✅ [SMART-MENU] Caricati \${secondaryPages.length} menu items dinamici\`);
-            
-        } catch (error) {
-            console.log('🔄 [SMART-MENU] Fallback su menu statico:', error.message);
-        }
-    }
-    
-    // 🔍 Utility: Estrai websiteId dall'URL o meta tags
-    function getWebsiteId() {
-        console.log('🔍 [SMART-MENU] Ricerca websiteId...');
-        
-        // Metodo 1: Da meta tag (se presente)
-        const metaWebsiteId = document.querySelector('meta[name="website-id"]');
-        console.log('🏷️ [SMART-MENU] Meta tag website-id:', metaWebsiteId);
-        if (metaWebsiteId) {
-            const id = metaWebsiteId.getAttribute('content');
-            console.log('✅ [SMART-MENU] WebsiteId da meta tag:', id);
-            return id;
-        }
-        
-        // Metodo 2: Da URL params (se presente)
-        const urlParams = new URLSearchParams(window.location.search);
-        const websiteId = urlParams.get('websiteId');
-        console.log('🔗 [SMART-MENU] WebsiteId da URL params:', websiteId);
-        if (websiteId) {
-            console.log('✅ [SMART-MENU] WebsiteId da URL:', websiteId);
-            return websiteId;
-        }
-        
-        // Metodo 3: Da localStorage (se presente)
-        try {
-            const stored = localStorage.getItem('currentWebsiteId');
-            console.log('💾 [SMART-MENU] WebsiteId da localStorage:', stored);
-            if (stored) {
-                console.log('✅ [SMART-MENU] WebsiteId da storage:', stored);
-                return stored;
-            }
-        } catch (e) {
-            // localStorage non disponibile
-        }
-        
-        return null;
     </script>`;
 
-    // Rimuovi eventuali script esistenti duplicati e aggiungi quello nuovo
+    // Rimuovi eventuali script duplicati e inserisci quello nuovo
     cleanHTML = cleanHTML.replace(/<script>[\s\S]*?toggleMobileMenu[\s\S]*?<\/script>/g, '');
-    
-    // Assicurati che il pulsante hamburger abbia almeno un id
-    if (!cleanHTML.includes('id="hamburger-btn"') && !cleanHTML.includes('onclick="toggleMobileMenu()"')) {
-      cleanHTML = cleanHTML.replace(
-        /<button([^>]*class="[^"]*"[^>]*)><i class="fas fa-bars/g,
-        '<button$1 id="hamburger-btn"><i class="fas fa-bars'
-      );
-    }
-    
-    // 🎯 HYBRID SMART MENU: Aggiungi meta tag websiteId se presente
-    if (websiteId && cleanHTML.includes('<head>')) {
-      const websiteMetaTag = `<meta name="website-id" content="${websiteId}">`;
-      cleanHTML = cleanHTML.replace('<head>', `<head>\n    ${websiteMetaTag}`);
-      console.log('✅ [HYBRID-MENU] WebsiteId meta tag added for smart menu system');
-    }
     
     if (cleanHTML.includes('</body>')) {
       cleanHTML = cleanHTML.replace('</body>', `${forceToggleScript}\n</body>`);
-      console.log('✅ [FORCE-UPDATE-PAGE] toggleMobileMenu script with auto-attach forcibly added before </body>');
+      console.log('✅ [FORCE-UPDATE-PAGE] Mobile menu script added before </body>');
     } else {
       cleanHTML += forceToggleScript;
-      console.log('✅ [FORCE-UPDATE-PAGE] toggleMobileMenu script with auto-attach forcibly added at end');
+      console.log('✅ [FORCE-UPDATE-PAGE] Mobile menu script added at end');
     }
 
     console.log('🧹 HTML cleaning: Original length:', htmlContent.length, ', Clean length:', cleanHTML.length);
