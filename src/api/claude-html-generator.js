@@ -218,14 +218,24 @@ function generateStaticNavbar(businessName, menuItems = []) {
  */
 async function generateNavbarWithDatabase(websiteId, businessName) {
   try {
-    console.log('🔧 [NAVBAR-DB-HP] Recupero menu items per websiteId:', websiteId);
+    console.log('🔧 [NAVBAR-DEBUG] INIZIO funzione con parametri:');
+    console.log('🔧 [NAVBAR-DEBUG] websiteId:', websiteId);
+    console.log('🔧 [NAVBAR-DEBUG] businessName:', businessName);
+    console.log('🔧 [NAVBAR-DEBUG] websiteId tipo:', typeof websiteId);
     
     let menuItems = [];
     
     // Se abbiamo websiteId, prova a recuperare dal database
     if (websiteId) {
+      console.log('✅ [NAVBAR-DEBUG] WebsiteId presente, eseguo query API...');
       const vendionlineUrl = process.env.VENDIONLINE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${vendionlineUrl}/api/website/menu-items?websiteId=${websiteId}`, {
+      console.log('🔧 [NAVBAR-DEBUG] URL API:', vendionlineUrl);
+      console.log('🔧 [NAVBAR-DEBUG] Costruisco URL completo...');
+      
+      const fullUrl = `${vendionlineUrl}/api/website/menu-items?websiteId=${websiteId}`;
+      console.log('🔧 [NAVBAR-DEBUG] URL finale:', fullUrl);
+      
+      const response = await fetch(fullUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -233,15 +243,26 @@ async function generateNavbarWithDatabase(websiteId, businessName) {
         }
       });
 
+      console.log('🔧 [NAVBAR-DEBUG] Response status:', response.status);
+      console.log('🔧 [NAVBAR-DEBUG] Response ok:', response.ok);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('🔧 [NAVBAR-DEBUG] Response data:', JSON.stringify(data, null, 2));
         if (data.success && data.menuItems) {
           menuItems = data.menuItems;
           console.log(`✅ [NAVBAR-DB-HP] Recuperati ${menuItems.length} menu items dal database`);
+        } else {
+          console.warn('⚠️ [NAVBAR-DEBUG] Response success=false o menuItems vuoto');
         }
       } else {
+        const errorText = await response.text();
+        console.warn('⚠️ [NAVBAR-DEBUG] API failed with status:', response.status);
+        console.warn('⚠️ [NAVBAR-DEBUG] Error text:', errorText);
         console.warn('⚠️ [NAVBAR-DB-HP] API fallita, usando menu di default');
       }
+    } else {
+      console.warn('❌ [NAVBAR-DEBUG] WebsiteId è vuoto/null/undefined!');
     }
     
     // Genera navbar statica con i menu items (o default se vuoti)
