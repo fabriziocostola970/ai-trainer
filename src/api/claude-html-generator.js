@@ -124,7 +124,21 @@ router.post('/generate-html', async (req, res) => {
     };
 
     // 🎨 PROMPT CLAUDE OTTIMALE PER HTML DIRETTO
-    const claudePrompt = `SEI UN WEB DESIGNER ESPERTO CHE CREA SITI WEB UNICI E MODERNI!
+    const claudePrompt = `❗❗❗ PRIMA REGOLA ASSOLUTA - JAVASCRIPT OBBLIGATORIO ❗❗❗
+OGNI PAGINA HTML DEVE TERMINARE CON QUESTO SCRIPT PRIMA DI </body>:
+
+<script>
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+</script>
+
+⚠️ SENZA QUESTO SCRIPT IL SITO NON FUNZIONA - INCLUDILO SEMPRE!
+
+SEI UN WEB DESIGNER ESPERTO CHE CREA SITI WEB UNICI E MODERNI!
 
 Devi creare una pagina HTML COMPLETA E FUNZIONALE per "${businessName}" (${businessType}), evitando design generici o template standard.
 
@@ -197,7 +211,7 @@ CODICE NAVBAR STANDARD:
     </div>
 </nav>
 
-❗❗❗ JAVASCRIPT OBBLIGATORIO - INCLUDI SEMPRE PRIMA DI </body>:
+❗❗❗ RICORDA: TERMINA SEMPRE CON QUESTO SCRIPT ❗❗❗
 <script>
 function toggleMobileMenu() {
     const menu = document.getElementById('mobileMenu');
@@ -206,8 +220,6 @@ function toggleMobileMenu() {
     }
 }
 </script>
-
-⚠️ REGOLA FINALE: OGNI HTML DEVE TERMINARE CON QUESTO SCRIPT PRIMA DI </body>
 
 ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
 <!DOCTYPE html>
@@ -248,17 +260,16 @@ ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
 </html>
 
 REGOLE ASSOLUTE:
-1. Usa il CODICE NAVBAR STANDARD sopra (senza modifiche)
-2. INCLUDI SEMPRE onclick="toggleMobileMenu()" nel pulsante hamburger
-3. INCLUDI SEMPRE il JavaScript toggleMobileMenu() prima di </body>
+1. ❗❗❗ TERMINA SEMPRE CON LO SCRIPT toggleMobileMenu() PRIMA DI </body>
+2. Usa il CODICE NAVBAR STANDARD sopra (senza modifiche)
+3. INCLUDI SEMPRE onclick="toggleMobileMenu()" nel pulsante hamburger
 4. Un solo div mobileMenu con id="mobileMenu" (non duplicare)
 5. Genera HTML COMPLETO dalla DOCTYPE alla chiusura
 6. Usa SOLO le immagini fornite sopra
 7. Implementa JavaScript per filtri e interazioni
 8. Sii ESTREMAMENTE CREATIVO nel design
 9. Mantieni alta qualità visiva e UX
-10. Adatta colori e stile al tipo di business
-11. ❗❗❗ TERMINA SEMPRE CON LO SCRIPT toggleMobileMenu() PRIMA DI </body>`;
+10. Adatta colori e stile al tipo di business`;
 
     console.log('🎨 Calling Claude Sonnet 4 for HTML generation...');
     console.log(`🎛️ Generation mode: ${generationMode}`);

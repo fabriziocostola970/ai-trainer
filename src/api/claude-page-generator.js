@@ -327,7 +327,21 @@ DESIGN REQUIREMENTS:
       });
     }
 
-    const fullPrompt = `[CONTESTO PROGETTO]
+    const fullPrompt = `❗❗❗ PRIMA REGOLA ASSOLUTA - JAVASCRIPT OBBLIGATORIO ❗❗❗
+OGNI PAGINA HTML DEVE TERMINARE CON QUESTO SCRIPT PRIMA DI </body>:
+
+<script>
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+</script>
+
+⚠️ SENZA QUESTO SCRIPT IL SITO NON FUNZIONA - INCLUDILO SEMPRE!
+
+[CONTESTO PROGETTO]
 SITO_ID: ${ownerId || 'unknown'}_${businessName?.replace(/[^a-zA-Z0-9]/g, '_') || 'website'}
 BUSINESS: ${businessName}
 TIPO_BUSINESS: ${businessType}
@@ -343,6 +357,16 @@ Questo sito mantiene uno stile coerente definito dalla homepage con le seguenti 
 
 [ISTRUZIONI SPECIFICHE]
 ${selectedPrompt}
+
+❗❗❗ RICORDA: TERMINA SEMPRE CON QUESTO SCRIPT ❗❗❗
+<script>
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+</script>
 
 FRAMEWORK TECNICO:
 - HTML5 semantico e accessibile
@@ -385,18 +409,17 @@ STRUTTURA HTML RICHIESTA:
 </html>
 
 REGOLE ASSOLUTE:
-1. NOME ATTIVITÀ: Usa sempre e solo "${businessName}" - mai modificare o interpretare
-2. NAVBAR: Usa il CODICE NAVBAR STANDARD della homepage (identico)
-3. FOOTER: Copia identicamente footer della homepage
-4. COLORI: Usa SOLO i colori specificati nel Style DNA
-5. FONT: Mantieni typography coerente
-6. CONTENUTO: Crea contenuto realistico e professionale
-7. RESPONSIVE: Assicurati che tutto sia mobile-friendly
-8. ANIMAZIONI: Include micro-animazioni e hover effects eleganti
-9. INCLUDI SEMPRE onclick="toggleMobileMenu()" nel pulsante hamburger
-10. INCLUDI SEMPRE il JavaScript toggleMobileMenu() prima di </body>
+1. ❗❗❗ TERMINA SEMPRE CON LO SCRIPT toggleMobileMenu() PRIMA DI </body>
+2. NOME ATTIVITÀ: Usa sempre e solo "${businessName}" - mai modificare o interpretare
+3. NAVBAR: Usa il CODICE NAVBAR STANDARD della homepage (identico)
+4. FOOTER: Copia identicamente footer della homepage
+5. COLORI: Usa SOLO i colori specificati nel Style DNA
+6. FONT: Mantieni typography coerente
+7. CONTENUTO: Crea contenuto realistico e professionale
+8. RESPONSIVE: Assicurati che tutto sia mobile-friendly
+9. ANIMAZIONI: Include micro-animazioni e hover effects eleganti
+10. INCLUDI SEMPRE onclick="toggleMobileMenu()" nel pulsante hamburger
 11. Un solo div mobileMenu con id="mobileMenu" (non duplicare)
-12. ❗❗❗ TERMINA SEMPRE CON LO SCRIPT toggleMobileMenu() PRIMA DI </body>
 
 JAVASCRIPT OBBLIGATORIO - INCLUDI SEMPRE PRIMA DI </body>:
 <script>
