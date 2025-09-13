@@ -210,6 +210,7 @@ ESEMPIO NAVBAR RESPONSIVE CORRETTO:
     </div>
 </nav>
 
+JAVASCRIPT OBBLIGATORIO PER IL MENU MOBILE:
 <script>
 function toggleMobileMenu() {
     const menu = document.getElementById('mobileMenu');
@@ -238,12 +239,22 @@ ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
     <!-- SEZIONI PRODOTTI/SERVIZI CREATIVE -->
     <!-- STORIA/CHI SIAMO CON PARALLAX -->
     <!-- CONTATTI STILIZZATI -->
-    <!-- JAVASCRIPT PER INTERATTIVITÀ -->
+    
+    <!-- JAVASCRIPT OBBLIGATORIO ALLA FINE -->
+    <script>
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        menu.classList.toggle('hidden');
+    }
+    
+    // Altri JavaScript per filtri e interazioni
+    </script>
 </body>
 </html>
 
 IMPORTANTE: 
 - Genera HTML COMPLETO dalla DOCTYPE alla chiusura
+- INCLUDI SEMPRE la funzione toggleMobileMenu() nel JavaScript finale
 - Usa SOLO le immagini fornite sopra
 - Implementa JavaScript per filtri e interazioni
 - Sii ESTREMAMENTE CREATIVO nel design

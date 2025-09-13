@@ -381,7 +381,18 @@ REGOLE ASSOLUTE:
 5. FONT: Mantieni typography coerente
 6. CONTENUTO: Crea contenuto realistico e professionale
 7. RESPONSIVE: Assicurati che tutto sia mobile-friendly
-8. ANIMAZIONI: Include micro-animazioni e hover effects eleganti`;
+8. ANIMAZIONI: Include micro-animazioni e hover effects eleganti
+9. JAVASCRIPT: INCLUDI SEMPRE la funzione toggleMobileMenu() per il menu hamburger
+
+JAVASCRIPT OBBLIGATORIO DA INCLUDERE:
+<script>
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+</script>`;
 
     console.log('🎨 Calling Claude Sonnet 4 for page generation...');
     console.log(`💰 Generation mode: ${generationMode}`);
