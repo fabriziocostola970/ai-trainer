@@ -14,15 +14,30 @@ const anthropic = new Anthropic({
 function generateStaticNavbar(businessName, menuItems = []) {
   console.log(`🎨 [STATIC-NAVBAR] Generazione navbar per: ${businessName} con ${menuItems.length} menu items`);
   
-  // Se non abbiamo menu items, usa quelli di default
+  // ✅ DEFAULT: Solo HOME (altri link solo se esistono nel DB)
   const defaultMenuItems = [
-    { name: 'Home', href: '/', isHomepage: true },
-    { name: 'Chi Siamo', href: '/chi-siamo', pageType: 'about' },
-    { name: 'Servizi', href: '/servizi', pageType: 'services' },
-    { name: 'Contatti', href: '/contatti', pageType: 'contact' }
+    { name: 'Home', href: '/', isHomepage: true }
   ];
   
-  const finalMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;
+  // Se abbiamo menu items dal DB, aggiungiamo alla HOME
+  let finalMenuItems = [...defaultMenuItems];
+  
+  if (menuItems.length > 0) {
+    // Aggiungi solo le pagine attive, ordinate per pageOrder
+    const activePages = menuItems
+      .filter(item => item.isActive && !item.isHomepage) // Escludi homepage (già presente)
+      .sort((a, b) => (a.pageOrder || 0) - (b.pageOrder || 0))
+      .map(item => ({
+        name: item.name,
+        href: `/${item.slug}`,
+        pageType: item.pageType
+      }));
+    
+    finalMenuItems = [...finalMenuItems, ...activePages];
+    console.log(`✅ [NAVBAR-DB] Aggiunte ${activePages.length} pagine dal database`);
+  } else {
+    console.log(`⚠️ [NAVBAR-DB] Nessuna pagina nel database, usando solo HOME`);
+  }
   
   return `
   <!-- � NAVBAR STATICA PERFETTA - Responsive & Accessibile -->
