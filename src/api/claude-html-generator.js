@@ -173,24 +173,51 @@ FRAMEWORK STILISTICO RICHIESTO:
 - Filtri interattivi funzionanti
 - Elementi decorativi (forme geometriche, patterns)
 
-🍔 NAVBAR REQUIREMENTS (IMPORTANT):
-- Create a MINIMAL navbar with only HAMBURGER MENU (mobile-style)
-- NO desktop links visible (NO "Home", "Servizi", "Chi Siamo" etc. in desktop version)
-- Only logo/brand name + hamburger icon for ALL screen sizes
-- Keep it simple and clean for consistent multi-page experience
-- Hamburger menu can contain links, but they should be hidden in dropdown
+🍔 NAVBAR REQUIREMENTS (RESPONSIVE & CONSISTENT):
+- Create a RESPONSIVE navbar that adapts to screen size
+- DESKTOP (≥768px): Show horizontal navigation links next to logo
+- MOBILE (<768px): Show hamburger menu with collapsible links
+- Ensure professional usability on large screens
+- Maintain mobile-friendly behavior for small screens
 
-ESEMPIO NAVBAR CORRETTO:
+ESEMPIO NAVBAR RESPONSIVE CORRETTO:
 <nav class="fixed top-0 w-full bg-white/90 backdrop-blur-sm shadow-lg z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <div class="text-2xl font-bold text-purple-600">${businessName}</div>
-            <button class="md:hidden text-gray-600 hover:text-purple-600">
+            
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex space-x-8">
+                <a href="#home" class="text-gray-700 hover:text-purple-600 transition-colors">Home</a>
+                <a href="#servizi" class="text-gray-700 hover:text-purple-600 transition-colors">Servizi</a>
+                <a href="#chi-siamo" class="text-gray-700 hover:text-purple-600 transition-colors">Chi Siamo</a>
+                <a href="#contatti" class="text-gray-700 hover:text-purple-600 transition-colors">Contatti</a>
+            </div>
+            
+            <!-- Mobile Hamburger -->
+            <button class="md:hidden text-gray-600 hover:text-purple-600" onclick="toggleMobileMenu()">
                 <i class="fas fa-bars text-xl"></i>
             </button>
         </div>
+        
+        <!-- Mobile Menu (hidden by default) -->
+        <div id="mobileMenu" class="md:hidden hidden bg-white border-t">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="#home" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Home</a>
+                <a href="#servizi" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Servizi</a>
+                <a href="#chi-siamo" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Chi Siamo</a>
+                <a href="#contatti" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Contatti</a>
+            </div>
+        </div>
     </div>
 </nav>
+
+<script>
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    menu.classList.toggle('hidden');
+}
+</script>
 
 ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
 <!DOCTYPE html>
