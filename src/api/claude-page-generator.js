@@ -8,157 +8,175 @@ const anthropic = new Anthropic({
 });
 
 /**
- * 🚀 NAVBAR TEMPLATE INJECTION - Genera navbar dinamica da database
+ * 🎨 NAVBAR TEMPLATE STATICA - Design Perfetto e Responsive
+ * Navbar moderna con menu hamburger funzionante e link dinamici
  */
-async function generateNavbarFromDatabase(websiteId, businessName) {
-  try {
-    console.log('🔧 [NAVBAR-INJECTION] Generazione navbar per websiteId:', websiteId);
-    
-    // Se non abbiamo websiteId, generiamo navbar base
-    if (!websiteId) {
-      console.log('⚠️ [NAVBAR-INJECTION] WebsiteId mancante, usando navbar base');
-      return generateBaseNavbar(businessName);
-    }
-
-    // 🌐 Chiamata API a VendiOnline-EU per ottenere le pagine
-    const vendionlineUrl = process.env.VENDIONLINE_API_URL || 'http://localhost:3001';
-    const response = await fetch(`${vendionlineUrl}/api/website/menu-items?websiteId=${websiteId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-AI-Trainer-Key': process.env.AI_TRAINER_API_KEY || '',
-      }
-    });
-
-    if (!response.ok) {
-      console.warn('⚠️ [NAVBAR-INJECTION] API fallita, usando navbar base');
-      return generateBaseNavbar(businessName);
-    }
-
-    const data = await response.json();
-    if (!data.success || !data.menuItems) {
-      console.warn('⚠️ [NAVBAR-INJECTION] Dati invalidi, usando navbar base');
-      return generateBaseNavbar(businessName);
-    }
-
-    // 🎯 Genera navbar con menu items dinamici
-    const menuItems = data.menuItems;
-    const navbarHtml = `
-    <nav class="bg-white shadow-lg fixed w-full z-50 top-0">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <!-- Logo -->
+function generateStaticNavbar(businessName, menuItems = []) {
+  console.log(`🎨 [STATIC-NAVBAR] Generazione navbar per: ${businessName} con ${menuItems.length} menu items`);
+  
+  // Se non abbiamo menu items, usa quelli di default
+  const defaultMenuItems = [
+    { name: 'Home', href: '/', isHomepage: true },
+    { name: 'Chi Siamo', href: '/chi-siamo', pageType: 'about' },
+    { name: 'Servizi', href: '/servizi', pageType: 'services' },
+    { name: 'Contatti', href: '/contatti', pageType: 'contact' }
+  ];
+  
+  const finalMenuItems = menuItems.length > 0 ? menuItems : defaultMenuItems;
+  
+  return `
+  <!-- � NAVBAR STATICA PERFETTA - Responsive & Accessibile -->
+  <nav class="bg-white shadow-lg fixed w-full z-50 top-0 border-b border-gray-200" role="navigation" aria-label="Main navigation">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        
+        <!-- 🏢 LOGO/BRAND -->
+        <div class="flex items-center flex-shrink-0">
           <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <h1 class="text-xl font-bold text-gray-900">${businessName}</h1>
+            <div class="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
+              ${businessName}
             </div>
           </div>
-          
-          <!-- Desktop Menu (nascosto su mobile) -->
-          <div class="hidden md:flex md:items-center md:space-x-8">
-            ${menuItems.map(item => `
-              <a href="${item.href}" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                ${item.name}
-              </a>
-            `).join('')}
-          </div>
-          
-          <!-- Mobile hamburger button -->
-          <div class="md:hidden flex items-center">
-            <button id="hamburger-btn" type="button" class="text-gray-700 hover:text-blue-600 focus:outline-none focus:text-blue-600">
-              <i class="fas fa-bars text-xl"></i>
-            </button>
-          </div>
         </div>
-      </div>
-      
-      <!-- Mobile menu -->
-      <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-gray-200">
-        <div class="px-2 pt-2 pb-3 space-y-1">
-          ${menuItems.map(item => `
-            <a href="${item.href}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
+        
+        <!-- 💻 DESKTOP MENU (Hidden on mobile) -->
+        <div class="hidden md:flex md:items-center md:space-x-1">
+          ${finalMenuItems.map(item => `
+            <a href="${item.href}" 
+               class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-in-out transform hover:scale-105"
+               ${item.isHomepage ? 'aria-current="page"' : ''}>
               ${item.name}
             </a>
           `).join('')}
         </div>
-      </div>
-    </nav>
-    
-    <!-- Spacer per compensare navbar fixed -->
-    <div class="h-16"></div>`;
-
-    console.log(`✅ [NAVBAR-INJECTION] Navbar generata con ${menuItems.length} menu items`);
-    return navbarHtml;
-
-  } catch (error) {
-    console.error('❌ [NAVBAR-INJECTION] Errore:', error.message);
-    return generateBaseNavbar(businessName);
-  }
-}
-
-/**
- * 🎯 NAVBAR BASE - Fallback quando non abbiamo dati dal database
- */
-function generateBaseNavbar(businessName) {
-  console.log('🔧 [NAVBAR-INJECTION] Generazione navbar base per:', businessName);
-  
-  return `
-  <nav class="bg-white shadow-lg fixed w-full z-50 top-0">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between h-16">
-        <!-- Logo -->
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <h1 class="text-xl font-bold text-gray-900">${businessName}</h1>
-          </div>
-        </div>
         
-        <!-- Desktop Menu Base -->
-        <div class="hidden md:flex md:items-center md:space-x-8">
-          <a href="/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-            Home
-          </a>
-          <a href="/chi-siamo" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-            Chi Siamo
-          </a>
-          <a href="/servizi" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-            Servizi
-          </a>
-          <a href="/contatti" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-            Contatti
-          </a>
-        </div>
-        
-        <!-- Mobile hamburger button -->
-        <div class="md:hidden flex items-center">
-          <button id="hamburger-btn" type="button" class="text-gray-700 hover:text-blue-600 focus:outline-none focus:text-blue-600">
-            <i class="fas fa-bars text-xl"></i>
+        <!-- 📱 MOBILE HAMBURGER BUTTON (Hidden on desktop) -->
+        <div class="md:hidden">
+          <button id="hamburger-btn" 
+                  type="button" 
+                  class="inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                  aria-controls="mobile-menu" 
+                  aria-expanded="false"
+                  aria-label="Toggle main menu">
+            <!-- Hamburger Icon -->
+            <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
         </div>
       </div>
     </div>
     
-    <!-- Mobile menu -->
-    <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-gray-200">
+    <!-- 📱 MOBILE MENU (Hidden by default, shown via JS) -->
+    <div id="mobileMenu" 
+         class="hidden md:hidden bg-white border-t border-gray-200 shadow-lg"
+         role="menu" 
+         aria-orientation="vertical" 
+         aria-labelledby="hamburger-btn">
       <div class="px-2 pt-2 pb-3 space-y-1">
-        <a href="/" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
-          Home
-        </a>
-        <a href="/chi-siamo" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
-          Chi Siamo
-        </a>
-        <a href="/servizi" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
-          Servizi
-        </a>
-        <a href="/contatti" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition-colors">
-          Contatti
-        </a>
+        ${finalMenuItems.map(item => `
+          <a href="${item.href}" 
+             class="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-all duration-200 ease-in-out transform hover:translate-x-1"
+             role="menuitem"
+             ${item.isHomepage ? 'aria-current="page"' : ''}>
+            ${item.name}
+          </a>
+        `).join('')}
       </div>
     </div>
   </nav>
   
-  <!-- Spacer per compensare navbar fixed -->
-  <div class="h-16"></div>`;
+  <!-- 📏 SPACER per compensare navbar fixed -->
+  <div class="h-16" aria-hidden="true"></div>
+  
+  <!-- 🎯 JAVASCRIPT HAMBURGER MENU - Sempre Funzionante -->
+  <script>
+    // Funzione toggle menu mobile
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      const button = document.getElementById('hamburger-btn');
+      
+      if (menu && button) {
+        const isHidden = menu.classList.contains('hidden');
+        
+        if (isHidden) {
+          menu.classList.remove('hidden');
+          button.setAttribute('aria-expanded', 'true');
+          console.log('✅ [NAVBAR] Mobile menu opened');
+        } else {
+          menu.classList.add('hidden');
+          button.setAttribute('aria-expanded', 'false');
+          console.log('✅ [NAVBAR] Mobile menu closed');
+        }
+      }
+    }
+    
+    // Auto-attach event listener quando DOM è pronto
+    document.addEventListener('DOMContentLoaded', function() {
+      const hamburgerBtn = document.getElementById('hamburger-btn');
+      if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', toggleMobileMenu);
+        console.log('✅ [NAVBAR] Static navbar initialized successfully');
+      } else {
+        console.warn('⚠️ [NAVBAR] Hamburger button not found');
+      }
+      
+      // Chiudi menu mobile quando si clicca fuori
+      document.addEventListener('click', function(event) {
+        const menu = document.getElementById('mobileMenu');
+        const button = document.getElementById('hamburger-btn');
+        
+        if (menu && !menu.classList.contains('hidden') && 
+            !menu.contains(event.target) && 
+            !button.contains(event.target)) {
+          menu.classList.add('hidden');
+          button.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+  </script>`;
+}
+
+/**
+ * 🚀 NAVBAR WITH DATABASE INTEGRATION
+ * Genera navbar statica popolata con dati dinamici dal database
+ */
+async function generateNavbarWithDatabase(websiteId, businessName) {
+  try {
+    console.log('🔧 [NAVBAR-DB] Recupero menu items per websiteId:', websiteId);
+    
+    let menuItems = [];
+    
+    // Se abbiamo websiteId, prova a recuperare dal database
+    if (websiteId) {
+      const vendionlineUrl = process.env.VENDIONLINE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${vendionlineUrl}/api/website/menu-items?websiteId=${websiteId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-AI-Trainer-Key': process.env.AI_TRAINER_API_KEY || '',
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.menuItems) {
+          menuItems = data.menuItems;
+          console.log(`✅ [NAVBAR-DB] Recuperati ${menuItems.length} menu items dal database`);
+        }
+      } else {
+        console.warn('⚠️ [NAVBAR-DB] API fallita, usando menu di default');
+      }
+    }
+    
+    // Genera navbar statica con i menu items (o default se vuoti)
+    return generateStaticNavbar(businessName, menuItems);
+    
+  } catch (error) {
+    console.error('❌ [NAVBAR-DB] Errore:', error.message);
+    // In caso di errore, usa navbar statica con menu di default
+    return generateStaticNavbar(businessName, []);
+  }
 }
 
 /**
@@ -306,7 +324,7 @@ ${designConventions ? `
 ` : ''}
 
 REQUISITI DI COERENZA:
-- NAVBAR: ${designConventions?.navbarHtml ? 'Usa ESATTAMENTE la struttura HTML fornita nelle convenzioni' : 'Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile'}
+- NAVBAR: NON creare navigazione - viene aggiunta automaticamente dal sistema
 - NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
 - FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
@@ -356,7 +374,7 @@ ${designConventions ? `
 ` : ''}
 
 REQUISITI DI COERENZA:
-- NAVBAR: ${designConventions?.navbarHtml ? 'Usa ESATTAMENTE la struttura HTML fornita nelle convenzioni' : 'Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile'}
+- NAVBAR: NON creare navigazione - viene aggiunta automaticamente dal sistema
 - NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
 - FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
@@ -521,7 +539,7 @@ STRUTTURA HTML RICHIESTA:
     </style>
 </head>
 <body>
-    <!-- NAVBAR COERENTE: Mantieni sempre la stessa struttura di navigazione della homepage -->
+    <!-- NON CREARE NAVBAR: La navigazione viene aggiunta automaticamente dal sistema -->
     <!-- CONTENUTO PRINCIPALE DELLA PAGINA -->
     <!-- FOOTER COERENTE: Copia esattamente footer e contenuti della homepage -->
     
@@ -541,14 +559,13 @@ STRUTTURA HTML RICHIESTA:
 
 REGOLE ASSOLUTE:
 1. NOME ATTIVITÀ: Usa sempre e solo "${businessName}" - mai modificare o interpretare
-2. NAVBAR: Usa il CODICE NAVBAR STANDARD della homepage (identico)
+2. NAVBAR: NON creare navigazione - viene aggiunta automaticamente dal sistema
 3. FOOTER: Copia identicamente footer della homepage
 4. COLORI: Usa SOLO i colori specificati nel Style DNA
 5. FONT: Mantieni typography coerente
 6. CONTENUTO: Crea contenuto realistico e professionale
 7. RESPONSIVE: Assicurati che tutto sia mobile-friendly
 8. ANIMAZIONI: Include micro-animazioni e hover effects eleganti
-9. Un solo div mobileMenu con id="mobileMenu" (non duplicare)
 
 JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
 </script>
@@ -641,7 +658,7 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
     console.log('🚀 [NAVBAR-INJECTION] Inizio sostituzione navbar...');
     
     try {
-      const dynamicNavbar = await generateNavbarFromDatabase(websiteId, businessName);
+      const dynamicNavbar = await generateNavbarWithDatabase(websiteId, businessName);
       
       // Metodo 1: Sostituisci navbar esistente se presente
       if (cleanHTML.includes('<nav')) {
