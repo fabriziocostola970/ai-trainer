@@ -567,15 +567,19 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
     
     // 🚀 HYBRID SMART MENU: Auto-populate menu links da database
     async function loadDynamicMenuItems() {
+        console.log('🚀 [SMART-MENU] Inizio caricamento menu dinamico...');
         try {
             // Estrai websiteId dall'URL o da meta tag
             const websiteId = getWebsiteId();
+            console.log('🔍 [SMART-MENU] WebsiteId trovato:', websiteId);
             if (!websiteId) {
-                console.log('🔍 [SMART-MENU] WebsiteId non trovato, usando menu statico');
+                console.log('❌ [SMART-MENU] WebsiteId non trovato, usando menu statico');
                 return;
             }
             
+            console.log('📞 [SMART-MENU] Chiamata API:', \`/api/website/menu-items?websiteId=\${websiteId}\`);
             const response = await fetch(\`/api/website/menu-items?websiteId=\${websiteId}\`);
+            console.log('📡 [SMART-MENU] Response status:', response.status);
             if (!response.ok) {
                 throw new Error(\`HTTP \${response.status}\`);
             }
@@ -586,6 +590,7 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
             }
             
             // 🔧 Trova i container del menu (desktop e mobile)
+            console.log('🔍 [SMART-MENU] Ricerca container menu...');
             const menuContainers = [
                 document.querySelector('#mobileMenu ul'),
                 document.querySelector('#mobileMenu nav'),
@@ -594,8 +599,16 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
                 document.querySelector('.nav-menu')
             ].filter(Boolean);
             
+            console.log('📋 [SMART-MENU] Container trovati:', menuContainers.length);
+            menuContainers.forEach((container, index) => {
+                console.log(\`📋 [SMART-MENU] Container \${index}:\`, container.tagName, container.className, container.id);
+            });
+            
             if (menuContainers.length === 0) {
-                console.log('🔍 [SMART-MENU] Container menu non trovati');
+                console.log('❌ [SMART-MENU] Nessun container menu trovato - elementi disponibili:');
+                console.log('- #mobileMenu:', document.querySelector('#mobileMenu'));
+                console.log('- nav:', document.querySelector('nav'));
+                console.log('- .mobile-menu:', document.querySelector('.mobile-menu'));
                 return;
             }
             
@@ -626,23 +639,32 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
     
     // 🔍 Utility: Estrai websiteId dall'URL o meta tags
     function getWebsiteId() {
+        console.log('🔍 [SMART-MENU] Ricerca websiteId...');
+        
         // Metodo 1: Da meta tag (se presente)
         const metaWebsiteId = document.querySelector('meta[name="website-id"]');
+        console.log('🏷️ [SMART-MENU] Meta tag website-id:', metaWebsiteId);
         if (metaWebsiteId) {
-            return metaWebsiteId.getAttribute('content');
+            const id = metaWebsiteId.getAttribute('content');
+            console.log('✅ [SMART-MENU] WebsiteId da meta tag:', id);
+            return id;
         }
         
         // Metodo 2: Da URL params (se presente)
         const urlParams = new URLSearchParams(window.location.search);
         const websiteId = urlParams.get('websiteId');
+        console.log('🔗 [SMART-MENU] WebsiteId da URL params:', websiteId);
         if (websiteId) {
+            console.log('✅ [SMART-MENU] WebsiteId da URL:', websiteId);
             return websiteId;
         }
         
         // Metodo 3: Da localStorage (se presente)
         try {
             const stored = localStorage.getItem('currentWebsiteId');
+            console.log('💾 [SMART-MENU] WebsiteId da localStorage:', stored);
             if (stored) {
+                console.log('✅ [SMART-MENU] WebsiteId da storage:', stored);
                 return stored;
             }
         } catch (e) {
