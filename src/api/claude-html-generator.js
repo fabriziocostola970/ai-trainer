@@ -244,11 +244,15 @@ ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
     <!-- STORIA/CHI SIAMO CON PARALLAX -->
     <!-- CONTATTI STILIZZATI -->
     
-    <!-- JAVASCRIPT OBBLIGATORIO ALLA FINE -->
+    <!-- ============================================ -->
+    <!-- QUESTO SCRIPT È OBBLIGATORIO - SEMPRE INCLUDERE -->
+    <!-- ============================================ -->
     <script>
     function toggleMobileMenu() {
         const menu = document.getElementById('mobileMenu');
-        menu.classList.toggle('hidden');
+        if (menu) {
+            menu.classList.toggle('hidden');
+        }
     }
     
     // Altri JavaScript per filtri e interazioni
@@ -256,14 +260,17 @@ ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
 </body>
 </html>
 
-IMPORTANTE: 
-- Genera HTML COMPLETO dalla DOCTYPE alla chiusura
-- INCLUDI SEMPRE la funzione toggleMobileMenu() nel JavaScript finale
-- Usa SOLO le immagini fornite sopra
-- Implementa JavaScript per filtri e interazioni
-- Sii ESTREMAMENTE CREATIVO nel design
-- Mantieni alta qualità visiva e UX
-- Adatta colori e stile al tipo di business`;
+REGOLE ASSOLUTE:
+1. USA SEMPRE onclick="toggleMobileMenu()" per il pulsante hamburger
+2. INCLUDI SEMPRE lo script toggleMobileMenu() nel body prima di </body>
+3. Il div del menu mobile deve avere id="mobileMenu"
+4. Genera HTML COMPLETO dalla DOCTYPE alla chiusura
+5. INCLUDI SEMPRE la funzione toggleMobileMenu() nel JavaScript finale
+6. Usa SOLO le immagini fornite sopra
+7. Implementa JavaScript per filtri e interazioni
+8. Sii ESTREMAMENTE CREATIVO nel design
+9. Mantieni alta qualità visiva e UX
+10. Adatta colori e stile al tipo di business`;
 
     console.log('🎨 Calling Claude Sonnet 4 for HTML generation...');
     console.log(`🎛️ Generation mode: ${generationMode}`);

@@ -369,7 +369,18 @@ STRUTTURA HTML RICHIESTA:
     <!-- NAVBAR COERENTE: Mantieni sempre la stessa struttura di navigazione della homepage -->
     <!-- CONTENUTO PRINCIPALE DELLA PAGINA -->
     <!-- FOOTER COERENTE: Copia esattamente footer e contenuti della homepage -->
-    <!-- JAVASCRIPT PER INTERATTIVITÀ -->
+    
+    <!-- ============================================ -->
+    <!-- QUESTO SCRIPT È OBBLIGATORIO - SEMPRE INCLUDERE -->
+    <!-- ============================================ -->
+    <script>
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        if (menu) {
+            menu.classList.toggle('hidden');
+        }
+    }
+    </script>
 </body>
 </html>
 
@@ -382,7 +393,9 @@ REGOLE ASSOLUTE:
 6. CONTENUTO: Crea contenuto realistico e professionale
 7. RESPONSIVE: Assicurati che tutto sia mobile-friendly
 8. ANIMAZIONI: Include micro-animazioni e hover effects eleganti
-9. JAVASCRIPT: INCLUDI SEMPRE la funzione toggleMobileMenu() per il menu hamburger
+9. USA SEMPRE onclick="toggleMobileMenu()" per il pulsante hamburger
+10. INCLUDI SEMPRE lo script toggleMobileMenu() nel body prima di </body>
+11. Il div del menu mobile deve avere id="mobileMenu"
 
 JAVASCRIPT OBBLIGATORIO DA INCLUDERE:
 <script>
