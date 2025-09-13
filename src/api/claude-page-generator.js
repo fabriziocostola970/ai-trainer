@@ -476,6 +476,30 @@ function toggleMobileMenu() {
       .replace(/^\s*```\s*/gm, '')
       .trim();
 
+    // 🔧 POST-PROCESSING: Aggiungi automaticamente toggleMobileMenu se mancante
+    if (!cleanHTML.includes('toggleMobileMenu')) {
+      console.log('🔧 [POST-PROCESS-PAGE] Adding missing toggleMobileMenu function...');
+      
+      const toggleMobileMenuScript = `
+    <script>
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        if (menu) {
+            menu.classList.toggle('hidden');
+        }
+    }
+    </script>`;
+      
+      // Inserisci prima della chiusura del body
+      if (cleanHTML.includes('</body>')) {
+        cleanHTML = cleanHTML.replace('</body>', `${toggleMobileMenuScript}\n</body>`);
+      } else {
+        // Fallback: aggiungi alla fine
+        cleanHTML += toggleMobileMenuScript;
+      }
+      console.log('✅ [POST-PROCESS-PAGE] toggleMobileMenu function added automatically');
+    }
+
     console.log('🧹 HTML cleaning: Original length:', htmlContent.length, ', Clean length:', cleanHTML.length);
 
     // VERIFICA CHE SIA HTML VALIDO
