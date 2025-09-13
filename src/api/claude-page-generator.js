@@ -51,13 +51,20 @@ function generateStaticNavbar(businessName, menuItems = []) {
         </div>
         
         <!-- 📱 MOBILE HAMBURGER BUTTON (Hidden on desktop) -->
-        <div class="md:hidden">
+        <div class="block md:hidden">
           <button id="hamburger-btn" 
                   type="button" 
                   class="inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
                   aria-controls="mobile-menu" 
                   aria-expanded="false"
-                  aria-label="Toggle main menu">
+                  aria-label="Toggle main menu"
+                  style="display: block !important;">
+          <style>
+            @media (min-width: 768px) {
+              #hamburger-btn { display: none !important; }
+              .hamburger-container { display: none !important; }
+            }
+          </style>
             <!-- Hamburger Icon -->
             <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -70,9 +77,18 @@ function generateStaticNavbar(businessName, menuItems = []) {
     <!-- 📱 MOBILE MENU (Hidden by default, shown via JS) -->
     <div id="mobileMenu" 
          class="hidden md:hidden bg-white border-t border-gray-200 shadow-lg"
+         style="display: none !important;"
          role="menu" 
          aria-orientation="vertical" 
          aria-labelledby="hamburger-btn">
+      <style>
+        @media (min-width: 768px) {
+          #mobileMenu { display: none !important; }
+        }
+        @media (max-width: 767px) {
+          #mobileMenu.show { display: block !important; }
+        }
+      </style>
       <div class="px-2 pt-2 pb-3 space-y-1">
         ${finalMenuItems.map(item => `
           <a href="${item.href}" 
@@ -91,23 +107,51 @@ function generateStaticNavbar(businessName, menuItems = []) {
   
   <!-- 🎯 JAVASCRIPT HAMBURGER MENU - Sempre Funzionante -->
   <script>
-    // Funzione toggle menu mobile
+    // Funzione toggle menu mobile con controlli aggiuntivi
     function toggleMobileMenu() {
       const menu = document.getElementById('mobileMenu');
       const button = document.getElementById('hamburger-btn');
       
       if (menu && button) {
-        const isHidden = menu.classList.contains('hidden');
+        const isHidden = menu.style.display === 'none' || menu.classList.contains('hidden');
         
         if (isHidden) {
+          menu.style.display = 'block';
           menu.classList.remove('hidden');
+          menu.classList.add('show');
           button.setAttribute('aria-expanded', 'true');
           console.log('✅ [NAVBAR] Mobile menu opened');
         } else {
+          menu.style.display = 'none';
           menu.classList.add('hidden');
+          menu.classList.remove('show');
           button.setAttribute('aria-expanded', 'false');
           console.log('✅ [NAVBAR] Mobile menu closed');
         }
+      }
+    }
+    
+    // Nasconde hamburger su desktop e assicura menu corretto
+    function checkScreenSize() {
+      const hamburgerBtn = document.getElementById('hamburger-btn');
+      const mobileMenu = document.getElementById('mobileMenu');
+      const desktopMenu = document.querySelector('.hidden.md\\:flex');
+      
+      if (window.innerWidth >= 768) {
+        // Desktop: nascondi hamburger e mobile menu
+        if (hamburgerBtn) hamburgerBtn.style.display = 'none';
+        if (mobileMenu) {
+          mobileMenu.style.display = 'none';
+          mobileMenu.classList.add('hidden');
+        }
+        if (desktopMenu) desktopMenu.style.display = 'flex';
+        console.log('🖥️ [NAVBAR] Desktop mode activated');
+      } else {
+        // Mobile: mostra hamburger, nascondi desktop menu
+        if (hamburgerBtn) hamburgerBtn.style.display = 'block';
+        if (mobileMenu) mobileMenu.style.display = 'none';
+        if (desktopMenu) desktopMenu.style.display = 'none';
+        console.log('📱 [NAVBAR] Mobile mode activated');
       }
     }
     
@@ -121,6 +165,12 @@ function generateStaticNavbar(businessName, menuItems = []) {
         console.warn('⚠️ [NAVBAR] Hamburger button not found');
       }
       
+      // Controlla dimensioni schermo al caricamento
+      checkScreenSize();
+      
+      // Controlla al resize
+      window.addEventListener('resize', checkScreenSize);
+      
       // Chiudi menu mobile quando si clicca fuori
       document.addEventListener('click', function(event) {
         const menu = document.getElementById('mobileMenu');
@@ -129,6 +179,7 @@ function generateStaticNavbar(businessName, menuItems = []) {
         if (menu && !menu.classList.contains('hidden') && 
             !menu.contains(event.target) && 
             !button.contains(event.target)) {
+          menu.style.display = 'none';
           menu.classList.add('hidden');
           button.setAttribute('aria-expanded', 'false');
         }
