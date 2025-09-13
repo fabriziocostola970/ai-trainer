@@ -327,29 +327,9 @@ FRAMEWORK STILISTICO RICHIESTO:
 🍔 NAVBAR REQUIREMENTS (HAMBURGER-ONLY STRATEGY):
 - Create a MINIMALIST navbar with hamburger menu for all screen sizes
 - DESKTOP (≥768px): Show ONLY logo + hamburger menu (NO visible links)
-- MOBILE (<768px): Show ONLY logo + hamburger menu (NO visible links)
-- Links appear ONLY when hamburger is clicked (dropdown)
-- Consistent behavior across all devices for clean design
-
-CODICE NAVBAR STANDARD:
-<nav class="fixed top-0 w-full bg-white/90 backdrop-blur-sm shadow-lg z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-            <div class="text-2xl font-bold text-purple-600">${businessName}</div>
-            <button class="text-gray-600 hover:text-purple-600" id="hamburger-btn">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-        </div>
-        <div id="mobileMenu" class="hidden bg-white border-t">
-            <div class="px-2 pt-2 pb-3 space-y-1">
-                <a href="#home" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Home</a>
-                <a href="#servizi" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Servizi</a>
-                <a href="#chi-siamo" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Chi Siamo</a>
-                <a href="#contatti" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Contatti</a>
-            </div>
-        </div>
-    </div>
-</nav>
+- MOBILE (<768px): Hamburger menu per navigazione pulita
+- Design responsive e accessibile su tutti i dispositivi
+- Menu dinamico gestito automaticamente dal sistema
 
 ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
 <!DOCTYPE html>
@@ -381,10 +361,10 @@ ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
 </html>
 
 REGOLE ASSOLUTE:
-1. Usa il CODICE NAVBAR STANDARD sopra (senza modifiche)
-2. Un solo div mobileMenu con id="mobileMenu" (non duplicare)
+1. NON includere navbar/navigazione - verrà aggiunta automaticamente dal sistema
+2. Inizia direttamente con <main> o prima sezione hero dopo <body>
 3. Genera HTML COMPLETO dalla DOCTYPE alla chiusura
-4. Usa SOLO le immagini fornite sopra
+4. Usa SOLO le immagini fornite sopra  
 5. Implementa JavaScript per filtri e interazioni
 6. Sii ESTREMAMENTE CREATIVO nel design
 7. Mantieni alta qualità visiva e UX
@@ -467,7 +447,38 @@ REGOLE ASSOLUTE:
     
     // Rimuovi eventuali wrapper markdown rimanenti
     cleanHTML = cleanHTML.replace(/^```html\n?/gm, '').replace(/\n?```$/gm, '');
+
+    // 🚀 NAVBAR TEMPLATE INJECTION - Homepage con navbar base
+    console.log('🚀 [NAVBAR-INJECTION-HP] Aggiunta navbar base alla homepage...');
     
+    try {
+      // Per la homepage usiamo sempre navbar base (websiteId non disponibile durante generazione)
+      const dynamicNavbar = generateBaseNavbar(businessName);
+      
+      // Metodo 1: Sostituisci navbar esistente se presente
+      if (cleanHTML.includes('<nav')) {
+        console.log('🔄 [NAVBAR-INJECTION-HP] Sostituzione navbar esistente...');
+        cleanHTML = cleanHTML.replace(/<nav[\s\S]*?<\/nav>/gi, dynamicNavbar);
+      } 
+      // Metodo 2: Inserisci navbar dopo <body> se non presente
+      else if (cleanHTML.includes('<body')) {
+        console.log('🔧 [NAVBAR-INJECTION-HP] Inserimento navbar dopo <body>...');
+        cleanHTML = cleanHTML.replace(/<body([^>]*)>/i, `<body$1>\n${dynamicNavbar}`);
+      }
+      // Metodo 3: Inserisci all'inizio del contenuto
+      else if (cleanHTML.includes('<html')) {
+        console.log('🔧 [NAVBAR-INJECTION-HP] Inserimento navbar all\'inizio...');
+        const insertPoint = cleanHTML.indexOf('>') + 1;
+        cleanHTML = cleanHTML.slice(0, insertPoint) + '\n' + dynamicNavbar + cleanHTML.slice(insertPoint);
+      }
+      
+      console.log('✅ [NAVBAR-INJECTION-HP] Navbar base injection completata');
+      
+    } catch (navbarError) {
+      console.error('❌ [NAVBAR-INJECTION-HP] Errore:', navbarError.message);
+      // Continua comunque con l'HTML originale
+    }
+
     // 🔧 POST-PROCESSING: Aggiungi automaticamente toggleMobileMenu se mancante
     if (!cleanHTML.includes('toggleMobileMenu')) {
       console.log('🔧 [POST-PROCESS] Adding missing toggleMobileMenu function...');

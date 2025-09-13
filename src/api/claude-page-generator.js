@@ -389,7 +389,7 @@ DESIGN REQUIREMENTS:
       portfolio: `Crea una bellissima pagina "PORTFOLIO" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
 
 REQUISITI DI COERENZA:
-- NAVBAR: Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile
+- NAVBAR: NON includere navbar/navigazione - verrà aggiunta automaticamente dal sistema
 - NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
 - FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
@@ -418,7 +418,7 @@ DESIGN REQUIREMENTS:
       blog: `Crea una bellissima pagina "BLOG" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
 
 REQUISITI DI COERENZA:
-- NAVBAR: Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile
+- NAVBAR: NON includere navbar/navigazione - verrà aggiunta automaticamente dal sistema
 - NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
 - FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
@@ -447,7 +447,7 @@ DESIGN REQUIREMENTS:
       testimonials: `Crea una bellissima pagina "RECENSIONI" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
 
 REQUISITI DI COERENZA:
-- NAVBAR: Replica identicamente la struttura di navigazione della homepage con gli stessi link e stile
+- NAVBAR: NON includere navbar/navigazione - verrà aggiunta automaticamente dal sistema
 - NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
 - FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
