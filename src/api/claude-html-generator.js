@@ -48,7 +48,7 @@ router.post('/generate-html', async (req, res) => {
     }
 
     const {
-      ownerId, // ← Passiamo l'ownerId dal bridge VendiOnline 
+      ownerId: requestOwnerId, // ← Rename to avoid conflict
       businessName, 
       businessType, 
       businessDescription, 
@@ -57,6 +57,9 @@ router.post('/generate-html', async (req, res) => {
       targetAudience = 'generale',
       generationMode = 'economico' // 🎛️ Global generation mode
     } = req.body;
+
+    // Assign to the declared variable
+    ownerId = requestOwnerId;
 
     if (!businessName || !businessDescription) {
       return res.status(400).json({
@@ -91,7 +94,7 @@ router.post('/generate-html', async (req, res) => {
     const websiteId = `${businessName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}`;
     console.log(`🆔 Website ID: ${websiteId}`);
 
-    // 🔗 Collega immagini al website se locali
+    // 🔗 Log immagini locali se disponibili
     if (businessImages.useLocal && businessImages.localImages) {
       try {
         const imageFileNames = [];
@@ -104,16 +107,11 @@ router.post('/generate-html', async (req, res) => {
         });
 
         if (imageFileNames.length > 0) {
-          const imageDownloadService = require('../services/image-download-service');
-          const linkedCount = await imageDownloadService.linkImagesToWebsite(
-            websiteId, 
-            imageFileNames, 
-            'claude_html_generation'
-          );
-          console.log(`🔗 Linked ${linkedCount} images to website ${websiteId}`);
+          console.log(`🔗 Found ${imageFileNames.length} local images for website ${websiteId}`);
+          console.log(`� Image files: ${imageFileNames.slice(0, 3).join(', ')}${imageFileNames.length > 3 ? '...' : ''}`);
         }
       } catch (linkError) {
-        console.warn('⚠️  Failed to link images:', linkError.message);
+        console.warn('⚠️  Failed to log images:', linkError.message);
       }
     }
 
