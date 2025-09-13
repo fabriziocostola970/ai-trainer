@@ -21,7 +21,22 @@ const pool = new Pool({
  * Navbar moderna con menu hamburger funzionante e link dinamici
  */
 function generateStaticNavbar(businessName, menuItems = []) {
-  console.log(`🎨 [STATIC-NAVBAR-HP] Generazione navbar per: ${businessName} con ${menuItems.length} menu items`);
+  con      const websiteResult = await pool.query(websiteQuery, [
+        JSON.stringify({ html: cleanHTML }),
+        JSON.stringify(websiteDesign),
+        websiteId // ✅ Usa websiteId da VendiOnline-EU
+      ]);
+      
+      console.log(`� Website updated: ${websiteId} for business: ${dbBusinessId}`);
+      
+      // Assegna i valori per la response (websiteId già corretto)
+      businessId = dbBusinessId;
+      // websiteId già assegnato sopra, non sovrascrivere!
+      
+    } catch (dbError) {
+      console.error('❌ Database update error:', dbError.message);
+      // Non blocchiamo la response se il DB fallisce
+    }C-NAVBAR-HP] Generazione navbar per: ${businessName} con ${menuItems.length} menu items`);
   
   // ✅ DEFAULT: Solo HOME (altri link solo se esistono nel DB)
   const defaultMenuItems = [
@@ -462,6 +477,7 @@ router.post('/generate-html', async (req, res) => {
 
     const {
       ownerId: requestOwnerId, // ← Rename to avoid conflict
+      websiteId: requestWebsiteId, // ← Webssite ID dal VendiOnline-EU
       businessName, 
       businessType, 
       businessDescription, 
@@ -471,8 +487,9 @@ router.post('/generate-html', async (req, res) => {
       generationMode = 'economico' // 🎛️ Global generation mode
     } = req.body;
 
-    // Assign to the declared variable
+    // Assign to the declared variables
     ownerId = requestOwnerId;
+    websiteId = requestWebsiteId;
 
     if (!businessName || !businessDescription) {
       return res.status(400).json({
@@ -503,9 +520,14 @@ router.post('/generate-html', async (req, res) => {
     
     console.log(`✅ Retrieved ${businessImages.total} images`);
 
-    // 🆔 Genera ID univoco per il website
-    const websiteId = `${businessName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}`;
-    console.log(`🆔 Website ID: ${websiteId}`);
+    // 🆔 Usa Website ID ricevuto da VendiOnline-EU
+    if (!websiteId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing websiteId - must be provided by VendiOnline-EU'
+      });
+    }
+    console.log(`🆔 Using Website ID from VendiOnline-EU: ${websiteId}`);
 
     // 🔗 Log immagini locali se disponibili
     if (businessImages.useLocal && businessImages.localImages) {
@@ -785,11 +807,13 @@ REGOLE ASSOLUTE:
       throw new Error('Generated content is not valid HTML');
     }
 
-    // 💾 SALVA NELLA TABELLA WEBSITES ESISTENTE
+    // 💾 AGGIORNA WEBSITE ESISTENTE (creato da VendiOnline-EU)
     try {
-      // Genera IDs univoci per database (diversi da quelli per preview)
+      // Genera ID univoco solo per il business (websiteId arriva da VendiOnline-EU)
       const dbBusinessId = `biz_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const dbWebsiteId = `site_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log(`🔧 Aggiornamento website esistente: ${websiteId}`);
+      console.log(`🔧 Business ID generato: ${dbBusinessId}`);
       
       // Prima creo/aggiorno il business con l'ownerId reale del token
       const businessQuery = `
@@ -813,15 +837,12 @@ REGOLE ASSOLUTE:
       
       console.log(`💼 Business created/updated: ${dbBusinessId} for owner: ${ownerId}`);
       
-      // Ora salvo il website nella tabella websites
+      // Ora aggiorna il website esistente nella tabella websites
       
       const websiteQuery = `
-        INSERT INTO websites (id, "businessId", content, design, status, version, "createdAt", "updatedAt")
-        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-        ON CONFLICT (id) DO UPDATE SET
-          content = EXCLUDED.content,
-          design = EXCLUDED.design,
-          "updatedAt" = NOW()
+        UPDATE websites 
+        SET content = $1, design = $2, "updatedAt" = NOW()
+        WHERE id = $3
         RETURNING id;
       `;
       
@@ -830,7 +851,7 @@ REGOLE ASSOLUTE:
         taskId: `website_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         ownerId: ownerId,
         metadata: {
-          website_id: dbWebsiteId,
+          website_id: websiteId, // ✅ Usa websiteId da VendiOnline-EU
           generation_type: 'direct_html',
           creative_mode: true,
           style: {
