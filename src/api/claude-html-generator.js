@@ -173,6 +173,25 @@ FRAMEWORK STILISTICO RICHIESTO:
 - Filtri interattivi funzionanti
 - Elementi decorativi (forme geometriche, patterns)
 
+🍔 NAVBAR REQUIREMENTS (IMPORTANT):
+- Create a MINIMAL navbar with only HAMBURGER MENU (mobile-style)
+- NO desktop links visible (NO "Home", "Servizi", "Chi Siamo" etc. in desktop version)
+- Only logo/brand name + hamburger icon for ALL screen sizes
+- Keep it simple and clean for consistent multi-page experience
+- Hamburger menu can contain links, but they should be hidden in dropdown
+
+ESEMPIO NAVBAR CORRETTO:
+<nav class="fixed top-0 w-full bg-white/90 backdrop-blur-sm shadow-lg z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <div class="text-2xl font-bold text-purple-600">${businessName}</div>
+            <button class="md:hidden text-gray-600 hover:text-purple-600">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
 ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
 <!DOCTYPE html>
 <html lang="it">
