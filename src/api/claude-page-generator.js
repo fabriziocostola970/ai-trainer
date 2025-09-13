@@ -96,51 +96,12 @@ IMPORTANTE: Mantieni ESATTA coerenza visiva con questi elementi della homepage.
 ` : ''}
 
 REQUISITI DI COERENZA NAVBAR:
-- DESKTOP (≥768px): Mostra link di navigazione orizzontali sempre visibili accanto al logo
-- MOBILE (<768px): Mostra hamburger menu con link in dropdown collassabile
+- DESKTOP (≥768px): Mostra SOLO logo e hamburger menu chiuso (nessun link visibile)
+- MOBILE (<768px): Mostra logo e hamburger menu chiuso (nessun link visibile)  
+- HAMBURGER MENU: Al click mostra dropdown con link di navigazione
 - Struttura responsive identica alla homepage per consistenza UX
 - NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
 - FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
-
-NAVBAR RESPONSIVE DA IMPLEMENTARE:
-<nav class="fixed top-0 w-full bg-white/90 backdrop-blur-sm shadow-lg z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-            <div class="text-2xl font-bold text-purple-600">${businessName}</div>
-            
-            <!-- Desktop Menu: sempre visibile su schermi grandi -->
-            <div class="hidden md:flex space-x-8">
-                <a href="/" class="text-gray-700 hover:text-purple-600 transition-colors">Home</a>
-                <a href="/servizi" class="text-gray-700 hover:text-purple-600 transition-colors">Servizi</a>
-                <a href="/chi-siamo" class="text-gray-700 hover:text-purple-600 transition-colors">Chi Siamo</a>
-                <a href="/contatti" class="text-gray-700 hover:text-purple-600 transition-colors">Contatti</a>
-            </div>
-            
-            <!-- Mobile Hamburger -->
-            <button class="md:hidden text-gray-600 hover:text-purple-600" onclick="toggleMobileMenu()">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-        </div>
-        
-        <!-- Mobile Menu (nascosto di default) -->
-        <div id="mobileMenu" class="md:hidden hidden bg-white border-t">
-            <div class="px-2 pt-2 pb-3 space-y-1">
-                <a href="/" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Home</a>
-                <a href="/servizi" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Servizi</a>
-                <a href="/chi-siamo" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Chi Siamo</a>
-                <a href="/contatti" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Contatti</a>
-            </div>
-        </div>
-    </div>
-</nav>
-
-JAVASCRIPT PER MOBILE MENU:
-<script>
-function toggleMobileMenu() {
-    const menu = document.getElementById('mobileMenu');
-    menu.classList.toggle('hidden');
-}
-</script>
 
 OBIETTIVO: Pagina About aziendale professionale e coinvolgente.
 
