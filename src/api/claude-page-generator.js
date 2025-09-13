@@ -519,13 +519,45 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
         }
     }
     
-    // Auto-attach event listener to hamburger button
+    // Auto-attach event listener to hamburger button + SMART NAVBAR DETECTION
     document.addEventListener('DOMContentLoaded', function() {
-        const hamburgerBtn = document.getElementById('hamburger-btn') || 
-                           document.querySelector('button[onclick*="toggleMobileMenu"]') ||
-                           document.querySelector('button i.fa-bars').parentElement;
+        // 🔧 SMART HAMBURGER DETECTION: Cerca il pulsante in vari modi
+        let hamburgerBtn = document.getElementById('hamburger-btn') || 
+                          document.querySelector('button[onclick*="toggleMobileMenu"]') ||
+                          document.querySelector('button i.fa-bars').parentElement;
+        
+        // Se non trova il burger button, cerca nelle navbar generiche
+        if (!hamburgerBtn) {
+            const navbar = document.querySelector('nav') || document.querySelector('header');
+            if (navbar) {
+                const allButtons = navbar.querySelectorAll('button');
+                for (const btn of allButtons) {
+                    if (btn.innerHTML.includes('fa-bars') || btn.innerHTML.includes('☰') || btn.innerHTML.includes('menu')) {
+                        hamburgerBtn = btn;
+                        hamburgerBtn.id = 'hamburger-btn';
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Attach toggle function
         if (hamburgerBtn) {
             hamburgerBtn.onclick = toggleMobileMenu;
+        }
+        
+        // 🔧 SMART MOBILE MENU DETECTION: Se manca il menu mobile, prova a identificarlo
+        let mobileMenu = document.getElementById('mobileMenu');
+        if (!mobileMenu) {
+            // Cerca menu nascosti o con classi simili
+            const possibleMenus = document.querySelectorAll('.mobile-menu, .nav-menu, [class*="mobile"], [class*="menu"]');
+            for (const menu of possibleMenus) {
+                if (menu.style.display === 'none' || menu.classList.contains('hidden')) {
+                    menu.id = 'mobileMenu';
+                    mobileMenu = menu;
+                    break;
+                }
+            }
         }
     });
     </script>`;
