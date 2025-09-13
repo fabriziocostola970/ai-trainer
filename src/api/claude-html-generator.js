@@ -640,6 +640,11 @@ REGOLE ASSOLUTE:
       // Non blocchiamo la response se il DB fallisce
     }
 
+    // 📁 SALVA HOMEPAGE COME FILE STATICO per serving futuro
+    const homePageSlug = 'index'; // Homepage = index.html
+    const saveResult = savePageToStatic(homePageSlug, cleanHTML, businessName);
+    console.log(`📁 [STATIC-SAVE-HP] ${saveResult.success ? '✅ Saved' : '❌ Failed'}: ${homePageSlug}`);
+
     // RESPONSE CON HTML E METADATA
     res.json({
       success: true,
@@ -647,6 +652,7 @@ REGOLE ASSOLUTE:
       websiteId: websiteId,
       businessId: businessId,
       savedToDatabase: true,
+      staticSaved: saveResult.success, // 🆕 Conferma salvataggio statico
       costInfo: costInfo, // 💰 Include cost information
       metadata: {
         website_id: websiteId,
@@ -682,5 +688,35 @@ REGOLE ASSOLUTE:
     });
   }
 });
+
+/**
+ * 📁 SAVE PAGE TO STATIC FILES (HOMEPAGE)
+ * Salva le homepage generate come file statici per il serving
+ */
+function savePageToStatic(pageSlug, htmlContent, businessName) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Directory per le pagine statiche (organizzate per business)
+    const staticDir = path.join(__dirname, '../../static-pages', businessName.toLowerCase().replace(/\s+/g, '-'));
+    
+    // Crea directory se non esiste
+    if (!fs.existsSync(staticDir)) {
+      fs.mkdirSync(staticDir, { recursive: true });
+    }
+    
+    // Salva il file HTML
+    const filePath = path.join(staticDir, `${pageSlug}.html`);
+    fs.writeFileSync(filePath, htmlContent, 'utf8');
+    
+    console.log(`✅ [STATIC-SAVE-HP] Page saved: ${filePath}`);
+    return { success: true, filePath };
+    
+  } catch (error) {
+    console.error('❌ [STATIC-SAVE-HP] Failed to save page:', error);
+    return { success: false, error: error.message };
+  }
+}
 
 module.exports = router;

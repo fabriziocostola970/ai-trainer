@@ -733,6 +733,11 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
       throw new Error('Generated content is not valid HTML');
     }
 
+    // 📁 SALVA PAGINA COME FILE STATICO per serving futuro
+    const pageSlug = pageType.toLowerCase().replace(/\s+/g, '-');
+    const saveResult = savePageToStatic(pageSlug, cleanHTML, businessName);
+    console.log(`📁 [STATIC-SAVE] ${saveResult.success ? '✅ Saved' : '❌ Failed'}: ${pageSlug}`);
+
     // RESPONSE OTTIMIZZATA PER VENDIONLINE CON COST TRACKING
     res.json({
       success: true,
@@ -740,6 +745,7 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
       pageType: pageType,
       styleDNA: styleDNA,
       costInfo: costInfo, // 🆕 Informazioni sui costi
+      staticSaved: saveResult.success, // 🆕 Conferma salvataggio statico
       metadata: {
         generated_at: new Date().toISOString(),
         page_type: pageType,
@@ -793,5 +799,35 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
     });
   }
 });
+
+/**
+ * 📁 SAVE PAGE TO STATIC FILES
+ * Salva le pagine generate come file statici per il serving
+ */
+function savePageToStatic(pageSlug, htmlContent, businessName) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Directory per le pagine statiche (organizzate per business)
+    const staticDir = path.join(__dirname, '../../static-pages', businessName.toLowerCase().replace(/\s+/g, '-'));
+    
+    // Crea directory se non esiste
+    if (!fs.existsSync(staticDir)) {
+      fs.mkdirSync(staticDir, { recursive: true });
+    }
+    
+    // Salva il file HTML
+    const filePath = path.join(staticDir, `${pageSlug}.html`);
+    fs.writeFileSync(filePath, htmlContent, 'utf8');
+    
+    console.log(`✅ [STATIC-SAVE] Page saved: ${filePath}`);
+    return { success: true, filePath };
+    
+  } catch (error) {
+    console.error('❌ [STATIC-SAVE] Failed to save page:', error);
+    return { success: false, error: error.message };
+  }
+}
 
 module.exports = router;

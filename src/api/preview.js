@@ -403,4 +403,170 @@ router.get('/list', async (req, res) => {
   }
 });
 
+/**
+ * 🚀 DYNAMIC PAGE SERVING SYSTEM
+ * Serve homepage generata
+ * GET /api/preview/:businessName
+ */
+router.get('/:businessName', (req, res) => {
+  try {
+    const { businessName } = req.params;
+    console.log(`🏠 [HOMEPAGE-SERVE] Requesting homepage for: ${businessName}`);
+    
+    // Converti business name in formato file
+    const businessDir = businessName.toLowerCase().replace(/\s+/g, '-');
+    const homePagePath = path.join(__dirname, '../../static-pages', businessDir, 'index.html');
+    
+    console.log(`📁 [HOMEPAGE-SERVE] Looking for: ${homePagePath}`);
+    
+    // Verifica se il file esiste
+    if (fs.existsSync(homePagePath)) {
+      const htmlContent = fs.readFileSync(homePagePath, 'utf8');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      console.log(`✅ [HOMEPAGE-SERVE] Served homepage for: ${businessName}`);
+      return res.send(htmlContent);
+    }
+    
+    // Se non esiste, prova a cercare in tutte le cartelle business
+    const staticPagesDir = path.join(__dirname, '../../static-pages');
+    if (fs.existsSync(staticPagesDir)) {
+      const businessDirs = fs.readdirSync(staticPagesDir);
+      
+      for (const dir of businessDirs) {
+        const altHomePath = path.join(staticPagesDir, dir, 'index.html');
+        if (fs.existsSync(altHomePath)) {
+          const htmlContent = fs.readFileSync(altHomePath, 'utf8');
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          console.log(`✅ [HOMEPAGE-SERVE] Found homepage in ${dir}`);
+          return res.send(htmlContent);
+        }
+      }
+    }
+    
+    // Homepage non trovata
+    return res.status(404).send(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Homepage non trovata - ${businessName}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+      </head>
+      <body class="bg-gray-50 flex items-center justify-center min-h-screen">
+        <div class="text-center max-w-md mx-auto p-6">
+          <div class="text-6xl mb-4">🏠</div>
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">Homepage non trovata</h1>
+          <p class="text-gray-600 mb-4">La homepage per "${businessName}" non è ancora stata generata.</p>
+          <div class="mt-6">
+            <a href="/frontend" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+              ← Vai al Dashboard
+            </a>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    
+  } catch (error) {
+    console.error('❌ [HOMEPAGE-SERVE] Error:', error);
+    res.status(500).send(`
+      <!DOCTYPE html>
+      <html>
+      <body>
+        <h1>❌ Errore del server</h1>
+        <p>Errore: ${error.message}</p>
+      </body>
+      </html>
+    `);
+  }
+});
+
+/**
+ * 🚀 DYNAMIC PAGE SERVING SYSTEM
+ * Serve pagine secondarie generate (chi-siamo, servizi, contatti, etc.)
+ * GET /api/preview/:businessName/:pageSlug
+ */
+router.get('/:businessName/:pageSlug', (req, res) => {
+  try {
+    const { businessName, pageSlug } = req.params;
+    console.log(`🔍 [DYNAMIC-SERVE] Requesting: ${businessName}/${pageSlug}`);
+    
+    // Converti business name in formato file
+    const businessDir = businessName.toLowerCase().replace(/\s+/g, '-');
+    const pagePath = path.join(__dirname, '../../static-pages', businessDir, `${pageSlug}.html`);
+    
+    console.log(`📁 [DYNAMIC-SERVE] Looking for: ${pagePath}`);
+    
+    // Verifica se il file esiste
+    if (fs.existsSync(pagePath)) {
+      const htmlContent = fs.readFileSync(pagePath, 'utf8');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      console.log(`✅ [DYNAMIC-SERVE] Served: ${businessName}/${pageSlug}`);
+      return res.send(htmlContent);
+    }
+    
+    // Se non esiste, prova a cercare in tutte le cartelle business
+    const staticPagesDir = path.join(__dirname, '../../static-pages');
+    if (fs.existsSync(staticPagesDir)) {
+      const businessDirs = fs.readdirSync(staticPagesDir);
+      
+      for (const dir of businessDirs) {
+        const altPagePath = path.join(staticPagesDir, dir, `${pageSlug}.html`);
+        if (fs.existsSync(altPagePath)) {
+          const htmlContent = fs.readFileSync(altPagePath, 'utf8');
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          console.log(`✅ [DYNAMIC-SERVE] Found in ${dir}: ${pageSlug}`);
+          return res.send(htmlContent);
+        }
+      }
+    }
+    
+    // Pagina non trovata
+    return res.status(404).send(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pagina non trovata - ${businessName}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+      </head>
+      <body class="bg-gray-50 flex items-center justify-center min-h-screen">
+        <div class="text-center max-w-md mx-auto p-6">
+          <div class="text-6xl mb-4">🔍</div>
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">Pagina non trovata</h1>
+          <p class="text-gray-600 mb-4">La pagina "${pageSlug}" per "${businessName}" non è ancora stata generata.</p>
+          <div class="space-y-2 text-sm text-gray-500">
+            <p>Pagine disponibili di solito:</p>
+            <div class="flex flex-wrap gap-2 justify-center">
+              <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">chi-siamo</span>
+              <span class="bg-green-100 text-green-800 px-2 py-1 rounded">servizi</span>
+              <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded">contatti</span>
+            </div>
+          </div>
+          <div class="mt-6">
+            <a href="/" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+              ← Torna alla Home
+            </a>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    
+  } catch (error) {
+    console.error('❌ [DYNAMIC-SERVE] Error:', error);
+    res.status(500).send(`
+      <!DOCTYPE html>
+      <html>
+      <body>
+        <h1>❌ Errore del server</h1>
+        <p>Errore: ${error.message}</p>
+      </body>
+      </html>
+    `);
+  }
+});
+
 module.exports = router;
