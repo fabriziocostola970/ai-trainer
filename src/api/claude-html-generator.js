@@ -54,7 +54,8 @@ router.post('/generate-html', async (req, res) => {
       businessDescription, 
       stylePreference = 'moderno',
       colorMood = 'professionale',
-      targetAudience = 'generale' 
+      targetAudience = 'generale',
+      generationMode = 'economico' // 🎛️ Global generation mode
     } = req.body;
 
     if (!businessName || !businessDescription) {
@@ -206,12 +207,24 @@ IMPORTANTE:
 - Adatta colori e stile al tipo di business`;
 
     console.log('🎨 Calling Claude Sonnet 4 for HTML generation...');
+    console.log(`🎛️ Generation mode: ${generationMode}`);
+    
+    // 🎛️ CONFIGURE CLAUDE BASED ON GENERATION MODE (align with page generation)
+    const claudeConfig = generationMode === 'economico' 
+      ? {
+          max_tokens: 3500,  // Economico: meno token come le pagine
+          temperature: 0.3   // Economico: più deterministico come le pagine
+        }
+      : {
+          max_tokens: 6000,  // Sviluppo: più token per contenuti dettagliati
+          temperature: 0.6   // Sviluppo: creatività bilanciata
+        };
     
     // CHIAMATA A CLAUDE SONNET 4 PER HTML DIRETTO
     const claudeResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 8000, // Più token per HTML completo
-      temperature: 0.9, // Massima creatività
+      max_tokens: claudeConfig.max_tokens,
+      temperature: claudeConfig.temperature,
       messages: [
         {
           role: 'user',
