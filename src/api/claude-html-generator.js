@@ -237,6 +237,30 @@ IMPORTANTE:
     console.log('✅ Claude HTML response received');
     console.log(`📄 Generated HTML length: ${htmlContent.length} characters`);
 
+    // 💰 CALCULATE COSTS (Claude Sonnet 4 pricing as of Sept 2025)
+    // Input: $3.00 per 1M tokens, Output: $15.00 per 1M tokens
+    const usage = claudeResponse.usage;
+    const inputTokens = usage?.input_tokens || 0;
+    const outputTokens = usage?.output_tokens || 0;
+    
+    const inputCost = (inputTokens / 1000000) * 3.00;
+    const outputCost = (outputTokens / 1000000) * 15.00;
+    const totalCost = inputCost + outputCost;
+    
+    const costInfo = {
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      inputCost,
+      outputCost,
+      totalCost,
+      generationMode,
+      model: 'claude-sonnet-4-20250514',
+      timestamp: new Date().toISOString()
+    };
+
+    console.log(`💰 Homepage Cost: $${totalCost.toFixed(4)} (mode: ${generationMode})`);
+
     // ESTRAI IL CODICE HTML (potrebbe essere wrappato in ```html)
     let cleanHTML = htmlContent;
     
@@ -361,6 +385,7 @@ IMPORTANTE:
       websiteId: websiteId,
       businessId: businessId,
       savedToDatabase: true,
+      costInfo: costInfo, // 💰 Include cost information
       metadata: {
         website_id: websiteId,
         generation_type: 'direct_html',
@@ -376,7 +401,12 @@ IMPORTANTE:
           backgrounds: (businessImages.backgrounds || []).length
         },
         content_length: cleanHTML.length,
-        claude_system: 'v3.0 - Direct HTML Creative Generation'
+        claude_system: 'v3.0 - Direct HTML Creative Generation',
+        cost_tracking: {
+          generation_mode: generationMode,
+          temperature: claudeConfig.temperature,
+          max_tokens: claudeConfig.max_tokens
+        }
       }
     });
 
