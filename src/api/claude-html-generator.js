@@ -171,29 +171,21 @@ FRAMEWORK STILISTICO RICHIESTO:
 - Filtri interattivi funzionanti
 - Elementi decorativi (forme geometriche, patterns)
 
-🍔 NAVBAR REQUIREMENTS (HAMBURGER-ONLY STRATEGY):
-- Create a MINIMALIST navbar with hamburger menu for all screen sizes
-- DESKTOP (≥768px): Show ONLY logo + hamburger menu (NO visible links)
-- MOBILE (<768px): Show ONLY logo + hamburger menu (NO visible links)
-- Links appear ONLY when hamburger is clicked (dropdown)
-- Consistent behavior across all devices for clean design
+🍔 NAVBAR REQUIREMENTS + JAVASCRIPT OBBLIGATORIO:
 
-⚠️ IMPORTANTE: INCLUDI SEMPRE IL JAVASCRIPT NELLA PAGINA HTML
-Il JavaScript per toggleMobileMenu() è OBBLIGATORIO e deve essere incluso in ogni pagina.
+OGNI PAGINA HTML DEVE INCLUDERE:
+1. Navbar hamburger-only (logo + hamburger per tutti i dispositivi)
+2. JavaScript toggleMobileMenu() - SEMPRE OBBLIGATORIO
 
-ESEMPIO NAVBAR HAMBURGER-ONLY:
+CODICE NAVBAR STANDARD:
 <nav class="fixed top-0 w-full bg-white/90 backdrop-blur-sm shadow-lg z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <div class="text-2xl font-bold text-purple-600">${businessName}</div>
-            
-            <!-- Hamburger Menu (sempre visibile) -->
             <button class="text-gray-600 hover:text-purple-600" onclick="toggleMobileMenu()">
                 <i class="fas fa-bars text-xl"></i>
             </button>
         </div>
-        
-        <!-- Dropdown Menu (nascosto di default) -->
         <div id="mobileMenu" class="hidden bg-white border-t">
             <div class="px-2 pt-2 pb-3 space-y-1">
                 <a href="#home" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Home</a>
@@ -204,28 +196,18 @@ ESEMPIO NAVBAR HAMBURGER-ONLY:
         </div>
     </div>
 </nav>
-        
-        <!-- Mobile Menu (hidden by default) -->
-        <div id="mobileMenu" class="md:hidden hidden bg-white border-t">
-            <div class="px-2 pt-2 pb-3 space-y-1">
-                <a href="#home" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Home</a>
-                <a href="#servizi" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Servizi</a>
-                <a href="#chi-siamo" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Chi Siamo</a>
-                <a href="#contatti" class="block px-3 py-2 text-gray-700 hover:text-purple-600">Contatti</a>
-            </div>
-        </div>
-    </div>
-</nav>
 
-JAVASCRIPT DA INCLUDERE SEMPRE:
+❗❗❗ JAVASCRIPT OBBLIGATORIO - INCLUDI SEMPRE PRIMA DI </body>:
 <script>
 function toggleMobileMenu() {
     const menu = document.getElementById('mobileMenu');
-    menu.classList.toggle('hidden');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
 }
 </script>
 
-❗ REGOLA: Ogni sito HTML creato DEVE includere questo JavaScript nel tag <script> prima di </body>
+⚠️ REGOLA FINALE: OGNI HTML DEVE TERMINARE CON QUESTO SCRIPT PRIMA DI </body>
 
 ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
 <!DOCTYPE html>
@@ -266,17 +248,17 @@ ESEMPIO STRUTTURA (ADATTA AL TUO BUSINESS):
 </html>
 
 REGOLE ASSOLUTE:
-1. USA SEMPRE onclick="toggleMobileMenu()" per il pulsante hamburger
-2. INCLUDI SEMPRE lo script toggleMobileMenu() nel body prima di </body>
-3. Il div del menu mobile deve avere id="mobileMenu"
-4. Genera HTML COMPLETO dalla DOCTYPE alla chiusura
-5. INCLUDI SEMPRE la funzione toggleMobileMenu() nel JavaScript finale - SENZA ECCEZIONI
+1. Usa il CODICE NAVBAR STANDARD sopra (senza modifiche)
+2. INCLUDI SEMPRE onclick="toggleMobileMenu()" nel pulsante hamburger
+3. INCLUDI SEMPRE il JavaScript toggleMobileMenu() prima di </body>
+4. Un solo div mobileMenu con id="mobileMenu" (non duplicare)
+5. Genera HTML COMPLETO dalla DOCTYPE alla chiusura
 6. Usa SOLO le immagini fornite sopra
 7. Implementa JavaScript per filtri e interazioni
 8. Sii ESTREMAMENTE CREATIVO nel design
 9. Mantieni alta qualità visiva e UX
 10. Adatta colori e stile al tipo di business
-11. ❗ OGNI PAGINA HTML DEVE AVERE IL JAVASCRIPT toggleMobileMenu() - È OBBLIGATORIO`;
+11. ❗❗❗ TERMINA SEMPRE CON LO SCRIPT toggleMobileMenu() PRIMA DI </body>`;
 
     console.log('🎨 Calling Claude Sonnet 4 for HTML generation...');
     console.log(`🎛️ Generation mode: ${generationMode}`);

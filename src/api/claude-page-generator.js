@@ -386,22 +386,19 @@ STRUTTURA HTML RICHIESTA:
 
 REGOLE ASSOLUTE:
 1. NOME ATTIVITÀ: Usa sempre e solo "${businessName}" - mai modificare o interpretare
-2. NAVBAR: Mantieni struttura di navigazione coerente con homepage  
+2. NAVBAR: Usa il CODICE NAVBAR STANDARD della homepage (identico)
 3. FOOTER: Copia identicamente footer della homepage
 4. COLORI: Usa SOLO i colori specificati nel Style DNA
 5. FONT: Mantieni typography coerente
 6. CONTENUTO: Crea contenuto realistico e professionale
 7. RESPONSIVE: Assicurati che tutto sia mobile-friendly
 8. ANIMAZIONI: Include micro-animazioni e hover effects eleganti
-9. USA SEMPRE onclick="toggleMobileMenu()" per il pulsante hamburger
-10. INCLUDI SEMPRE lo script toggleMobileMenu() nel body prima di </body>
-11. Il div del menu mobile deve avere id="mobileMenu"
-12. ❗ OGNI PAGINA HTML DEVE AVERE IL JAVASCRIPT toggleMobileMenu() - È OBBLIGATORIO
+9. INCLUDI SEMPRE onclick="toggleMobileMenu()" nel pulsante hamburger
+10. INCLUDI SEMPRE il JavaScript toggleMobileMenu() prima di </body>
+11. Un solo div mobileMenu con id="mobileMenu" (non duplicare)
+12. ❗❗❗ TERMINA SEMPRE CON LO SCRIPT toggleMobileMenu() PRIMA DI </body>
 
-⚠️ IMPORTANTE: INCLUDI SEMPRE IL JAVASCRIPT NELLA PAGINA HTML
-Il JavaScript per toggleMobileMenu() è OBBLIGATORIO e deve essere incluso in ogni pagina.
-
-JAVASCRIPT DA INCLUDERE SEMPRE:
+JAVASCRIPT OBBLIGATORIO - INCLUDI SEMPRE PRIMA DI </body>:
 <script>
 function toggleMobileMenu() {
     const menu = document.getElementById('mobileMenu');
@@ -409,6 +406,7 @@ function toggleMobileMenu() {
         menu.classList.toggle('hidden');
     }
 }
+</script>
 </script>
 
 ❗ REGOLA: Ogni sito HTML creato DEVE includere questo JavaScript nel tag <script> prima di </body>`;
