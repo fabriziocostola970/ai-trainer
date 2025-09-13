@@ -35,6 +35,7 @@ router.post('/generate-page', async (req, res) => {
     }
 
     const {
+      websiteId, // 🆕 Per Hybrid Smart Menu System
       ownerId,
       businessName, 
       businessType, 
@@ -559,7 +560,96 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
                 }
             }
         }
+        
+        // 🎯 HYBRID SMART MENU SYSTEM: Carica menu items dinamicamente
+        loadDynamicMenuItems();
     });
+    
+    // 🚀 HYBRID SMART MENU: Auto-populate menu links da database
+    async function loadDynamicMenuItems() {
+        try {
+            // Estrai websiteId dall'URL o da meta tag
+            const websiteId = getWebsiteId();
+            if (!websiteId) {
+                console.log('🔍 [SMART-MENU] WebsiteId non trovato, usando menu statico');
+                return;
+            }
+            
+            const response = await fetch(\`/api/website/menu-items?websiteId=\${websiteId}\`);
+            if (!response.ok) {
+                throw new Error(\`HTTP \${response.status}\`);
+            }
+            
+            const data = await response.json();
+            if (!data.success || !data.menuItems) {
+                throw new Error('Invalid response format');
+            }
+            
+            // 🔧 Trova i container del menu (desktop e mobile)
+            const menuContainers = [
+                document.querySelector('#mobileMenu ul'),
+                document.querySelector('#mobileMenu nav'),
+                document.querySelector('nav ul'),
+                document.querySelector('.mobile-menu ul'),
+                document.querySelector('.nav-menu')
+            ].filter(Boolean);
+            
+            if (menuContainers.length === 0) {
+                console.log('🔍 [SMART-MENU] Container menu non trovati');
+                return;
+            }
+            
+            // 🎯 Rimuovi link dinamici esistenti (se presenti)
+            menuContainers.forEach(container => {
+                const dynamicLinks = container.querySelectorAll('[data-dynamic-menu]');
+                dynamicLinks.forEach(link => link.remove());
+            });
+            
+            // 🚀 Aggiungi i nuovi menu items (escludi homepage)
+            const secondaryPages = data.menuItems.filter(item => !item.isHomepage);
+            
+            menuContainers.forEach(container => {
+                secondaryPages.forEach(page => {
+                    const li = document.createElement('li');
+                    li.setAttribute('data-dynamic-menu', 'true');
+                    li.innerHTML = \`<a href="\${page.href}" class="menu-link block px-4 py-2 text-gray-700 hover:bg-gray-100">\${page.name}</a>\`;
+                    container.appendChild(li);
+                });
+            });
+            
+            console.log(\`✅ [SMART-MENU] Caricati \${secondaryPages.length} menu items dinamici\`);
+            
+        } catch (error) {
+            console.log('🔄 [SMART-MENU] Fallback su menu statico:', error.message);
+        }
+    }
+    
+    // 🔍 Utility: Estrai websiteId dall'URL o meta tags
+    function getWebsiteId() {
+        // Metodo 1: Da meta tag (se presente)
+        const metaWebsiteId = document.querySelector('meta[name="website-id"]');
+        if (metaWebsiteId) {
+            return metaWebsiteId.getAttribute('content');
+        }
+        
+        // Metodo 2: Da URL params (se presente)
+        const urlParams = new URLSearchParams(window.location.search);
+        const websiteId = urlParams.get('websiteId');
+        if (websiteId) {
+            return websiteId;
+        }
+        
+        // Metodo 3: Da localStorage (se presente)
+        try {
+            const stored = localStorage.getItem('currentWebsiteId');
+            if (stored) {
+                return stored;
+            }
+        } catch (e) {
+            // localStorage non disponibile
+        }
+        
+        return null;
     </script>`;
 
     // Rimuovi eventuali script esistenti duplicati e aggiungi quello nuovo
@@ -571,6 +661,13 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
         /<button([^>]*class="[^"]*"[^>]*)><i class="fas fa-bars/g,
         '<button$1 id="hamburger-btn"><i class="fas fa-bars'
       );
+    }
+    
+    // 🎯 HYBRID SMART MENU: Aggiungi meta tag websiteId se presente
+    if (websiteId && cleanHTML.includes('<head>')) {
+      const websiteMetaTag = `<meta name="website-id" content="${websiteId}">`;
+      cleanHTML = cleanHTML.replace('<head>', `<head>\n    ${websiteMetaTag}`);
+      console.log('✅ [HYBRID-MENU] WebsiteId meta tag added for smart menu system');
     }
     
     if (cleanHTML.includes('</body>')) {
