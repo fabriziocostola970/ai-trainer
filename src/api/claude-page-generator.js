@@ -540,6 +540,41 @@ function toggleMobileMenu() {
       console.log('✅ [POST-PROCESS-PAGE] toggleMobileMenu function added automatically');
     }
 
+    // 🔧 SOLUZIONE DEFINITIVA: Forza SEMPRE l'aggiornamento con script corretto
+    console.log('🔧 [FORCE-UPDATE-PAGE] Ensuring toggleMobileMenu is present...');
+    
+    // Controlla se manca onclick="toggleMobileMenu()" nel pulsante hamburger
+    if (!cleanHTML.includes('onclick="toggleMobileMenu()"')) {
+      console.log('🔧 [FORCE-UPDATE-PAGE] Adding missing onclick handler...');
+      // Sostituisci qualsiasi pulsante hamburger con la versione corretta
+      cleanHTML = cleanHTML.replace(
+        /<button[^>]*class="[^"]*"[^>]*><i class="fas fa-bars[^>]*><\/i><\/button>/g,
+        '<button class="text-gray-600 hover:text-purple-600" onclick="toggleMobileMenu()"><i class="fas fa-bars text-xl"></i></button>'
+      );
+    }
+
+    // Forza sempre la presenza dello script (anche se già presente)
+    const forceToggleScript = `
+    <script>
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        if (menu) {
+            menu.classList.toggle('hidden');
+        }
+    }
+    </script>`;
+
+    // Rimuovi eventuali script esistenti duplicati e aggiungi quello nuovo
+    cleanHTML = cleanHTML.replace(/<script>[\s\S]*?toggleMobileMenu[\s\S]*?<\/script>/g, '');
+    
+    if (cleanHTML.includes('</body>')) {
+      cleanHTML = cleanHTML.replace('</body>', `${forceToggleScript}\n</body>`);
+      console.log('✅ [FORCE-UPDATE-PAGE] toggleMobileMenu script forcibly added before </body>');
+    } else {
+      cleanHTML += forceToggleScript;
+      console.log('✅ [FORCE-UPDATE-PAGE] toggleMobileMenu script forcibly added at end');
+    }
+
     console.log('🧹 HTML cleaning: Original length:', htmlContent.length, ', Clean length:', cleanHTML.length);
 
     // VERIFICA CHE SIA HTML VALIDO
