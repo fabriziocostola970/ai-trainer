@@ -905,9 +905,12 @@ REGOLE ASSOLUTE:
       // Ora aggiorna il website esistente (creato da VendiOnline-EU)
       
       const websiteQuery = `
-        UPDATE websites 
-        SET content = $1, design = $2, "updatedAt" = NOW()
-        WHERE id = $3
+        INSERT INTO websites (id, "businessId", content, design, status, version, "createdAt", "updatedAt")
+        VALUES ($3, $4, $1, $2, 'generated', 1, NOW(), NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          content = $1,
+          design = $2,
+          "updatedAt" = NOW()
         RETURNING id;
       `;
       
@@ -943,9 +946,10 @@ REGOLE ASSOLUTE:
       };
 
       const websiteResult = await pool.query(websiteQuery, [
-        cleanHTML,                            // $1 content - HTML diretto!
+        JSON.stringify({ html: cleanHTML }),  // $1 content - JSONB format
         JSON.stringify(websiteDesign),        // $2 design
-        websiteId                             // $3 id (WHERE condition)
+        websiteId,                            // $3 id
+        businessId                            // $4 businessId
       ]);
       
       console.log(`🌐 Website updated: ${websiteId} for business: ${businessId}`);
