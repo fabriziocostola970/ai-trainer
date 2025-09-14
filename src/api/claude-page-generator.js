@@ -754,11 +754,16 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
     
     try {
       const dynamicNavbar = await generateNavbarWithDatabase(websiteId, businessName);
+      console.log('🔍 [NAVBAR-INJECTION] Dynamic navbar length:', dynamicNavbar.length);
+      console.log('🔍 [NAVBAR-INJECTION] HTML contains <nav>:', cleanHTML.includes('<nav'));
       
       // Metodo 1: Sostituisci navbar esistente se presente
       if (cleanHTML.includes('<nav')) {
         console.log('🔄 [NAVBAR-INJECTION] Sostituzione navbar esistente...');
+        const originalLength = cleanHTML.length;
         cleanHTML = cleanHTML.replace(/<nav[\s\S]*?<\/nav>/gi, dynamicNavbar);
+        const newLength = cleanHTML.length;
+        console.log('🔍 [NAVBAR-INJECTION] Sostituzione: ', originalLength, '→', newLength, 'chars');
       } 
       // Metodo 2: Inserisci navbar dopo <body> se non presente
       else if (cleanHTML.includes('<body')) {
