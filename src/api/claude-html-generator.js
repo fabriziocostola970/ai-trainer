@@ -463,6 +463,7 @@ router.post('/generate-html', async (req, res) => {
     const {
       ownerId: requestOwnerId, // ← Rename to avoid conflict
       websiteId: requestWebsiteId, // ← Website ID from VendiOnline-EU
+      businessId: requestBusinessId, // ← Business ID from VendiOnline-EU
       businessName, 
       businessType, 
       businessDescription, 
@@ -475,6 +476,7 @@ router.post('/generate-html', async (req, res) => {
     // Assign to the declared variables
     ownerId = requestOwnerId;
     websiteId = requestWebsiteId;
+    businessId = requestBusinessId;
 
     if (!businessName || !businessDescription) {
       return res.status(400).json({
@@ -795,31 +797,30 @@ REGOLE ASSOLUTE:
 
     // 💾 SALVA NELLA TABELLA WEBSITES ESISTENTE
     try {
-      // Genera IDs univoci per database (diversi da quelli per preview)
-      const dbBusinessId = `biz_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const dbWebsiteId = `site_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Usa gli IDs ricevuti da VendiOnline-EU (non generare nuovi)
+      console.log(`🔄 Updating existing records - Business ID: ${businessId}, Website ID: ${websiteId}`);
       
-      // Prima creo/aggiorno il business con l'ownerId reale del token
+      // Prima aggiorna il business esistente con l'ownerId reale del token
       const businessQuery = `
-        INSERT INTO businesses (id, "ownerId", name, type, description, "createdAt", "updatedAt")
-        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-        ON CONFLICT (id) DO UPDATE SET
-          name = EXCLUDED.name,
-          type = EXCLUDED.type,
-          description = EXCLUDED.description,
-          "updatedAt" = NOW()
+        UPDATE businesses 
+        SET name = $1, type = $2, description = $3, "updatedAt" = NOW()
+        WHERE id = $4 AND "ownerId" = $5
         RETURNING id;
       `;
       
-      await pool.query(businessQuery, [
-        dbBusinessId,
-        ownerId, // ← Usa l'ownerId reale dal token
+      const businessResult = await pool.query(businessQuery, [
         businessName,
         businessType || 'general',
-        businessDescription || ''
+        businessDescription || '',
+        businessId,  // ← Usa l'ID esistente
+        ownerId // ← Verifica che l'owner sia corretto
       ]);
       
-      console.log(`💼 Business created/updated: ${dbBusinessId} for owner: ${ownerId}`);
+      if (businessResult.rows.length === 0) {
+        throw new Error(`Business not found or owner mismatch: ${businessId} for owner: ${ownerId}`);
+      }
+      
+      console.log(`💼 Business updated: ${businessId} for owner: ${ownerId}`);
       
       // Ora aggiorna il website esistente (creato da VendiOnline-EU)
       
@@ -867,10 +868,7 @@ REGOLE ASSOLUTE:
         websiteId                             // $3 id (WHERE condition)
       ]);
       
-      console.log(`🌐 Website updated: ${websiteId} for business: ${dbBusinessId}`);
-      
-      // Le variabili sono già corrette: websiteId ricevuto da VendiOnline-EU
-      businessId = dbBusinessId;
+      console.log(`🌐 Website updated: ${websiteId} for business: ${businessId}`);
       
     } catch (dbError) {
       console.error('❌ Database save error:', dbError.message);
