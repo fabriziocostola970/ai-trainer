@@ -18,6 +18,69 @@ const pool = new Pool({
 });
 
 /**
+ * 🔄 AGGIORNA NAVBAR IN TUTTE LE PAGINE ESISTENTI
+ * Quando si crea una nuova pagina, aggiorna anche tutte le esistenti
+ */
+async function updateAllPagesNavbar(websiteId, businessName, pool) {
+  console.log('🔄 [NAVBAR-UPDATE] Aggiornamento navbar in tutte le pagine esistenti...');
+  
+  try {
+    // 1. Genera nuovo navbar dinamico
+    const { generateDynamicNavbar } = require('../components/navbar-generator');
+    const newNavbar = await generateDynamicNavbar(websiteId, businessName, pool);
+    
+    console.log('🔍 [NAVBAR-UPDATE] Nuovo navbar generato, lunghezza:', newNavbar.length);
+    
+    // 2. Trova tutte le pagine del sito
+    const pagesQuery = `
+      SELECT id, name, content 
+      FROM website_pages 
+      WHERE "websiteId" = $1 AND "isActive" = true
+    `;
+    const result = await pool.query(pagesQuery, [websiteId]);
+    
+    console.log(`📄 [NAVBAR-UPDATE] Trovate ${result.rows.length} pagine da aggiornare`);
+    
+    // 3. Aggiorna navbar in ogni pagina
+    for (const page of result.rows) {
+      let updatedContent = page.content;
+      let wasUpdated = false;
+      
+      // Metodo 1: Sostituisci placeholder (preferito)
+      if (updatedContent.includes('<!-- DYNAMIC_NAVBAR_PLACEHOLDER -->')) {
+        updatedContent = updatedContent.replace('<!-- DYNAMIC_NAVBAR_PLACEHOLDER -->', newNavbar);
+        wasUpdated = true;
+        console.log(`🔄 [NAVBAR-UPDATE] ${page.name}: Sostituito placeholder`);
+      }
+      // Metodo 2: Sostituisci <nav>...</nav> (fallback)
+      else if (updatedContent.includes('<nav')) {
+        const originalLength = updatedContent.length;
+        updatedContent = updatedContent.replace(/<nav[\s\S]*?<\/nav>/gi, newNavbar);
+        wasUpdated = updatedContent.length !== originalLength;
+        console.log(`🔄 [NAVBAR-UPDATE] ${page.name}: Sostituito tag nav (${originalLength} → ${updatedContent.length})`);
+      }
+      else {
+        console.log(`⚠️ [NAVBAR-UPDATE] ${page.name}: Nessun navbar trovato da sostituire`);
+      }
+      
+      // 4. Salva contenuto aggiornato solo se cambiato
+      if (wasUpdated) {
+        await pool.query(
+          'UPDATE website_pages SET content = $1, "updatedAt" = NOW() WHERE id = $2',
+          [updatedContent, page.id]
+        );
+        console.log(`✅ [NAVBAR-UPDATE] Aggiornata pagina: ${page.name}`);
+      }
+    }
+    
+    console.log(`🎯 [NAVBAR-UPDATE] Processo completato - ${result.rows.length} pagine controllate`);
+    
+  } catch (error) {
+    console.error('❌ [NAVBAR-UPDATE] Errore durante aggiornamento:', error);
+  }
+}
+
+/**
  * 🎨 NAVBAR TEMPLATE STATICA - Design Perfetto e Responsive
  * Navbar moderna con menu hamburger funzionante e link dinamici
  */
@@ -854,6 +917,11 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
     const pageSlug = pageType.toLowerCase().replace(/\s+/g, '-');
     const saveResult = savePageToStatic(pageSlug, cleanHTML, businessName);
     console.log(`📁 [STATIC-SAVE] ${saveResult.success ? '✅ Saved' : '❌ Failed'}: ${pageSlug}`);
+
+    // 🔄 AGGIORNA NAVBAR IN TUTTE LE PAGINE ESISTENTI
+    if (websiteId) {
+      await updateAllPagesNavbar(websiteId, businessName, pool);
+    }
 
     // RESPONSE OTTIMIZZATA PER VENDIONLINE CON COST TRACKING
     res.json({
