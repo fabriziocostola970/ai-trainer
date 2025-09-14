@@ -1,9 +1,8 @@
 // Global error handlers for diagnostics
 process.on('uncaughtException', (err, origin) => {
   console.error(`\n\nFATAL: Uncaught Exception\nERROR: ${err.stack || err}\nORIGIN: ${origin}\n`);
-  process.exit(1)// 🎨 CLAUDE PAGE GENERATOR ROUTES (Multi-Page System with Style DNA) - v1.1
-const claudePageRouter = require('./src/api/claude-page-generator');
-app.use('/api/claude', claudePageRouter);});
+  process.exit(1);
+});
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error(`\n\nFATAL: Unhandled Rejection\nPROMISE: ${promise}\nREASON: ${reason.stack || reason}\n`);
@@ -206,11 +205,11 @@ app.get('/api/design/extraction-stats', (req, res) => {
 const claudeRouter = require('./src/api/claude-website-generator');
 app.use('/api/claude', claudeRouter);
 
-// 🎨 CLAUDE HTML GENERATOR ROUTES (Direct HTML Generation)
+// 🎨 CLAUDE HTML GENERATOR ROUTES (Navbar Dinamica + HTML Generation)
 const claudeHtmlRouter = require('./src/api/claude-html-generator');
 app.use('/api/claude', claudeHtmlRouter);
 
-// � CLAUDE PAGE GENERATOR ROUTES (Multi-Page System with Style DNA)
+// 🎨 CLAUDE PAGE GENERATOR ROUTES (Multi-Page System with Style DNA)
 const claudePageRouter = require('./src/api/claude-page-generator');
 app.use('/api/claude', claudePageRouter);
 

@@ -1,10 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
+const { Pool } = require('pg');
 
 // CLAUDE SONNET 4 - GENERAZIONE PAGINE SECONDARIE CON STYLE DNA
 const anthropic = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY,
+});
+
+// 🗄️ POSTGRESQL CONNECTION POOL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 /**
@@ -210,28 +220,44 @@ function generateStaticNavbar(businessName, menuItems = []) {
 async function generateNavbarWithDatabase(websiteId, businessName) {
   try {
     console.log('🔧 [NAVBAR-DB] Recupero menu items per websiteId:', websiteId);
+    console.log('🔍 [NAVBAR-DB] Pool disponibile:', !!pool);
+    console.log('🔍 [NAVBAR-DB] WebsiteId:', websiteId);
     
     let menuItems = [];
     
-    // Se abbiamo websiteId, prova a recuperare dal database
+    // Se abbiamo websiteId, prova a recuperare dal database DIRETTAMENTE
     if (websiteId) {
-      const vendionlineUrl = process.env.VENDIONLINE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${vendionlineUrl}/api/website/menu-items?websiteId=${websiteId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-AI-Trainer-Key': process.env.AI_TRAINER_API_KEY || '',
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.menuItems) {
-          menuItems = data.menuItems;
-          console.log(`✅ [NAVBAR-DB] Recuperati ${menuItems.length} menu items dal database`);
-        }
+      const pagesQuery = `
+        SELECT id, name, slug, "pageType", "pageOrder", "isHomepage", "isActive"
+        FROM website_pages 
+        WHERE "websiteId" = $1 AND "isActive" = true
+        ORDER BY "pageOrder" ASC, "createdAt" ASC
+      `;
+      
+      console.log('🔍 [NAVBAR-DB] Eseguendo query:', pagesQuery);
+      console.log('🔍 [NAVBAR-DB] Con parametro websiteId:', websiteId);
+      
+      const result = await pool.query(pagesQuery, [websiteId]);
+      const pages = result.rows;
+      
+      console.log('🔍 [NAVBAR-DB] Risultato query - rows:', pages.length);
+      console.log('🔍 [NAVBAR-DB] Prime 2 pagine:', pages.slice(0, 2));
+      
+      if (pages.length > 0) {
+        // Trasforma le pagine in menu items
+        menuItems = pages.map(page => ({
+          name: page.name,
+          href: page.slug.startsWith('/') ? page.slug : `/${page.slug}`,
+          pageType: page.pageType,
+          pageOrder: page.pageOrder,
+          isHomepage: page.isHomepage,
+          isActive: page.isActive
+        }));
+        
+        console.log(`✅ [NAVBAR-DB] Recuperati ${menuItems.length} menu items dal database`);
+        console.log('🔍 [NAVBAR-DB] Menu items:', menuItems.map(m => `${m.name}:${m.href}`).join(', '));
       } else {
-        console.warn('⚠️ [NAVBAR-DB] API fallita, usando menu di default');
+        console.log('⚠️ [NAVBAR-DB] Nessuna pagina trovata nel database');
       }
     }
     
@@ -239,7 +265,10 @@ async function generateNavbarWithDatabase(websiteId, businessName) {
     return generateStaticNavbar(businessName, menuItems);
     
   } catch (error) {
-    console.error('❌ [NAVBAR-DB] Errore:', error.message);
+    console.error('❌ [NAVBAR-GENERATOR] Errore database completo:', error);
+    console.error('❌ [NAVBAR-GENERATOR] Error message:', error.message);
+    console.error('❌ [NAVBAR-GENERATOR] Error stack:', error.stack);
+    console.error('❌ [NAVBAR-GENERATOR] Pool status:', !!pool);
     // In caso di errore, usa navbar statica con menu di default
     return generateStaticNavbar(businessName, []);
   }
