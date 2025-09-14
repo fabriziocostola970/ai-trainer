@@ -201,6 +201,120 @@ app.get('/api/design/extraction-stats', (req, res) => {
   });
 });
 
+// 🔍 SEO FUNCTIONS - Sistema routing dinamico con SEO
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
+
+/**
+ * 🔍 TROVA PAGINA PER SLUG
+ */
+async function findPageBySlug(slug) {
+  try {
+    const query = `
+      SELECT p.*, w."businessName" 
+      FROM website_pages p 
+      JOIN websites w ON p."websiteId" = w.id 
+      WHERE p.slug = $1 AND p."isActive" = true
+      LIMIT 1
+    `;
+    
+    const result = await pool.query(query, [slug.startsWith('/') ? slug : `/${slug}`]);
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('❌ [SEO] Errore ricerca pagina:', error);
+    return null;
+  }
+}
+
+/**
+ * 🔍 TROVA HOMEPAGE
+ */
+async function findHomepage(websiteId) {
+  try {
+    const query = `
+      SELECT p.*, w."businessName" 
+      FROM website_pages p 
+      JOIN websites w ON p."websiteId" = w.id 
+      WHERE p."isHomepage" = true AND p."isActive" = true
+      ${websiteId ? 'AND p."websiteId" = $1' : ''}
+      LIMIT 1
+    `;
+    
+    const params = websiteId ? [websiteId] : [];
+    const result = await pool.query(query, params);
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('❌ [SEO] Errore ricerca homepage:', error);
+    return null;
+  }
+}
+
+/**
+ * 🎯 INJECTION SEO METADATA
+ */
+function injectSeoMetadata(page) {
+  let html = page.content;
+  
+  // ✅ Title dinamico con fallback
+  const pageTitle = page.seoTitle || page.name;
+  const businessName = page.businessName || 'Sito Web';
+  const fullTitle = page.isHomepage ? `${businessName}` : `${pageTitle} - ${businessName}`;
+  
+  html = html.replace(
+    /<title>.*?<\/title>/i, 
+    `<title>${fullTitle}</title>`
+  );
+  
+  // ✅ Meta description con fallback
+  const description = page.seoDescription || `Scopri ${page.name} di ${businessName}. Qualità e professionalità al vostro servizio.`;
+  
+  // ✅ SEO Meta Tags completi
+  const seoMetaTags = `
+    <meta name="description" content="${description}">
+    <meta name="keywords" content="${page.name}, ${businessName}, ${page.pageType}">
+    <meta name="author" content="${businessName}">
+    <meta name="robots" content="index, follow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="${fullTitle}">
+    <meta property="og:description" content="${description}">
+    <meta property="og:site_name" content="${businessName}">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="${fullTitle}">
+    <meta name="twitter:description" content="${description}">
+    
+    <!-- Schema.org for Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "${pageTitle}",
+      "description": "${description}",
+      "publisher": {
+        "@type": "Organization",
+        "name": "${businessName}"
+      }
+    }
+    </script>
+  `;
+  
+  // Inserisci meta tag prima di </head>
+  html = html.replace('</head>', `${seoMetaTags}\n</head>`);
+  
+  return html;
+}
+
 // 🎨 CLAUDE WEBSITE GENERATOR ROUTES
 const claudeRouter = require('./src/api/claude-website-generator');
 app.use('/api/claude', claudeRouter);
@@ -216,6 +330,44 @@ app.use('/api/claude', claudePageRouter);
 // �🌐 PREVIEW ROUTES (Static HTML Sites)
 const previewRouter = require('./src/api/preview');
 app.use('/api/preview', previewRouter);
+
+// 🎯 SEO ROUTES - Sistema routing dinamico per pagine dal database
+app.get('/:slug', async (req, res) => {
+  try {
+    const slug = req.params.slug;
+    
+    console.log(`🔍 [SEO-ROUTE] Ricerca pagina per slug: ${slug}`);
+    
+    // Cerca pagina nel database
+    const page = await findPageBySlug(slug);
+    
+    if (!page) {
+      console.log(`❌ [SEO-ROUTE] Pagina non trovata: ${slug}`);
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Pagina non trovata</title></head>
+        <body>
+          <h1>404 - Pagina non trovata</h1>
+          <p>La pagina "${slug}" non esiste.</p>
+          <a href="/">Torna alla homepage</a>
+        </body>
+        </html>
+      `);
+    }
+    
+    console.log(`✅ [SEO-ROUTE] Pagina trovata: ${page.name} (${page.pageType})`);
+    
+    // Inietta metadata SEO
+    const seoHtml = injectSeoMetadata(page);
+    
+    res.send(seoHtml);
+    
+  } catch (error) {
+    console.error('❌ [SEO-ROUTE] Errore:', error);
+    res.status(500).send('Errore interno del server');
+  }
+});
 
 // Basic root endpoint
 app.get('/', (req, res) => {
