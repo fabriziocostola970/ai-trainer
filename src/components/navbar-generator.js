@@ -16,6 +16,9 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
   console.log('🚀 [NAVBAR-GENERATOR] Generazione navbar per websiteId:', websiteId);
   
   try {
+    console.log('🔍 [NAVBAR-DB] Pool disponibile:', !!pool);
+    console.log('🔍 [NAVBAR-DB] WebsiteId:', websiteId);
+    
     // 📊 QUERY PAGINE DAL DATABASE
     const pagesQuery = `
       SELECT id, name, slug, "pageType", "pageOrder", "isHomepage", "isActive"
@@ -24,8 +27,14 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
       ORDER BY "pageOrder" ASC, "createdAt" ASC
     `;
     
+    console.log('🔍 [NAVBAR-DB] Eseguendo query:', pagesQuery);
+    console.log('🔍 [NAVBAR-DB] Con parametro websiteId:', websiteId);
+    
     const result = await pool.query(pagesQuery, [websiteId]);
     const pages = result.rows;
+    
+    console.log('🔍 [NAVBAR-DB] Risultato query - rows:', pages.length);
+    console.log('🔍 [NAVBAR-DB] Prime 2 pagine:', pages.slice(0, 2));
     
     console.log(`📄 [NAVBAR-GENERATOR] Trovate ${pages.length} pagine attive per navbar`);
     
@@ -73,7 +82,10 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
     return generateStaticNavbar(businessName, menuItems);
     
   } catch (error) {
-    console.error('❌ [NAVBAR-GENERATOR] Errore database:', error.message);
+    console.error('❌ [NAVBAR-GENERATOR] Errore database completo:', error);
+    console.error('❌ [NAVBAR-GENERATOR] Error message:', error.message);
+    console.error('❌ [NAVBAR-GENERATOR] Error stack:', error.stack);
+    console.error('❌ [NAVBAR-GENERATOR] Pool status:', !!pool);
     // Fallback navbar base
     return generateStaticNavbar(businessName, []);
   }
