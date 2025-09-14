@@ -39,7 +39,7 @@ function generateStaticNavbar(businessName, menuItems = []) {
       .sort((a, b) => (a.pageOrder || 0) - (b.pageOrder || 0))
       .map(item => ({
         name: item.name,
-        href: `/${item.slug}`,
+        href: item.slug?.startsWith('/') ? item.slug : `/${item.slug}`, // 🔧 FIX: Gestisci slug con slash
         pageType: item.pageType
       }));
     
