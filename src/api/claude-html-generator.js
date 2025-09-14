@@ -213,66 +213,146 @@ function generateStaticNavbar(businessName, menuItems = []) {
 }
 
 /**
- * 🚀 NAVBAR WITH DATABASE INTEGRATION (HOMEPAGE)
- * Genera navbar statica popolata con dati dinamici dal database
+ * 🚀 NAVBAR DINAMICA - Genera navbar con JavaScript che carica menu items da API
+ * HOME fisso + menu items dinamici dal database (come PHP)
  */
-async function generateNavbarWithDatabase(websiteId, businessName) {
-  try {
-    console.log('🔧 [NAVBAR-DEBUG] INIZIO funzione con parametri:');
-    console.log('🔧 [NAVBAR-DEBUG] websiteId:', websiteId);
-    console.log('🔧 [NAVBAR-DEBUG] businessName:', businessName);
-    console.log('🔧 [NAVBAR-DEBUG] websiteId tipo:', typeof websiteId);
-    
-    let menuItems = [];
-    
-    // Se abbiamo websiteId, prova a recuperare dal database
-    if (websiteId) {
-      console.log('✅ [NAVBAR-DEBUG] WebsiteId presente, eseguo query API...');
-      const vendionlineUrl = process.env.VENDIONLINE_API_URL || 'http://localhost:3001';
-      console.log('🔧 [NAVBAR-DEBUG] URL API:', vendionlineUrl);
-      console.log('🔧 [NAVBAR-DEBUG] Costruisco URL completo...');
-      
-      const fullUrl = `${vendionlineUrl}/api/website/menu-items?websiteId=${websiteId}`;
-      console.log('🔧 [NAVBAR-DEBUG] URL finale:', fullUrl);
-      
-      const response = await fetch(fullUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-AI-Trainer-Key': process.env.AI_TRAINER_API_KEY || '',
-        }
-      });
+async function generateDynamicNavbar(websiteId, businessName) {
+  console.log('� [DYNAMIC-NAVBAR] Generazione navbar dinamica per websiteId:', websiteId);
+  
+  const vendionlineUrl = process.env.VENDIONLINE_API_URL || 'https://vendionline-eu-production.up.railway.app';
+  
+  return `
+    <!-- � DYNAMIC NAVBAR - Home fisso + menu dinamici -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <!-- Logo -->
+          <div class="flex-shrink-0">
+            <a href="/" class="text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
+              ${businessName || 'Business'}
+            </a>
+          </div>
+          
+          <!-- Menu Items -->
+          <div class="hidden md:block">
+            <div class="ml-10 flex items-baseline space-x-4" id="navbar-menu">
+              <!-- HOME - sempre presente -->
+              <a href="/" class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                Home
+              </a>
+              <!-- Menu dinamici caricati da JavaScript -->
+              <div id="dynamic-menu-items" class="inline-flex space-x-4">
+                <!-- Caricamento in corso... -->
+                <span class="text-gray-400 text-sm">Caricamento menu...</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Mobile menu button -->
+          <div class="md:hidden">
+            <button id="mobile-menu-button" class="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600">
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="md:hidden hidden">
+          <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+            <a href="/" class="text-gray-900 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+              Home
+            </a>
+            <div id="mobile-dynamic-menu">
+              <!-- Menu dinamici mobile -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
 
-      console.log('🔧 [NAVBAR-DEBUG] Response status:', response.status);
-      console.log('🔧 [NAVBAR-DEBUG] Response ok:', response.ok);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('🔧 [NAVBAR-DEBUG] Response data:', JSON.stringify(data, null, 2));
-        if (data.success && data.menuItems) {
-          menuItems = data.menuItems;
-          console.log(`✅ [NAVBAR-DB-HP] Recuperati ${menuItems.length} menu items dal database`);
-        } else {
-          console.warn('⚠️ [NAVBAR-DEBUG] Response success=false o menuItems vuoto');
+    <script>
+      // 🚀 CARICAMENTO DINAMICO MENU - Come PHP!
+      console.log('� [DYNAMIC-MENU] Inizio caricamento menu dinamico...');
+      
+      async function loadDynamicMenu() {
+        try {
+          console.log('� [DYNAMIC-MENU] Chiamata API per websiteId: ${websiteId}');
+          
+          const response = await fetch('${vendionlineUrl}/api/website/menu-items?websiteId=${websiteId}', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-AI-Trainer-Key': '${process.env.AI_TRAINER_API_KEY || ''}'
+            }
+          });
+          
+          console.log('� [DYNAMIC-MENU] Response status:', response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('� [DYNAMIC-MENU] Data ricevuto:', data);
+            
+            if (data.success && data.menuItems) {
+              // Filtra solo le pagine NON homepage
+              const secondaryPages = data.menuItems.filter(item => !item.isHomepage);
+              console.log('🔍 [DYNAMIC-MENU] Pagine secondarie:', secondaryPages);
+              
+              // Genera HTML per menu desktop
+              const desktopMenuHTML = secondaryPages.map(item => 
+                \`<a href="\${item.href}" class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                  \${item.name}
+                </a>\`
+              ).join('');
+              
+              // Genera HTML per menu mobile
+              const mobileMenuHTML = secondaryPages.map(item => 
+                \`<a href="\${item.href}" class="text-gray-900 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                  \${item.name}
+                </a>\`
+              ).join('');
+              
+              // Aggiorna menu desktop
+              const desktopContainer = document.getElementById('dynamic-menu-items');
+              if (desktopContainer) {
+                desktopContainer.innerHTML = desktopMenuHTML;
+                console.log('✅ [DYNAMIC-MENU] Menu desktop aggiornato con', secondaryPages.length, 'items');
+              }
+              
+              // Aggiorna menu mobile
+              const mobileContainer = document.getElementById('mobile-dynamic-menu');
+              if (mobileContainer) {
+                mobileContainer.innerHTML = mobileMenuHTML;
+                console.log('✅ [DYNAMIC-MENU] Menu mobile aggiornato');
+              }
+              
+            } else {
+              console.warn('⚠️ [DYNAMIC-MENU] Nessun menu item trovato');
+              document.getElementById('dynamic-menu-items').innerHTML = '';
+            }
+          } else {
+            throw new Error(\`API failed with status \${response.status}\`);
+          }
+        } catch (error) {
+          console.error('❌ [DYNAMIC-MENU] Errore caricamento menu:', error);
+          document.getElementById('dynamic-menu-items').innerHTML = 
+            '<span class="text-red-400 text-sm">Errore caricamento menu</span>';
         }
-      } else {
-        const errorText = await response.text();
-        console.warn('⚠️ [NAVBAR-DEBUG] API failed with status:', response.status);
-        console.warn('⚠️ [NAVBAR-DEBUG] Error text:', errorText);
-        console.warn('⚠️ [NAVBAR-DB-HP] API fallita, usando menu di default');
       }
-    } else {
-      console.warn('❌ [NAVBAR-DEBUG] WebsiteId è vuoto/null/undefined!');
-    }
-    
-    // Genera navbar statica con i menu items (o default se vuoti)
-    return generateStaticNavbar(businessName, menuItems);
-    
-  } catch (error) {
-    console.error('❌ [NAVBAR-DB-HP] Errore:', error.message);
-    // In caso di errore, usa navbar statica con menu di default
-    return generateStaticNavbar(businessName, []);
-  }
+      
+      // Carica menu al caricamento pagina
+      document.addEventListener('DOMContentLoaded', loadDynamicMenu);
+      
+      // Mobile menu toggle
+      document.getElementById('mobile-menu-button')?.addEventListener('click', function() {
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenu.classList.toggle('hidden');
+      });
+      
+      console.log('🚀 [DYNAMIC-MENU] Script di caricamento menu inizializzato');
+    </script>
+  `;
 }
 
 /**
@@ -694,8 +774,8 @@ REGOLE ASSOLUTE:
     console.log('🚀 [NAVBAR-INJECTION-HP] Aggiunta navbar statica alla homepage...');
     
     try {
-      // Per la homepage usiamo navbar statica con database integration
-      const dynamicNavbar = await generateNavbarWithDatabase(websiteId, businessName);
+      // Per la homepage usiamo navbar dinamica (come PHP!)
+      const dynamicNavbar = await generateDynamicNavbar(websiteId, businessName);
       
       // Metodo 1: Sostituisci navbar esistente se presente
       if (cleanHTML.includes('<nav')) {
@@ -879,7 +959,7 @@ REGOLE ASSOLUTE:
         ON CONFLICT ("websiteId", slug) DO UPDATE SET
           content = $5,
           "updatedAt" = NOW()
-        RETURNING id;
+        RETURNING id; 
       `;
       
       const pageId = `page_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
