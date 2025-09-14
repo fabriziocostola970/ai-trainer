@@ -674,12 +674,12 @@ FRAMEWORK STILISTICO RICHIESTO:
 - Filtri interattivi funzionanti
 - Elementi decorativi (forme geometriche, patterns)
 
-🚫 NAVBAR REQUIREMENTS - NON CREARE NAVBAR:
-- NON includere tag <nav> o elementi di navigazione
-- NON creare menu o link di navigazione  
-- NON includere header di navigazione
-- Concentrati solo sul contenuto principale della pagina
-- Inizia direttamente con sezioni hero/main content
+🚫 NAVBAR REQUIREMENTS - CREA NAVBAR DINAMICA:
+- Includi navbar responsive con logo del business
+- Aggiungi links per: Home, Chi Siamo, Servizi, Contatti
+- Usa IDs specifici per integrazione JavaScript dinamica
+- Navbar fissa in alto con effetti scroll
+- Menu mobile hamburger funzionante
 
 
 
@@ -770,36 +770,7 @@ REGOLE ASSOLUTE:
     // Rimuovi eventuali wrapper markdown rimanenti
     cleanHTML = cleanHTML.replace(/^```html\n?/gm, '').replace(/\n?```$/gm, '');
 
-    // 🚀 NAVBAR TEMPLATE INJECTION - Homepage con navbar base
-    console.log('🚀 [NAVBAR-INJECTION-HP] Aggiunta navbar statica alla homepage...');
-    
-    try {
-      // Per la homepage usiamo navbar dinamica (come PHP!)
-      const dynamicNavbar = await generateDynamicNavbar(websiteId, businessName);
-      
-      // Metodo 1: Sostituisci navbar esistente se presente
-      if (cleanHTML.includes('<nav')) {
-        console.log('🔄 [NAVBAR-INJECTION-HP] Sostituzione navbar esistente...');
-        cleanHTML = cleanHTML.replace(/<nav[\s\S]*?<\/nav>/gi, dynamicNavbar);
-      } 
-      // Metodo 2: Inserisci navbar dopo <body> se non presente
-      else if (cleanHTML.includes('<body')) {
-        console.log('🔧 [NAVBAR-INJECTION-HP] Inserimento navbar dopo <body>...');
-        cleanHTML = cleanHTML.replace(/<body([^>]*)>/i, `<body$1>\n${dynamicNavbar}`);
-      }
-      // Metodo 3: Inserisci all'inizio del contenuto
-      else if (cleanHTML.includes('<html')) {
-        console.log('🔧 [NAVBAR-INJECTION-HP] Inserimento navbar all\'inizio...');
-        const insertPoint = cleanHTML.indexOf('>') + 1;
-        cleanHTML = cleanHTML.slice(0, insertPoint) + '\n' + dynamicNavbar + cleanHTML.slice(insertPoint);
-      }
-      
-      console.log('✅ [NAVBAR-INJECTION-HP] Navbar base injection completata');
-      
-    } catch (navbarError) {
-      console.error('❌ [NAVBAR-INJECTION-HP] Errore:', navbarError.message);
-      // Continua comunque con l'HTML originale
-    }
+    console.log('✅ HTML generato da Claude Sonnet pronto per il salvataggio');
 
     // 🔧 POST-PROCESSING: Aggiungi automaticamente toggleMobileMenu se mancante
     if (!cleanHTML.includes('toggleMobileMenu')) {
@@ -826,48 +797,6 @@ REGOLE ASSOLUTE:
     }
 
     // 🔧 SOLUZIONE DEFINITIVA: Forza SEMPRE l'aggiornamento con script corretto
-    console.log('🔧 [FORCE-UPDATE] Ensuring toggleMobileMenu is present...');
-    
-    // Forza sempre la presenza dello script (anche se già presente)
-    const forceToggleScript = `
-    <script>
-    function toggleMobileMenu() {
-        const menu = document.getElementById('mobileMenu');
-        if (menu) {
-            menu.classList.toggle('hidden');
-        }
-    }
-    
-    // Auto-attach event listener to hamburger button
-    document.addEventListener('DOMContentLoaded', function() {
-        const hamburgerBtn = document.getElementById('hamburger-btn') || 
-                           document.querySelector('button[onclick*="toggleMobileMenu"]') ||
-                           document.querySelector('button i.fa-bars').parentElement;
-        if (hamburgerBtn) {
-            hamburgerBtn.onclick = toggleMobileMenu;
-        }
-    });
-    </script>`;
-
-    // Rimuovi eventuali script esistenti duplicati e aggiungi quello nuovo
-    cleanHTML = cleanHTML.replace(/<script>[\s\S]*?toggleMobileMenu[\s\S]*?<\/script>/g, '');
-    
-    // Assicurati che il pulsante hamburger abbia almeno un id
-    if (!cleanHTML.includes('id="hamburger-btn"') && !cleanHTML.includes('onclick="toggleMobileMenu()"')) {
-      cleanHTML = cleanHTML.replace(
-        /<button([^>]*class="[^"]*"[^>]*)><i class="fas fa-bars/g,
-        '<button$1 id="hamburger-btn"><i class="fas fa-bars'
-      );
-    }
-    
-    if (cleanHTML.includes('</body>')) {
-      cleanHTML = cleanHTML.replace('</body>', `${forceToggleScript}\n</body>`);
-      console.log('✅ [FORCE-UPDATE] toggleMobileMenu script with auto-attach forcibly added before </body>');
-    } else {
-      cleanHTML += forceToggleScript;
-      console.log('✅ [FORCE-UPDATE] toggleMobileMenu script with auto-attach forcibly added at end');
-    }
-    
     console.log(`🧹 HTML cleaning: Original length: ${htmlContent.length}, Clean length: ${cleanHTML.length}`);
 
     // VERIFICA CHE SIA HTML VALIDO
