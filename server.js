@@ -201,7 +201,46 @@ app.get('/api/design/extraction-stats', (req, res) => {
   });
 });
 
-// 🔍 SEO FUNCTIONS - Sistema routing dinamico con SEO
+// � NAVBAR UPDATE ENDPOINT - Chiamato da VendiOnline-EU quando si aggiorna una pagina
+app.post('/update-navbar', async (req, res) => {
+  try {
+    const { websiteId, businessName } = req.body;
+    
+    console.log(`🔄 [NAVBAR-UPDATE-API] Received request for websiteId: ${websiteId}, business: ${businessName}`);
+    
+    if (!websiteId || !businessName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: websiteId, businessName'
+      });
+    }
+
+    // Import and call navbar update function
+    const { updateAllPagesNavbar } = require('./src/api/claude-page-generator.js');
+    
+    await updateAllPagesNavbar(websiteId, businessName, pool);
+    
+    console.log(`✅ [NAVBAR-UPDATE-API] Successfully updated navbar for website: ${websiteId}`);
+    
+    res.json({
+      success: true,
+      message: 'Navbar updated successfully',
+      websiteId: websiteId,
+      businessName: businessName,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ [NAVBAR-UPDATE-API] Error updating navbar:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// �🔍 SEO FUNCTIONS - Sistema routing dinamico con SEO
 const { Pool } = require('pg');
 
 const pool = new Pool({
