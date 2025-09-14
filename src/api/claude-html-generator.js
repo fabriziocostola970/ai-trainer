@@ -870,6 +870,34 @@ REGOLE ASSOLUTE:
       
       console.log(`🌐 Website updated: ${websiteId} for business: ${businessId}`);
       
+      // 🆕 FASE 2: Scrive ANCHE in website_pages per architettura futura
+      console.log('📄 Creating homepage record in website_pages...');
+      
+      const pageQuery = `
+        INSERT INTO website_pages (id, "websiteId", name, slug, content, "pageType", "pageOrder", "isHomepage", "isActive", "createdAt", "updatedAt")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+        ON CONFLICT ("websiteId", slug) DO UPDATE SET
+          content = $5,
+          "updatedAt" = NOW()
+        RETURNING id;
+      `;
+      
+      const pageId = `page_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const pageResult = await pool.query(pageQuery, [
+        pageId,          // $1 id
+        websiteId,       // $2 websiteId  
+        'Home',          // $3 name
+        '',              // $4 slug (homepage = empty string)
+        cleanHTML,       // $5 content (HTML completo)
+        'homepage',      // $6 pageType
+        0,               // $7 pageOrder (homepage sempre prima)
+        true,            // $8 isHomepage
+        true             // $9 isActive
+      ]);
+      
+      console.log(`📄 Homepage page created in website_pages: ${pageId}`);
+      
     } catch (dbError) {
       console.error('❌ Database save error:', dbError.message);
       // Non blocchiamo la response se il DB fallisce
