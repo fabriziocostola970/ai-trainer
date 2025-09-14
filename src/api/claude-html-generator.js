@@ -943,7 +943,7 @@ REGOLE ASSOLUTE:
       };
 
       const websiteResult = await pool.query(websiteQuery, [
-        JSON.stringify({ html: cleanHTML }),  // $1 content
+        cleanHTML,                            // $1 content - HTML diretto!
         JSON.stringify(websiteDesign),        // $2 design
         websiteId                             // $3 id (WHERE condition)
       ]);
