@@ -55,9 +55,12 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
     
     // Aggiungi pagine secondarie
     secondaryPages.forEach(page => {
+      // 🔧 FIX: Gestisci slug che già hanno il slash iniziale
+      const href = page.slug.startsWith('/') ? page.slug : `/${page.slug}`;
+      
       menuItems.push({
         name: page.name,
-        href: `/${page.slug}`,
+        href: href,
         pageType: page.pageType,
         pageOrder: page.pageOrder
       });
