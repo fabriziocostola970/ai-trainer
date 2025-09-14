@@ -418,8 +418,10 @@ ${designConventions ? `
 'Usa font della homepage'}
 ` : ''}
 
-REQUISITI DI COERENZA:
-- NAVBAR: NON creare navigazione - viene aggiunta automaticamente dal sistema
+REQUISITI DI COERENZA NAVBAR:
+- NAVBAR PLACEHOLDER: Usa ESATTAMENTE questo placeholder: <!-- DYNAMIC_NAVBAR_PLACEHOLDER -->
+- NON creare navbar hardcoded - usa SOLO il placeholder che verrà sostituito automaticamente
+- Il placeholder deve essere posizionato subito dopo <body> prima del contenuto principale
 - NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
 - FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
 
@@ -634,7 +636,7 @@ STRUTTURA HTML RICHIESTA:
     </style>
 </head>
 <body>
-    <!-- NON CREARE NAVBAR: La navigazione viene aggiunta automaticamente dal sistema -->
+    <!-- DYNAMIC_NAVBAR_PLACEHOLDER -->
     <!-- CONTENUTO PRINCIPALE DELLA PAGINA -->
     <!-- FOOTER COERENTE: Copia esattamente footer e contenuti della homepage -->
     
@@ -749,32 +751,30 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
       .replace(/^\s*```\s*/gm, '')
       .trim();
 
-    // � NAVBAR TEMPLATE INJECTION - Sostituisce/aggiunge navbar dinamica
+    // 🎯 NAVBAR PLACEHOLDER INJECTION - Stesso sistema della homepage
     console.log('🚀 [NAVBAR-INJECTION] Inizio sostituzione navbar...');
     
     try {
-      const dynamicNavbar = await generateNavbarWithDatabase(websiteId, businessName);
-      console.log('🔍 [NAVBAR-INJECTION] Dynamic navbar length:', dynamicNavbar.length);
-      console.log('🔍 [NAVBAR-INJECTION] HTML contains <nav>:', cleanHTML.includes('<nav'));
+      // Usa la stessa funzione della homepage con pool database
+      const { generateDynamicNavbar } = require('../components/navbar-generator');
+      const dynamicNavbar = await generateDynamicNavbar(websiteId, businessName, pool);
       
-      // Metodo 1: Sostituisci navbar esistente se presente
-      if (cleanHTML.includes('<nav')) {
-        console.log('🔄 [NAVBAR-INJECTION] Sostituzione navbar esistente...');
-        const originalLength = cleanHTML.length;
-        cleanHTML = cleanHTML.replace(/<nav[\s\S]*?<\/nav>/gi, dynamicNavbar);
-        const newLength = cleanHTML.length;
-        console.log('🔍 [NAVBAR-INJECTION] Sostituzione: ', originalLength, '→', newLength, 'chars');
+      console.log('🔍 [NAVBAR-INJECTION] Dynamic navbar length:', dynamicNavbar.length);
+      console.log('🔍 [NAVBAR-INJECTION] HTML contains placeholder:', cleanHTML.includes('<!-- DYNAMIC_NAVBAR_PLACEHOLDER -->'));
+      
+      // Sostituisci placeholder con navbar dinamico (stesso sistema homepage)
+      if (cleanHTML.includes('<!-- DYNAMIC_NAVBAR_PLACEHOLDER -->')) {
+        console.log('🔄 [NAVBAR-INJECTION] Trovato placeholder, sostituisco con navbar dinamica...');
+        cleanHTML = cleanHTML.replace('<!-- DYNAMIC_NAVBAR_PLACEHOLDER -->', dynamicNavbar);
+        console.log('✅ [NAVBAR-INJECTION] Placeholder sostituito con successo!');
       } 
-      // Metodo 2: Inserisci navbar dopo <body> se non presente
+      // Fallback: se placeholder manca, inserisci dopo body
       else if (cleanHTML.includes('<body')) {
-        console.log('🔧 [NAVBAR-INJECTION] Inserimento navbar dopo <body>...');
+        console.log('🔧 [NAVBAR-INJECTION] Placeholder mancante, inserimento navbar dopo <body>...');
         cleanHTML = cleanHTML.replace(/<body([^>]*)>/i, `<body$1>\n${dynamicNavbar}`);
       }
-      // Metodo 3: Inserisci all'inizio del contenuto
-      else if (cleanHTML.includes('<html')) {
-        console.log('🔧 [NAVBAR-INJECTION] Inserimento navbar all\'inizio...');
-        const insertPoint = cleanHTML.indexOf('>') + 1;
-        cleanHTML = cleanHTML.slice(0, insertPoint) + '\n' + dynamicNavbar + cleanHTML.slice(insertPoint);
+      else {
+        console.warn('⚠️ [NAVBAR-INJECTION] Nessun metodo di injection disponibile');
       }
       
       console.log('✅ [NAVBAR-INJECTION] Navbar injection completata');
