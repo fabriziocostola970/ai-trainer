@@ -52,11 +52,14 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
     console.log(`🏠 Homepage: ${homePage?.name || 'Non trovata'}`);
     console.log(`📄 Pagine secondarie: ${secondaryPages.map(p => p.name).join(', ')}`);
     
-    // 🎨 Costruisci array menu items
+    // 🎨 Costruisci array menu items - FIX: Usa slug della homepage
+    const homeHref = homePage?.slug ? (homePage.slug.startsWith('/') ? homePage.slug : `/${homePage.slug}`) : '/';
+    console.log(`🔧 [HOME-FIX] Homepage href: ${homeHref}`);
+    
     const menuItems = [
       {
         name: 'Home',
-        href: '/',
+        href: homeHref,
         isHomepage: true,
         pageType: 'homepage'
       }
