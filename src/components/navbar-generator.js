@@ -119,7 +119,9 @@ function generateStaticNavbar(businessName, menuItems = []) {
   
   return `
   <!-- 🎨 NAVBAR DINAMICA RESPONSIVE - Generated: ${new Date().toISOString()} -->
-  <nav class="bg-white shadow-lg fixed w-full z-50 top-0 border-b border-gray-200" role="navigation" aria-label="Main navigation" data-navbar-version="${Date.now()}">
+  <!-- 🔄 CACHE BUSTER: ${Math.random().toString(36).substring(7)} -->
+  <nav class="bg-white shadow-lg fixed w-full z-50 top-0 border-b border-gray-200" role="navigation" aria-label="Main navigation" data-navbar-version="${Date.now()}" data-cache-buster="${Math.random()}">
+    <!-- 📊 DEBUG: Menu items count: ${finalMenuItems.length} -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         
@@ -186,6 +188,11 @@ function generateStaticNavbar(businessName, menuItems = []) {
   
   <!-- 📏 SPACER per navbar fixed -->
   <div class="h-16" aria-hidden="true"></div>
+  
+  <!-- 🚫 CACHE CONTROL -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   
   <!-- 🎯 JAVASCRIPT MOBILE MENU - Sempre Funzionante -->
   <script>
