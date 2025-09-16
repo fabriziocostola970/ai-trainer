@@ -52,9 +52,9 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
     console.log(`🏠 Homepage: ${homePage?.name || 'Non trovata'}`);
     console.log(`📄 Pagine secondarie: ${secondaryPages.map(p => p.name).join(', ')}`);
     
-    // 🎨 Costruisci array menu items - FIX: Usa slug della homepage
-    const homeHref = homePage?.slug ? (homePage.slug.startsWith('/') ? homePage.slug : `/${homePage.slug}`) : '/';
-    console.log(`🔧 [HOME-FIX] Homepage href: ${homeHref}`);
+    // 🎨 Costruisci array menu items - TEST: Link Home a preview
+    const homeHref = `/preview?businessId=[BUSINESS_ID]&websiteId=[WEBSITE_ID]`;
+    console.log(`🔧 [HOME-TEST] Homepage href: ${homeHref}`);
     
     const menuItems = [
       {
@@ -103,9 +103,9 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
 function generateStaticNavbar(businessName, menuItems = []) {
   console.log(`🎨 [NAVBAR-STATIC] Generazione navbar per: ${businessName} con ${menuItems.length} menu items`);
   
-  // ✅ DEFAULT: Solo HOME se non ci sono menu items
+  // ✅ DEFAULT: Solo HOME se non ci sono menu items - TEST: Link a preview
   const defaultMenuItems = [
-    { name: 'Home', href: '/', isHomepage: true }
+    { name: 'Home', href: '/preview?businessId=[BUSINESS_ID]&websiteId=[WEBSITE_ID]', isHomepage: true }
   ];
   
   // Se abbiamo menu items dal DB, usali, altrimenti usa default
