@@ -102,6 +102,7 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
  */
 function generateStaticNavbar(businessName, menuItems = []) {
   console.log(`🎨 [NAVBAR-STATIC] Generazione navbar per: ${businessName} con ${menuItems.length} menu items`);
+  console.log(`🔍 [DEBUG-MENU] Menu items completi:`, JSON.stringify(menuItems, null, 2));
   
   // ✅ DEFAULT: Solo HOME se non ci sono menu items
   const defaultMenuItems = [
@@ -116,6 +117,8 @@ function generateStaticNavbar(businessName, menuItems = []) {
   if (!hasHome) {
     finalMenuItems = [defaultMenuItems[0], ...finalMenuItems];
   }
+  
+  console.log(`🔍 [DEBUG-FINAL] Final menu items completi:`, JSON.stringify(finalMenuItems, null, 2));
   
   return `
   <!-- 🎨 NAVBAR DINAMICA RESPONSIVE -->
@@ -166,14 +169,18 @@ function generateStaticNavbar(businessName, menuItems = []) {
          aria-orientation="vertical" 
          aria-labelledby="hamburger-btn">
       <div class="px-2 pt-2 pb-3 space-y-1">
-        ${finalMenuItems.map(item => `
-          <a href="${item.href}" 
-             class="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-all duration-200 ease-in-out transform hover:translate-x-1"
-             role="menuitem"
-             ${item.isHomepage ? 'aria-current="page"' : ''}>
-            ${item.name}
-          </a>
-        `).join('')}
+        ${(() => {
+          const mobileMenuHTML = finalMenuItems.map(item => `
+            <a href="${item.href}" 
+               class="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-all duration-200 ease-in-out transform hover:translate-x-1"
+               role="menuitem"
+               ${item.isHomepage ? 'aria-current="page"' : ''}>
+              ${item.name}
+            </a>
+          `).join('');
+          console.log(`🔍 [DEBUG-MOBILE-HTML] Menu mobile HTML:`, mobileMenuHTML);
+          return mobileMenuHTML;
+        })()}
       </div>
     </div>
   </nav>
