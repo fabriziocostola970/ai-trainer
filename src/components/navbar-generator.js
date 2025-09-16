@@ -52,8 +52,25 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
     console.log(`🏠 Homepage: ${homePage?.name || 'Non trovata'}`);
     console.log(`📄 Pagine secondarie: ${secondaryPages.map(p => p.name).join(', ')}`);
     
-    // 🎨 Costruisci array menu items - TEST: Link Home a preview
-    const homeHref = `/preview?businessId=[BUSINESS_ID]&websiteId=[WEBSITE_ID]`;
+    // 🔧 OTTIENI businessId dal database per i placeholder
+    let businessId = 'BUSINESS_ID'; // fallback
+    try {
+      const businessQuery = `
+        SELECT w."businessId" 
+        FROM websites w 
+        WHERE w.id = $1
+      `;
+      const businessResult = await pool.query(businessQuery, [websiteId]);
+      if (businessResult.rows.length > 0) {
+        businessId = businessResult.rows[0].businessId;
+        console.log(`🔧 [BUSINESS-ID] Trovato businessId: ${businessId}`);
+      }
+    } catch (error) {
+      console.error('❌ [BUSINESS-ID] Errore nel recupero businessId:', error);
+    }
+    
+    // 🎨 Costruisci array menu items - TEST: Link Home a preview con dati reali
+    const homeHref = `/preview?businessId=${businessId}&websiteId=${websiteId}`;
     console.log(`🔧 [HOME-TEST] Homepage href: ${homeHref}`);
     
     const menuItems = [
@@ -102,11 +119,10 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
  */
 function generateStaticNavbar(businessName, menuItems = []) {
   console.log(`🎨 [NAVBAR-STATIC] Generazione navbar per: ${businessName} con ${menuItems.length} menu items`);
-  console.log(`🔍 [DEBUG] Menu items ricevuti:`, menuItems);
   
-  // ✅ DEFAULT: Solo HOME se non ci sono menu items - TEST: Link a preview
+  // ✅ DEFAULT: Solo HOME se non ci sono menu items - TEST: Link a preview con dati reali  
   const defaultMenuItems = [
-    { name: 'Home', href: '/preview?businessId=[BUSINESS_ID]&websiteId=[WEBSITE_ID]', isHomepage: true }
+    { name: 'Home', href: `/preview?businessId=DEFAULT&websiteId=DEFAULT`, isHomepage: true }
   ];
   
   // Se abbiamo menu items dal DB, usali, altrimenti usa default
@@ -114,13 +130,9 @@ function generateStaticNavbar(businessName, menuItems = []) {
   
   // Assicurati che ci sia sempre Home come primo elemento
   const hasHome = finalMenuItems.some(item => item.isHomepage);
-  console.log(`🔍 [DEBUG] Ha Home?:`, hasHome);
   if (!hasHome) {
     finalMenuItems = [defaultMenuItems[0], ...finalMenuItems];
-    console.log(`🔧 [DEBUG] Aggiunto Home mancante`);
   }
-  
-  console.log(`🔍 [DEBUG] Final menu items:`, finalMenuItems);
   
   return `
   <!-- 🎨 NAVBAR DINAMICA RESPONSIVE -->
