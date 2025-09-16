@@ -56,26 +56,29 @@ async function updateAllPagesNavbar(websiteId, businessName, pool) {
       else if (updatedContent.includes('<nav')) {
         const originalLength = updatedContent.length;
         
-        // Prima prova: sostituzione precisa con attributi navbar
-        if (updatedContent.includes('role="navigation"') || updatedContent.includes('data-navbar-version')) {
-          updatedContent = updatedContent.replace(/<nav[^>]*role="navigation"[\s\S]*?<\/nav>/gi, newNavbar);
-          console.log(`🔄 [NAVBAR-UPDATE] ${page.name}: Sostituito nav con role="navigation"`);
-        }
-        // Fallback: sostituzione generale
-        else {
-          // Conta quante navbar ci sono
-          const navMatches = updatedContent.match(/<nav[\s\S]*?<\/nav>/gi);
-          console.log(`🔍 [NAVBAR-DEBUG] ${page.name}: Trovate ${navMatches ? navMatches.length : 0} navbar`);
-          
-          // Sostituisci TUTTE le navbar (rimuove duplicati)
-          updatedContent = updatedContent.replace(/<nav[\s\S]*?<\/nav>/gi, '');
-          // Aggiungi la nuova navbar all'inizio del body
-          updatedContent = updatedContent.replace(/<body[^>]*>/i, `$&\n${newNavbar}`);
-          console.log(`🔄 [NAVBAR-UPDATE] ${page.name}: Rimosse tutte le navbar e aggiunta nuova`);
+        // STRATEGIA SICURA: Rimuovi TUTTE le navbar e aggiungi solo la nuova
+        
+        // 1. Conta navbar esistenti
+        const navMatches = updatedContent.match(/<nav[\s\S]*?<\/nav>/gi);
+        const navCount = navMatches ? navMatches.length : 0;
+        console.log(`🔍 [NAVBAR-DEBUG] ${page.name}: Trovate ${navCount} navbar esistenti`);
+        
+        // 2. Rimuovi TUTTE le navbar (incluse quelle con attributi)
+        updatedContent = updatedContent.replace(/<nav[\s\S]*?<\/nav>/gi, '');
+        console.log(`🗑️ [NAVBAR-CLEAN] ${page.name}: Rimosse tutte le ${navCount} navbar`);
+        
+        // 3. Aggiungi la nuova navbar subito dopo <body>
+        if (updatedContent.includes('<body')) {
+          updatedContent = updatedContent.replace(/(<body[^>]*>)/i, `$1\n${newNavbar}`);
+          console.log(`✅ [NAVBAR-ADD] ${page.name}: Aggiunta nuova navbar dopo <body>`);
+        } else {
+          // Fallback: aggiungi all'inizio del contenuto
+          updatedContent = newNavbar + '\n' + updatedContent;
+          console.log(`✅ [NAVBAR-ADD] ${page.name}: Aggiunta navbar all'inizio (fallback)`);
         }
         
-        wasUpdated = updatedContent.length !== originalLength;
-        console.log(`🔄 [NAVBAR-UPDATE] ${page.name}: Aggiornamento completato (${originalLength} → ${updatedContent.length})`);
+        wasUpdated = true;
+        console.log(`🔄 [NAVBAR-UPDATE] ${page.name}: Completato (${originalLength} → ${updatedContent.length})`);
       }
       else {
         console.log(`⚠️ [NAVBAR-UPDATE] ${page.name}: Nessun navbar trovato da sostituire`);
