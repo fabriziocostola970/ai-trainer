@@ -144,7 +144,7 @@ function generateStaticNavbar(businessName, menuItems = []) {
         </div>
         
         <!-- 📱 MOBILE HAMBURGER BUTTON -->
-        <div class="block md:hidden">
+        <div class="md:hidden">
           <button id="hamburger-btn" 
                   type="button" 
                   class="inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
