@@ -52,12 +52,30 @@ async function updateAllPagesNavbar(websiteId, businessName, pool) {
         wasUpdated = true;
         console.log(`🔄 [NAVBAR-UPDATE] ${page.name}: Sostituito placeholder`);
       }
-      // Metodo 2: Sostituisci <nav>...</nav> (fallback)
+      // Metodo 2: Sostituisci <nav>...</nav> (fallback migliorato)
       else if (updatedContent.includes('<nav')) {
         const originalLength = updatedContent.length;
-        updatedContent = updatedContent.replace(/<nav[\s\S]*?<\/nav>/gi, newNavbar);
+        
+        // Prima prova: sostituzione precisa con attributi navbar
+        if (updatedContent.includes('role="navigation"') || updatedContent.includes('data-navbar-version')) {
+          updatedContent = updatedContent.replace(/<nav[^>]*role="navigation"[\s\S]*?<\/nav>/gi, newNavbar);
+          console.log(`🔄 [NAVBAR-UPDATE] ${page.name}: Sostituito nav con role="navigation"`);
+        }
+        // Fallback: sostituzione generale
+        else {
+          // Conta quante navbar ci sono
+          const navMatches = updatedContent.match(/<nav[\s\S]*?<\/nav>/gi);
+          console.log(`🔍 [NAVBAR-DEBUG] ${page.name}: Trovate ${navMatches ? navMatches.length : 0} navbar`);
+          
+          // Sostituisci TUTTE le navbar (rimuove duplicati)
+          updatedContent = updatedContent.replace(/<nav[\s\S]*?<\/nav>/gi, '');
+          // Aggiungi la nuova navbar all'inizio del body
+          updatedContent = updatedContent.replace(/<body[^>]*>/i, `$&\n${newNavbar}`);
+          console.log(`🔄 [NAVBAR-UPDATE] ${page.name}: Rimosse tutte le navbar e aggiunta nuova`);
+        }
+        
         wasUpdated = updatedContent.length !== originalLength;
-        console.log(`🔄 [NAVBAR-UPDATE] ${page.name}: Sostituito tag nav (${originalLength} → ${updatedContent.length})`);
+        console.log(`🔄 [NAVBAR-UPDATE] ${page.name}: Aggiornamento completato (${originalLength} → ${updatedContent.length})`);
       }
       else {
         console.log(`⚠️ [NAVBAR-UPDATE] ${page.name}: Nessun navbar trovato da sostituire`);
