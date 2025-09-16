@@ -186,11 +186,17 @@ function generateStaticNavbar(businessName, menuItems = []) {
     console.log('🚀 [NAVBAR] Inizializzazione navbar con ${finalMenuItems.length} menu items');
     
     function toggleMobileMenu() {
+      console.log('🔍 [NAVBAR-DEBUG] toggleMobileMenu chiamata');
+      
       const menu = document.getElementById('mobileMenu');
       const button = document.getElementById('hamburger-btn');
       
+      console.log('🔍 [NAVBAR-DEBUG] Menu trovato:', !!menu);
+      console.log('🔍 [NAVBAR-DEBUG] Button trovato:', !!button);
+      
       if (menu && button) {
         const isHidden = menu.classList.contains('hidden');
+        console.log('🔍 [NAVBAR-DEBUG] Menu nascosto:', isHidden);
         
         if (isHidden) {
           menu.classList.remove('hidden');
@@ -206,10 +212,23 @@ function generateStaticNavbar(businessName, menuItems = []) {
     
     // Auto-attach al caricamento DOM
     document.addEventListener('DOMContentLoaded', function() {
+      console.log('🔍 [NAVBAR-DEBUG] DOM loaded, cercando elementi...');
+      
       const hamburgerBtn = document.getElementById('hamburger-btn');
+      const mobileMenu = document.getElementById('mobileMenu');
+      
+      console.log('🔍 [NAVBAR-DEBUG] Hamburger button:', !!hamburgerBtn);
+      console.log('🔍 [NAVBAR-DEBUG] Mobile menu:', !!mobileMenu);
+      
       if (hamburgerBtn) {
         hamburgerBtn.addEventListener('click', toggleMobileMenu);
         console.log('✅ [NAVBAR] Event listener collegato al pulsante hamburger');
+      } else {
+        console.error('❌ [NAVBAR] Hamburger button NON trovato!');
+      }
+      
+      if (!mobileMenu) {
+        console.error('❌ [NAVBAR] Mobile menu NON trovato!');
       }
       
       // Chiudi menu mobile quando si clicca fuori
