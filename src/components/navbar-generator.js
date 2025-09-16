@@ -52,26 +52,9 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
     console.log(`🏠 Homepage: ${homePage?.name || 'Non trovata'}`);
     console.log(`📄 Pagine secondarie: ${secondaryPages.map(p => p.name).join(', ')}`);
     
-    // 🔧 OTTIENI businessId dal database per i placeholder
-    let businessId = 'BUSINESS_ID'; // fallback
-    try {
-      const businessQuery = `
-        SELECT w."businessId" 
-        FROM websites w 
-        WHERE w.id = $1
-      `;
-      const businessResult = await pool.query(businessQuery, [websiteId]);
-      if (businessResult.rows.length > 0) {
-        businessId = businessResult.rows[0].businessId;
-        console.log(`🔧 [BUSINESS-ID] Trovato businessId: ${businessId}`);
-      }
-    } catch (error) {
-      console.error('❌ [BUSINESS-ID] Errore nel recupero businessId:', error);
-    }
-    
-    // 🎨 Costruisci array menu items - TEST: Link Home a preview con dati reali
-    const homeHref = `/preview?businessId=${businessId}&websiteId=${websiteId}`;
-    console.log(`🔧 [HOME-TEST] Homepage href: ${homeHref}`);
+    // 🎨 Costruisci array menu items - FIX: Usa slug della homepage  
+    const homeHref = homePage?.slug ? (homePage.slug.startsWith('/') ? homePage.slug : `/${homePage.slug}`) : '/';
+    console.log(`🔧 [HOME-FIX] Homepage href: ${homeHref}`);
     
     const menuItems = [
       {
@@ -120,9 +103,9 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
 function generateStaticNavbar(businessName, menuItems = []) {
   console.log(`🎨 [NAVBAR-STATIC] Generazione navbar per: ${businessName} con ${menuItems.length} menu items`);
   
-  // ✅ DEFAULT: Solo HOME se non ci sono menu items - TEST: Link a preview con dati reali  
+  // ✅ DEFAULT: Solo HOME se non ci sono menu items
   const defaultMenuItems = [
-    { name: 'Home', href: `/preview?businessId=DEFAULT&websiteId=DEFAULT`, isHomepage: true }
+    { name: 'Home', href: '/', isHomepage: true }
   ];
   
   // Se abbiamo menu items dal DB, usali, altrimenti usa default
@@ -160,8 +143,8 @@ function generateStaticNavbar(businessName, menuItems = []) {
           `).join('')}
         </div>
         
-        <!-- 📱 MOBILE HAMBURGER BUTTON - FORCE HIDE ON DESKTOP -->
-        <div class="block md:!hidden">
+        <!-- 📱 MOBILE HAMBURGER BUTTON -->
+        <div class="md:hidden">
           <button id="hamburger-btn" 
                   type="button" 
                   class="inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
