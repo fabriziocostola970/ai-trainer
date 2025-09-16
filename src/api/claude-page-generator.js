@@ -939,11 +939,10 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
     const saveResult = savePageToStatic(pageSlug, cleanHTML, businessName);
     console.log(`📁 [STATIC-SAVE] ${saveResult.success ? '✅ Saved' : '❌ Failed'}: ${pageSlug}`);
 
-    // 🔄 AGGIORNA NAVBAR - COMMENTATO: Sarà gestito da VendiOnline-EU DOPO il salvataggio
-    // if (websiteId) {
-    //   await updateAllPagesNavbar(websiteId, businessName, pool);
-    // }
-    console.log('ℹ️ [NAVBAR-UPDATE] Skipped - will be handled by VendiOnline-EU after page save');
+    // 🔄 AGGIORNA NAVBAR IN TUTTE LE PAGINE ESISTENTI
+    if (websiteId) {
+      await updateAllPagesNavbar(websiteId, businessName, pool);
+    }
 
     // RESPONSE OTTIMIZZATA PER VENDIONLINE CON COST TRACKING
     res.json({
