@@ -118,8 +118,8 @@ function generateStaticNavbar(businessName, menuItems = []) {
   }
   
   return `
-  <!-- 🎨 NAVBAR DINAMICA RESPONSIVE -->
-  <nav class="bg-white shadow-lg fixed w-full z-50 top-0 border-b border-gray-200" role="navigation" aria-label="Main navigation">
+  <!-- 🎨 NAVBAR DINAMICA RESPONSIVE - Generated: ${new Date().toISOString()} -->
+  <nav class="bg-white shadow-lg fixed w-full z-50 top-0 border-b border-gray-200" role="navigation" aria-label="Main navigation" data-navbar-version="${Date.now()}">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         
@@ -134,13 +134,16 @@ function generateStaticNavbar(businessName, menuItems = []) {
         
         <!-- 💻 DESKTOP MENU -->
         <div class="hidden md:flex md:items-center md:space-x-1">
-          ${finalMenuItems.map(item => `
-            <a href="${item.href}" 
-               class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-in-out transform hover:scale-105"
-               ${item.isHomepage ? 'aria-current="page"' : ''}>
-              ${item.name}
-            </a>
-          `).join('')}
+          ${(() => {
+            console.log(`🖥️ [DESKTOP-MENU] Rendering ${finalMenuItems.length} items:`, finalMenuItems.map(i => i.name).join(', '));
+            return finalMenuItems.map(item => `
+              <a href="${item.href}" 
+                 class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-in-out transform hover:scale-105"
+                 ${item.isHomepage ? 'aria-current="page"' : ''}>
+                ${item.name}
+              </a>
+            `).join('');
+          })()}
         </div>
         
         <!-- 📱 MOBILE HAMBURGER BUTTON - HIDDEN ON DESKTOP -->
@@ -166,14 +169,17 @@ function generateStaticNavbar(businessName, menuItems = []) {
          aria-orientation="vertical" 
          aria-labelledby="hamburger-btn">
       <div class="px-2 pt-2 pb-3 space-y-1">
-        ${finalMenuItems.map(item => `
-          <a href="${item.href}" 
-             class="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-all duration-200 ease-in-out transform hover:translate-x-1"
-             role="menuitem"
-             ${item.isHomepage ? 'aria-current="page"' : ''}>
-            ${item.name}
-          </a>
-        `).join('')}
+        ${(() => {
+          console.log(`📱 [MOBILE-MENU] Rendering ${finalMenuItems.length} items:`, finalMenuItems.map(i => i.name).join(', '));
+          return finalMenuItems.map(item => `
+            <a href="${item.href}" 
+               class="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-all duration-200 ease-in-out transform hover:translate-x-1"
+               role="menuitem"
+               ${item.isHomepage ? 'aria-current="page"' : ''}>
+              ${item.name}
+            </a>
+          `).join('');
+        })()}
       </div>
     </div>
   </nav>
