@@ -102,6 +102,7 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
  */
 function generateStaticNavbar(businessName, menuItems = []) {
   console.log(`🎨 [NAVBAR-STATIC] Generazione navbar per: ${businessName} con ${menuItems.length} menu items`);
+  console.log(`🔍 [DEBUG] Menu items ricevuti:`, menuItems);
   
   // ✅ DEFAULT: Solo HOME se non ci sono menu items - TEST: Link a preview
   const defaultMenuItems = [
@@ -113,9 +114,13 @@ function generateStaticNavbar(businessName, menuItems = []) {
   
   // Assicurati che ci sia sempre Home come primo elemento
   const hasHome = finalMenuItems.some(item => item.isHomepage);
+  console.log(`🔍 [DEBUG] Ha Home?:`, hasHome);
   if (!hasHome) {
     finalMenuItems = [defaultMenuItems[0], ...finalMenuItems];
+    console.log(`🔧 [DEBUG] Aggiunto Home mancante`);
   }
+  
+  console.log(`🔍 [DEBUG] Final menu items:`, finalMenuItems);
   
   return `
   <!-- 🎨 NAVBAR DINAMICA RESPONSIVE -->
@@ -143,8 +148,8 @@ function generateStaticNavbar(businessName, menuItems = []) {
           `).join('')}
         </div>
         
-        <!-- 📱 MOBILE HAMBURGER BUTTON -->
-        <div class="md:hidden">
+        <!-- 📱 MOBILE HAMBURGER BUTTON - FORCE HIDE ON DESKTOP -->
+        <div class="block md:!hidden">
           <button id="hamburger-btn" 
                   type="button" 
                   class="inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
