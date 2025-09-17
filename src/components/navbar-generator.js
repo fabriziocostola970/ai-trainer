@@ -234,10 +234,10 @@ function generateStaticNavbar(businessName, menuItems = []) {
   <!-- 🎯 JAVASCRIPT MOBILE MENU - Sempre Funzionante -->
   <script>
     console.log('🚀 [NAVBAR] Inizializzazione navbar con ' + ${finalMenuItems.length} + ' menu items');
-    console.log('🔍 [NAVBAR-DEBUG] Script caricato, definendo funzione globale...');
+    console.log('🔍 [NAVBAR-DEBUG] Script caricato, definendo funzione...');
     
-    // 🌐 FUNZIONE GLOBALE per onclick
-    window.toggleMobileMenu = function() {
+    // 🎯 FUNZIONE TOGGLE MENU (come in claude-page-generator.js)
+    function toggleMobileMenu() {
       console.log('🔍 [NAVBAR-DEBUG] toggleMobileMenu chiamata');
       
       const menu = document.getElementById('mobileMenu');
@@ -249,17 +249,21 @@ function generateStaticNavbar(businessName, menuItems = []) {
       console.log('🔍 [NAVBAR-DEBUG] Button element:', button);
       
       if (menu && button) {
-        const isHidden = menu.classList.contains('hidden');
+        const isHidden = menu.style.display === 'none' || menu.classList.contains('hidden');
         console.log('🔍 [NAVBAR-DEBUG] Menu nascosto:', isHidden);
         console.log('🔍 [NAVBAR-DEBUG] Menu classList:', Array.from(menu.classList));
         
         if (isHidden) {
+          menu.style.display = 'block';
           menu.classList.remove('hidden');
+          menu.classList.add('show');
           button.setAttribute('aria-expanded', 'true');
           console.log('✅ [NAVBAR] Mobile menu aperto');
           console.log('🔍 [NAVBAR-DEBUG] Menu classList dopo apertura:', Array.from(menu.classList));
         } else {
+          menu.style.display = 'none';
           menu.classList.add('hidden');
+          menu.classList.remove('show');
           button.setAttribute('aria-expanded', 'false');
           console.log('✅ [NAVBAR] Mobile menu chiuso');
           console.log('🔍 [NAVBAR-DEBUG] Menu classList dopo chiusura:', Array.from(menu.classList));
