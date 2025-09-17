@@ -232,6 +232,14 @@ REGOLE ASSOLUTE:
     console.log('✅ Claude HTML response received');
     console.log(`📄 Generated HTML length: ${htmlContent.length} characters`);
     
+    // 🔍 DEBUG: Controlla se l'HTML è completo
+    console.log('🔍 [CLAUDE-DEBUG] Checking HTML completeness...');
+    console.log('🔍 [CLAUDE-DEBUG] Has opening <html>:', htmlContent.includes('<html'));
+    console.log('🔍 [CLAUDE-DEBUG] Has closing </html>:', htmlContent.includes('</html>'));
+    console.log('🔍 [CLAUDE-DEBUG] Has opening <body>:', htmlContent.includes('<body'));
+    console.log('🔍 [CLAUDE-DEBUG] Has closing </body>:', htmlContent.includes('</body>'));
+    console.log('🔍 [CLAUDE-DEBUG] Last 200 chars:', htmlContent.slice(-200));
+    
     // 🔍 LOG CLAUDE'S RAW RESPONSE FOR DEBUGGING
     console.log('🔍 [CLAUDE-RAW] First 1000 chars of Claude response:');
     console.log(htmlContent.substring(0, 1000));
