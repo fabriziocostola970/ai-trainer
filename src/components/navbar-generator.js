@@ -233,7 +233,7 @@ function generateStaticNavbar(businessName, menuItems = []) {
   
   <!-- 🎯 JAVASCRIPT MOBILE MENU - Sempre Funzionante -->
   <script>
-    console.log('🚀 [NAVBAR] Inizializzazione navbar con ${finalMenuItems.length} menu items');
+    console.log('🚀 [NAVBAR] Inizializzazione navbar con ' + ${finalMenuItems.length} + ' menu items');
     console.log('🔍 [NAVBAR-DEBUG] Script caricato, definendo funzione globale...');
     
     // 🌐 FUNZIONE GLOBALE per onclick
