@@ -207,7 +207,7 @@ REGOLE ASSOLUTE:
     // 🎛️ CONFIGURE CLAUDE BASED ON GENERATION MODE (align with page generation)
     const claudeConfig = generationMode === 'economico' 
       ? {
-          max_tokens: 6000,  // Aumentato: abbastanza per HTML completo con navbar
+          max_tokens: 3500,  // Ripristinato valore originale
           temperature: 0.3   // Economico: più deterministico come le pagine
         }
       : {

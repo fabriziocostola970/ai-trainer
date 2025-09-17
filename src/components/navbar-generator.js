@@ -2,7 +2,13 @@
  * 🚀 NAVBAR GENERATOR - Gestione dinamica menu da database website_pages
  * 
  * Questo modulo genera navbar dinamiche che leggono le pagine reali 
- * dalla tabella website_pages del database PostgreSQL.
+ * dalla tabella website_pag                  type="button" 
+                  class="inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                  aria-controls="mobile-menu" 
+                  aria-expanded="false"
+                  aria-label="Toggle main menu"
+                  onmousedown="console.log('🔍 HAMBURGER MOUSEDOWN!');"
+                  onmouseup="console.log('🔍 HAMBURGER MOUSEUP!');">"atabase PostgreSQL.
  */
 
 /**
@@ -271,10 +277,7 @@ function generateStaticNavbar(businessName, menuItems = []) {
         }
       }
       
-      // 🌐 Rendi la funzione globale per onclick
-      window.toggleMobileMenu = toggleMobileMenu;
-      console.log('✅ [NAVBAR] Funzione toggleMobileMenu definita e resa globale');
-      console.log('🔍 [NAVBAR-DEBUG] window.toggleMobileMenu:', typeof window.toggleMobileMenu);
+      console.log('✅ [NAVBAR] Funzione toggleMobileMenu definita');
       
     } catch (error) {
       console.error('❌ [NAVBAR] Errore durante inizializzazione:', error);
