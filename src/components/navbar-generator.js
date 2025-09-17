@@ -120,6 +120,30 @@ function generateStaticNavbar(businessName, menuItems = []) {
   return `
   <!-- 🎨 NAVBAR DINAMICA RESPONSIVE - Generated: ${new Date().toISOString()} -->
   <!-- 🔄 CACHE BUSTER: ${Math.random().toString(36).substring(7)} -->
+  
+  <!-- 🔧 CSS CUSTOM per forzare responsive navbar -->
+  <style>
+    @media (min-width: 768px) {
+      .navbar-hamburger-container {
+        display: none !important;
+      }
+      .navbar-desktop-menu {
+        display: flex !important;
+      }
+      .navbar-mobile-menu {
+        display: none !important;
+      }
+    }
+    @media (max-width: 767px) {
+      .navbar-hamburger-container {
+        display: flex !important;
+      }
+      .navbar-desktop-menu {
+        display: none !important;
+      }
+    }
+  </style>
+  
   <nav class="bg-white shadow-lg fixed w-full z-50 top-0 border-b border-gray-200" role="navigation" aria-label="Main navigation" data-navbar-version="${Date.now()}" data-cache-buster="${Math.random()}">
     <!-- 📊 DEBUG: Menu items count: ${finalMenuItems.length} -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -135,7 +159,7 @@ function generateStaticNavbar(businessName, menuItems = []) {
         </div>
         
         <!-- 💻 DESKTOP MENU -->
-        <div class="hidden md:flex md:items-center md:space-x-1">
+        <div class="navbar-desktop-menu hidden md:flex md:items-center md:space-x-1">
           ${(() => {
             console.log(`🖥️ [DESKTOP-MENU] Rendering ${finalMenuItems.length} items:`, finalMenuItems.map(i => i.name).join(', '));
             return finalMenuItems.map(item => `
@@ -149,7 +173,7 @@ function generateStaticNavbar(businessName, menuItems = []) {
         </div>
         
         <!-- 📱 MOBILE HAMBURGER BUTTON - HIDDEN ON DESKTOP -->
-        <div class="md:hidden">
+        <div class="navbar-hamburger-container md:hidden">
           <button id="hamburger-btn" 
                   type="button" 
                   class="inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
@@ -166,7 +190,7 @@ function generateStaticNavbar(businessName, menuItems = []) {
     
     <!-- 📱 MOBILE MENU -->
     <div id="mobileMenu" 
-         class="hidden md:hidden bg-white border-t border-gray-200 shadow-lg"
+         class="navbar-mobile-menu hidden md:hidden bg-white border-t border-gray-200 shadow-lg"
          role="menu" 
          aria-orientation="vertical" 
          aria-labelledby="hamburger-btn">
