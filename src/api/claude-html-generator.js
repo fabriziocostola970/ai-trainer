@@ -231,6 +231,19 @@ REGOLE ASSOLUTE:
     const htmlContent = claudeResponse.content[0].text;
     console.log('✅ Claude HTML response received');
     console.log(`📄 Generated HTML length: ${htmlContent.length} characters`);
+    
+    // 🔍 LOG CLAUDE'S RAW RESPONSE FOR DEBUGGING
+    console.log('🔍 [CLAUDE-RAW] First 1000 chars of Claude response:');
+    console.log(htmlContent.substring(0, 1000));
+    console.log('🔍 [CLAUDE-RAW] Contains placeholder:', htmlContent.includes('<!-- DYNAMIC_NAVBAR_PLACEHOLDER -->'));
+    console.log('🔍 [CLAUDE-RAW] Contains <nav tag:', htmlContent.includes('<nav'));
+    
+    if (htmlContent.includes('<nav')) {
+      const navbarMatch = htmlContent.match(/<nav[\s\S]*?<\/nav>/i);
+      if (navbarMatch) {
+        console.log('🔍 [CLAUDE-RAW] Claude created manual navbar:', navbarMatch[0].substring(0, 200) + '...');
+      }
+    }
 
     // 💰 CALCULATE COSTS (Claude Sonnet 4 pricing as of Sept 2025)
     // Input: $3.00 per 1M tokens, Output: $15.00 per 1M tokens

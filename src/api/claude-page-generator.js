@@ -31,7 +31,7 @@ async function updateAllPagesNavbar(websiteId, businessName, pool) {
     
     console.log('🔍 [NAVBAR-UPDATE] Nuovo navbar generato, lunghezza:', newNavbar.length);
     
-    // 2. Trova tutte le pagine del sito
+    // 2. Trova tutte le pagine del sito (INCLUSA LA HOMEPAGE)
     const pagesQuery = `
       SELECT id, name, content 
       FROM website_pages 
@@ -39,7 +39,7 @@ async function updateAllPagesNavbar(websiteId, businessName, pool) {
     `;
     const result = await pool.query(pagesQuery, [websiteId]);
     
-    console.log(`📄 [NAVBAR-UPDATE] Trovate ${result.rows.length} pagine da aggiornare`);
+    console.log(`📄 [NAVBAR-UPDATE] Trovate ${result.rows.length} pagine da aggiornare (inclusa homepage)`);
     
     // 3. Aggiorna navbar in ogni pagina
     for (const page of result.rows) {
@@ -63,9 +63,27 @@ async function updateAllPagesNavbar(websiteId, businessName, pool) {
         const navCount = navMatches ? navMatches.length : 0;
         console.log(`🔍 [NAVBAR-DEBUG] ${page.name}: Trovate ${navCount} navbar esistenti`);
         
-        // 2. Rimuovi TUTTE le navbar (incluse quelle con attributi)
+        // 2. PULIZIA COMPLETA: Rimuovi TUTTE le navbar e frammenti
+        console.log(`🧹 [NAVBAR-CLEAN] ${page.name}: Inizio pulizia completa navbar...`);
+        
+        // Rimuovi navbar complete
         updatedContent = updatedContent.replace(/<nav[\s\S]*?<\/nav>/gi, '');
-        console.log(`🗑️ [NAVBAR-CLEAN] ${page.name}: Rimosse tutte le ${navCount} navbar`);
+        
+        // Rimuovi commenti navbar
+        updatedContent = updatedContent.replace(/<!--[\s\S]*?NAVBAR[\s\S]*?-->/gi, '');
+        
+        // Rimuovi spacer navbar
+        updatedContent = updatedContent.replace(/<div[^>]*class="h-16"[^>]*aria-hidden="true"[^>]*><\/div>/gi, '');
+        
+        // Rimuovi script navbar duplicati
+        updatedContent = updatedContent.replace(/<script>[\s\S]*?toggleMobileMenu[\s\S]*?<\/script>/gi, '');
+        
+        // Rimuovi meta cache control duplicati
+        updatedContent = updatedContent.replace(/<meta[^>]*http-equiv="Cache-Control"[^>]*>/gi, '');
+        updatedContent = updatedContent.replace(/<meta[^>]*http-equiv="Pragma"[^>]*>/gi, '');
+        updatedContent = updatedContent.replace(/<meta[^>]*http-equiv="Expires"[^>]*>/gi, '');
+        
+        console.log(`🧹 [NAVBAR-CLEAN] ${page.name}: Pulizia completa completata`);
         
         // 3. Aggiungi la nuova navbar subito dopo <body>
         if (updatedContent.includes('<body')) {
