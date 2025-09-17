@@ -141,6 +141,13 @@ function generateStaticNavbar(businessName, menuItems = []) {
       .navbar-desktop-menu {
         display: none !important;
       }
+      /* Mobile menu: hidden di default, visibile quando si rimuove .hidden */
+      .navbar-mobile-menu {
+        display: none;
+      }
+      .navbar-mobile-menu:not(.hidden) {
+        display: block !important;
+      }
     }
   </style>
   
