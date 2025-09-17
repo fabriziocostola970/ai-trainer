@@ -939,7 +939,71 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
     const saveResult = savePageToStatic(pageSlug, cleanHTML, businessName);
     console.log(`📁 [STATIC-SAVE] ${saveResult.success ? '✅ Saved' : '❌ Failed'}: ${pageSlug}`);
 
-    // 🔄 AGGIORNA NAVBAR IN TUTTE LE PAGINE ESISTENTI
+    // � STEP 1: SALVA PAGINA NEL DATABASE PRIMA DI AGGIORNARE NAVBAR
+    if (websiteId && pool) {
+      console.log('💾 [DB-SAVE] Saving page to database before navbar update...');
+      
+      try {
+        // Generate slug for database
+        const dbSlug = pageType.toLowerCase().replace(/\s+/g, '-');
+        
+        // Generate page name in Italian
+        const pageNames = {
+          'about': 'Chi Siamo',
+          'services': 'Servizi', 
+          'contact': 'Contatti',
+          'gallery': 'Galleria',
+          'team': 'Team',
+          'menu': 'Menu',
+          'products': 'Prodotti',
+          'blog': 'Blog',
+          'portfolio': 'Portfolio'
+        };
+        
+        const pageName = pageNames[pageType.toLowerCase()] || 
+                        pageType.charAt(0).toUpperCase() + pageType.slice(1);
+        
+        // Get next page order
+        const orderQuery = `
+          SELECT COALESCE(MAX("pageOrder"), 0) + 1 as next_order
+          FROM website_pages 
+          WHERE "websiteId" = $1
+        `;
+        const orderResult = await pool.query(orderQuery, [websiteId]);
+        const nextOrder = orderResult.rows[0]?.next_order || 1;
+        
+        // Insert page in database
+        const pageId = `page_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const insertQuery = `
+          INSERT INTO website_pages (id, "websiteId", name, slug, content, "pageType", "pageOrder", "isHomepage", "isActive", "createdAt", "updatedAt")
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+          ON CONFLICT ("websiteId", slug) DO UPDATE SET
+            content = $5,
+            "updatedAt" = NOW()
+          RETURNING id;
+        `;
+        
+        const insertResult = await pool.query(insertQuery, [
+          pageId,          // $1 id
+          websiteId,       // $2 websiteId  
+          pageName,        // $3 name (Italian)
+          `/${dbSlug}`,    // $4 slug with leading slash
+          cleanHTML,       // $5 content
+          pageType,        // $6 pageType
+          nextOrder,       // $7 pageOrder
+          false,           // $8 isHomepage
+          true             // $9 isActive
+        ]);
+        
+        console.log(`💾 [DB-SAVE] Page "${pageName}" saved with ID: ${insertResult.rows[0]?.id || pageId}`);
+        
+      } catch (dbError) {
+        console.error('❌ [DB-SAVE] Failed to save page to database:', dbError.message);
+        // Continue anyway - don't fail the whole process
+      }
+    }
+
+    // 🔄 STEP 2: AGGIORNA NAVBAR IN TUTTE LE PAGINE (ora trova la pagina!)
     if (websiteId) {
       await updateAllPagesNavbar(websiteId, businessName, pool);
     }
