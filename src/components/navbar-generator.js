@@ -173,7 +173,8 @@ function generateStaticNavbar(businessName, menuItems = []) {
       <div class="px-2 pt-2 pb-3 space-y-1">
         ${(() => {
           console.log(`📱 [MOBILE-MENU] Rendering ${finalMenuItems.length} items:`, finalMenuItems.map(i => i.name).join(', '));
-          return finalMenuItems.map(item => `
+          console.log(`📱 [MOBILE-MENU] Menu items data:`, JSON.stringify(finalMenuItems, null, 2));
+          const mobileMenuHTML = finalMenuItems.map(item => `
             <a href="${item.href}" 
                class="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-all duration-200 ease-in-out transform hover:translate-x-1"
                role="menuitem"
@@ -181,6 +182,8 @@ function generateStaticNavbar(businessName, menuItems = []) {
               ${item.name}
             </a>
           `).join('');
+          console.log(`📱 [MOBILE-MENU] Generated HTML length:`, mobileMenuHTML.length);
+          return mobileMenuHTML;
         })()}
       </div>
     </div>
