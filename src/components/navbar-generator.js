@@ -233,44 +233,51 @@ function generateStaticNavbar(businessName, menuItems = []) {
   
   <!-- 🎯 JAVASCRIPT MOBILE MENU - Sempre Funzionante -->
   <script>
-    console.log('🚀 [NAVBAR] Inizializzazione navbar con ' + ${finalMenuItems.length} + ' menu items');
-    console.log('🔍 [NAVBAR-DEBUG] Script caricato, definendo funzione...');
+    console.log('🚀 [NAVBAR] Script iniziato - caricamento in corso...');
     
-    // 🎯 FUNZIONE TOGGLE MENU (come in claude-page-generator.js)
-    function toggleMobileMenu() {
-      console.log('🔍 [NAVBAR-DEBUG] toggleMobileMenu chiamata');
+    try {
+      console.log('🚀 [NAVBAR] Inizializzazione navbar con ' + ${finalMenuItems.length} + ' menu items');
+      console.log('🔍 [NAVBAR-DEBUG] Script caricato, definendo funzione...');
       
-      const menu = document.getElementById('mobileMenu');
-      const button = document.getElementById('hamburger-btn');
-      
-      console.log('🔍 [NAVBAR-DEBUG] Menu trovato:', !!menu);
-      console.log('🔍 [NAVBAR-DEBUG] Button trovato:', !!button);
-      console.log('🔍 [NAVBAR-DEBUG] Menu element:', menu);
-      console.log('🔍 [NAVBAR-DEBUG] Button element:', button);
-      
-      if (menu && button) {
-        const isHidden = menu.style.display === 'none' || menu.classList.contains('hidden');
-        console.log('🔍 [NAVBAR-DEBUG] Menu nascosto:', isHidden);
-        console.log('🔍 [NAVBAR-DEBUG] Menu classList:', Array.from(menu.classList));
+      // 🎯 FUNZIONE TOGGLE MENU (come in claude-page-generator.js)
+      function toggleMobileMenu() {
+        console.log('🔍 [NAVBAR-DEBUG] toggleMobileMenu chiamata');
         
-        if (isHidden) {
-          menu.style.display = 'block';
-          menu.classList.remove('hidden');
-          menu.classList.add('show');
-          button.setAttribute('aria-expanded', 'true');
-          console.log('✅ [NAVBAR] Mobile menu aperto');
-          console.log('🔍 [NAVBAR-DEBUG] Menu classList dopo apertura:', Array.from(menu.classList));
+        const menu = document.getElementById('mobileMenu');
+        const button = document.getElementById('hamburger-btn');
+        
+        console.log('🔍 [NAVBAR-DEBUG] Menu trovato:', !!menu);
+        console.log('🔍 [NAVBAR-DEBUG] Button trovato:', !!button);
+        
+        if (menu && button) {
+          const isHidden = menu.style.display === 'none' || menu.classList.contains('hidden');
+          console.log('🔍 [NAVBAR-DEBUG] Menu nascosto:', isHidden);
+          
+          if (isHidden) {
+            menu.style.display = 'block';
+            menu.classList.remove('hidden');
+            menu.classList.add('show');
+            button.setAttribute('aria-expanded', 'true');
+            console.log('✅ [NAVBAR] Mobile menu aperto');
+          } else {
+            menu.style.display = 'none';
+            menu.classList.add('hidden');
+            menu.classList.remove('show');
+            button.setAttribute('aria-expanded', 'false');
+            console.log('✅ [NAVBAR] Mobile menu chiuso');
+          }
         } else {
-          menu.style.display = 'none';
-          menu.classList.add('hidden');
-          menu.classList.remove('show');
-          button.setAttribute('aria-expanded', 'false');
-          console.log('✅ [NAVBAR] Mobile menu chiuso');
-          console.log('🔍 [NAVBAR-DEBUG] Menu classList dopo chiusura:', Array.from(menu.classList));
+          console.error('❌ [NAVBAR] Elementi mancanti - Menu:', !!menu, 'Button:', !!button);
         }
-      } else {
-        console.error('❌ [NAVBAR] Elementi mancanti - Menu:', !!menu, 'Button:', !!button);
       }
+      
+      // 🌐 Rendi la funzione globale per onclick
+      window.toggleMobileMenu = toggleMobileMenu;
+      console.log('✅ [NAVBAR] Funzione toggleMobileMenu definita e resa globale');
+      console.log('🔍 [NAVBAR-DEBUG] window.toggleMobileMenu:', typeof window.toggleMobileMenu);
+      
+    } catch (error) {
+      console.error('❌ [NAVBAR] Errore durante inizializzazione:', error);
     }
     
     // Auto-attach al caricamento DOM per event listener aggiuntivo
