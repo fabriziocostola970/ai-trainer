@@ -236,7 +236,7 @@ function generateStaticNavbar(businessName, menuItems = []) {
     console.log('🚀 [NAVBAR] Script iniziato - caricamento in corso...');
     
     try {
-      console.log('🚀 [NAVBAR] Inizializzazione navbar con ' + ${finalMenuItems.length} + ' menu items');
+      console.log('🚀 [NAVBAR] Inizializzazione navbar completata');
       console.log('🔍 [NAVBAR-DEBUG] Script caricato, definendo funzione...');
       
       // 🎯 FUNZIONE TOGGLE MENU (come in claude-page-generator.js)
