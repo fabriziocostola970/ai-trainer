@@ -186,7 +186,10 @@ function generateStaticNavbar(businessName, menuItems = []) {
                   class="inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
                   aria-controls="mobile-menu" 
                   aria-expanded="false"
-                  aria-label="Toggle main menu">
+                  aria-label="Toggle main menu"
+                  onclick="console.log('🔍 HAMBURGER CLICKED DIRECTLY!'); toggleMobileMenu();"
+                  onmousedown="console.log('🔍 HAMBURGER MOUSEDOWN!');"
+                  onmouseup="console.log('🔍 HAMBURGER MOUSEUP!');">
             <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -231,8 +234,10 @@ function generateStaticNavbar(businessName, menuItems = []) {
   <!-- 🎯 JAVASCRIPT MOBILE MENU - Sempre Funzionante -->
   <script>
     console.log('🚀 [NAVBAR] Inizializzazione navbar con ${finalMenuItems.length} menu items');
+    console.log('🔍 [NAVBAR-DEBUG] Script caricato, definendo funzione globale...');
     
-    function toggleMobileMenu() {
+    // 🌐 FUNZIONE GLOBALE per onclick
+    window.toggleMobileMenu = function() {
       console.log('🔍 [NAVBAR-DEBUG] toggleMobileMenu chiamata');
       
       const menu = document.getElementById('mobileMenu');
@@ -240,24 +245,31 @@ function generateStaticNavbar(businessName, menuItems = []) {
       
       console.log('🔍 [NAVBAR-DEBUG] Menu trovato:', !!menu);
       console.log('🔍 [NAVBAR-DEBUG] Button trovato:', !!button);
+      console.log('🔍 [NAVBAR-DEBUG] Menu element:', menu);
+      console.log('🔍 [NAVBAR-DEBUG] Button element:', button);
       
       if (menu && button) {
         const isHidden = menu.classList.contains('hidden');
         console.log('🔍 [NAVBAR-DEBUG] Menu nascosto:', isHidden);
+        console.log('🔍 [NAVBAR-DEBUG] Menu classList:', Array.from(menu.classList));
         
         if (isHidden) {
           menu.classList.remove('hidden');
           button.setAttribute('aria-expanded', 'true');
           console.log('✅ [NAVBAR] Mobile menu aperto');
+          console.log('🔍 [NAVBAR-DEBUG] Menu classList dopo apertura:', Array.from(menu.classList));
         } else {
           menu.classList.add('hidden');
           button.setAttribute('aria-expanded', 'false');
           console.log('✅ [NAVBAR] Mobile menu chiuso');
+          console.log('🔍 [NAVBAR-DEBUG] Menu classList dopo chiusura:', Array.from(menu.classList));
         }
+      } else {
+        console.error('❌ [NAVBAR] Elementi mancanti - Menu:', !!menu, 'Button:', !!button);
       }
     }
     
-    // Auto-attach al caricamento DOM
+    // Auto-attach al caricamento DOM per event listener aggiuntivo
     document.addEventListener('DOMContentLoaded', function() {
       console.log('🔍 [NAVBAR-DEBUG] DOM loaded, cercando elementi...');
       
