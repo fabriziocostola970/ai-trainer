@@ -2,15 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const UnifiedImageService = require('../services/unified-image-service.js');
-const ImageDo    const claudeConfig = generationMode === 'economico' 
-      ? {
-          max_tokens: 6000,  // Aumentato: abbastanza per HTML completo con navbar
-          temperature: 0.3   // Economico: più deterministico come le pagine
-        }
-      : {
-          max_tokens: 6000,  // Sviluppo: più token per contenuti dettagliati
-          temperature: 0.7   // Sviluppo: più creativo
-        };vice = require('../services/image-download-service.js');
+const ImageDownloadService = require('../services/image-download-service.js');
 const { Pool } = require('pg');
 
 // 🚀 IMPORT NAVBAR GENERATOR
@@ -215,7 +207,7 @@ REGOLE ASSOLUTE:
     // 🎛️ CONFIGURE CLAUDE BASED ON GENERATION MODE (align with page generation)
     const claudeConfig = generationMode === 'economico' 
       ? {
-          max_tokens: 3500,  // Economico: meno token come le pagine
+          max_tokens: 6000,  // Aumentato: abbastanza per HTML completo con navbar
           temperature: 0.3   // Economico: più deterministico come le pagine
         }
       : {
