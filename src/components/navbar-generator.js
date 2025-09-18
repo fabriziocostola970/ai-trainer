@@ -276,6 +276,10 @@ function generateStaticNavbar(businessName, menuItems = []) {
       
       console.log('✅ [NAVBAR] Funzione toggleMobileMenu definita');
       
+      // 🔄 COMPATIBILITÀ TEMPORANEA: Rendi disponibile anche per onclick esistenti
+      window.toggleMobileMenu = toggleMobileMenu;
+      console.log('⚠️ [NAVBAR] window.toggleMobileMenu assegnata per compatibilità');
+      
     } catch (error) {
       console.error('❌ [NAVBAR] Errore durante inizializzazione:', error);
     }
