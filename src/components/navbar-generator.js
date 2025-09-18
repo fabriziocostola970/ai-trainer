@@ -244,34 +244,46 @@ function generateStaticNavbar(businessName, menuItems = []) {
       
       // 🎯 FUNZIONE TOGGLE MENU (come in claude-page-generator.js)
       function toggleMobileMenu() {
-        console.log('🔍 [NAVBAR-DEBUG] toggleMobileMenu chiamata');
+        console.log('� [DEBUG] === TOGGLE MOBILE MENU CHIAMATA ===');
+        console.log('�🔍 [NAVBAR-DEBUG] toggleMobileMenu chiamata');
         
         const menu = document.getElementById('mobileMenu');
         const button = document.getElementById('hamburger-btn');
         
-        console.log('🔍 [NAVBAR-DEBUG] Menu trovato:', !!menu);
+        console.log('🔥 [DEBUG] Elementi trovati:');
+        console.log('� [DEBUG] - Menu element:', menu);
+        console.log('🔥 [DEBUG] - Button element:', button);
+        console.log('�🔍 [NAVBAR-DEBUG] Menu trovato:', !!menu);
         console.log('🔍 [NAVBAR-DEBUG] Button trovato:', !!button);
         
         if (menu && button) {
           const isHidden = menu.style.display === 'none' || menu.classList.contains('hidden');
-          console.log('🔍 [NAVBAR-DEBUG] Menu nascosto:', isHidden);
+          console.log('� [DEBUG] Menu state:');
+          console.log('🔥 [DEBUG] - style.display:', menu.style.display);
+          console.log('🔥 [DEBUG] - classList:', Array.from(menu.classList));
+          console.log('�🔍 [NAVBAR-DEBUG] Menu nascosto:', isHidden);
           
           if (isHidden) {
             menu.style.display = 'block';
             menu.classList.remove('hidden');
             menu.classList.add('show');
             button.setAttribute('aria-expanded', 'true');
+            console.log('🔥 [DEBUG] MENU APERTO!');
             console.log('✅ [NAVBAR] Mobile menu aperto');
           } else {
             menu.style.display = 'none';
             menu.classList.add('hidden');
             menu.classList.remove('show');
             button.setAttribute('aria-expanded', 'false');
+            console.log('🔥 [DEBUG] MENU CHIUSO!');
             console.log('✅ [NAVBAR] Mobile menu chiuso');
           }
         } else {
+          console.error('🔥 [DEBUG] ERRORE: Elementi mancanti!');
           console.error('❌ [NAVBAR] Elementi mancanti - Menu:', !!menu, 'Button:', !!button);
         }
+        
+        console.log('🔥 [DEBUG] === FINE TOGGLE MOBILE MENU ===');
       }
       
       console.log('✅ [NAVBAR] Funzione toggleMobileMenu definita');
@@ -295,7 +307,13 @@ function generateStaticNavbar(businessName, menuItems = []) {
       console.log('🔍 [NAVBAR-DEBUG] Mobile menu:', !!mobileMenu);
       
       if (hamburgerBtn) {
-        hamburgerBtn.addEventListener('click', toggleMobileMenu);
+        // Aggiungi log diretto al click per debug
+        hamburgerBtn.addEventListener('click', function(e) {
+          console.log('🔥 [DEBUG] HAMBURGER CLICKED! Event:', e);
+          console.log('🔥 [DEBUG] Event target:', e.target);
+          console.log('🔥 [DEBUG] Calling toggleMobileMenu...');
+          toggleMobileMenu();
+        });
         console.log('✅ [NAVBAR] Event listener collegato al pulsante hamburger');
       } else {
         console.error('❌ [NAVBAR] Hamburger button NON trovato!');
