@@ -429,6 +429,9 @@ REGOLE ASSOLUTE:
       // 🆕 FASE 2: Scrive ANCHE in website_pages per architettura futura
       console.log('📄 Creating homepage record in website_pages...');
       
+      // 🆕 Generate pageId outside try block for response
+      const pageId = `page_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       const pageQuery = `
         INSERT INTO website_pages (id, "websiteId", name, slug, content, "pageType", "pageOrder", "isHomepage", "isActive", "createdAt", "updatedAt")
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
@@ -437,8 +440,6 @@ REGOLE ASSOLUTE:
           "updatedAt" = NOW()
         RETURNING id; 
       `;
-      
-      const pageId = `page_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       const pageResult = await pool.query(pageQuery, [
         pageId,          // $1 id
@@ -470,6 +471,7 @@ REGOLE ASSOLUTE:
       html: cleanHTML,
       websiteId: websiteId,
       businessId: businessId,
+      pageId: pageId, // 🆕 Aggiungo pageId per tracking costi completo
       savedToDatabase: true,
       staticSaved: saveResult.success, // 🆕 Conferma salvataggio statico
       costInfo: costInfo, // 💰 Include cost information
