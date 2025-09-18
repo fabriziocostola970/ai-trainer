@@ -347,6 +347,9 @@ REGOLE ASSOLUTE:
       throw new Error('Generated content is not valid HTML');
     }
 
+    // 🆕 Generate pageId OUTSIDE try block for response availability
+    const pageId = `page_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     // 💾 SALVA NELLA TABELLA WEBSITES ESISTENTE
     try {
       // Usa gli IDs ricevuti da VendiOnline-EU (non generare nuovi)
@@ -428,9 +431,6 @@ REGOLE ASSOLUTE:
       
       // 🆕 FASE 2: Scrive ANCHE in website_pages per architettura futura
       console.log('📄 Creating homepage record in website_pages...');
-      
-      // 🆕 Generate pageId outside try block for response
-      const pageId = `page_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       const pageQuery = `
         INSERT INTO website_pages (id, "websiteId", name, slug, content, "pageType", "pageOrder", "isHomepage", "isActive", "createdAt", "updatedAt")
