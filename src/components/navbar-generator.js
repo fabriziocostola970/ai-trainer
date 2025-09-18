@@ -340,13 +340,33 @@ function generateStaticNavbar(businessName, menuItems = []) {
       console.log('✅ [NAVBAR] Navbar completamente inizializzata');
     }
     
+    // 🔧 REACT FIX: Polling per elementi dinamici (per preview React)
+    function waitForReactElements() {
+      const hamburgerBtn = document.getElementById('hamburger-btn');
+      
+      if (hamburgerBtn) {
+        console.log('✅ [NAVBAR-REACT] Elementi trovati con polling, attaccando event listeners...');
+        attachEventListeners();
+        return;
+      }
+      
+      console.log('⏳ [NAVBAR-REACT] Elementi non ancora disponibili, riprovo tra 100ms...');
+      setTimeout(waitForReactElements, 100);
+    }
+    
     // Esegui subito se DOM è pronto, altrimenti aspetta DOMContentLoaded
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', attachEventListeners);
       console.log('🔍 [NAVBAR-DEBUG] DOM in caricamento, aspettando DOMContentLoaded...');
     } else {
-      attachEventListeners();
-      console.log('🔍 [NAVBAR-DEBUG] DOM già pronto, eseguendo subito...');
+      // 🔧 REACT CHECK: Se siamo in React (preview), usa polling
+      if (window.React || document.querySelector('[data-reactroot]') || window.location.pathname.includes('/preview')) {
+        console.log('🔍 [NAVBAR-REACT] Ambiente React rilevato, usando polling...');
+        waitForReactElements();
+      } else {
+        attachEventListeners();
+        console.log('🔍 [NAVBAR-DEBUG] DOM già pronto, eseguendo subito...');
+      }
     }
   </script>`;
 }
