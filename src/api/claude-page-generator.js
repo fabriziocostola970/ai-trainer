@@ -947,6 +947,9 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
 
     console.log('🧹 HTML cleaning: Original length:', htmlContent.length, ', Clean length:', cleanHTML.length);
 
+    // 🆕 Variabile per catturare il pageId salvato nel database
+    let savedPageId = null;
+
     // VERIFICA CHE SIA HTML VALIDO
     if (!cleanHTML.includes('<!DOCTYPE html>') && !cleanHTML.includes('<html')) {
       throw new Error('Generated content is not valid HTML');
@@ -1013,7 +1016,8 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
           true             // $9 isActive
         ]);
         
-        console.log(`💾 [DB-SAVE] Page "${pageName}" saved with ID: ${insertResult.rows[0]?.id || pageId}`);
+        savedPageId = insertResult.rows[0]?.id || pageId; // 🆕 Cattura il pageId salvato
+        console.log(`💾 [DB-SAVE] Page "${pageName}" saved with ID: ${savedPageId}`);
         
       } catch (dbError) {
         console.error('❌ [DB-SAVE] Failed to save page to database:', dbError.message);
@@ -1032,6 +1036,7 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
       htmlContent: cleanHTML, // ← Campo che si aspetta VendiOnline
       pageType: pageType,
       styleDNA: styleDNA,
+      pageId: savedPageId, // 🆕 ID della pagina salvata nel database
       costInfo: costInfo, // 🆕 Informazioni sui costi
       staticSaved: saveResult.success, // 🆕 Conferma salvataggio statico
       metadata: {
