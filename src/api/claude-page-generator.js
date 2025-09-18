@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const { Pool } = require('pg');
+const { generateStaticNavbar } = require('../components/navbar-generator.js');
 
 // CLAUDE SONNET 4 - GENERAZIONE PAGINE SECONDARIE CON STYLE DNA
 const anthropic = new Anthropic({
@@ -119,48 +120,13 @@ async function updateAllPagesNavbar(websiteId, businessName, pool) {
   }
 }
 
+}
+
 /**
- * 🎨 NAVBAR TEMPLATE STATICA - Design Perfetto e Responsive
- * Navbar moderna con menu hamburger funzionante e link dinamici
+ * 🚀 NAVBAR WITH DATABASE INTEGRATION
+ * Genera navbar statica popolata con dati dinamici dal database
  */
-function generateStaticNavbar(businessName, menuItems = []) {
-  console.log(`🎨 [STATIC-NAVBAR] Generazione navbar per: ${businessName} con ${menuItems.length} menu items`);
-  
-  // ✅ DEFAULT: Solo HOME (altri link solo se esistono nel DB)
-  const defaultMenuItems = [
-    { name: 'Home', href: '/', isHomepage: true }
-  ];
-  
-  // Se abbiamo menu items dal DB, aggiungiamo alla HOME
-  let finalMenuItems = [...defaultMenuItems];
-  
-  if (menuItems.length > 0) {
-    // Aggiungi solo le pagine attive, ordinate per pageOrder
-    const activePages = menuItems
-      .filter(item => item.isActive && !item.isHomepage) // Escludi homepage (già presente)
-      .sort((a, b) => (a.pageOrder || 0) - (b.pageOrder || 0))
-      .map(item => ({
-        name: item.name,
-        href: item.slug?.startsWith('/') ? item.slug : `/${item.slug}`, // 🔧 FIX: Gestisci slug con slash
-        pageType: item.pageType
-      }));
-    
-    finalMenuItems = [...finalMenuItems, ...activePages];
-    console.log(`✅ [NAVBAR-DB] Aggiunte ${activePages.length} pagine dal database`);
-  } else {
-    console.log(`⚠️ [NAVBAR-DB] Nessuna pagina nel database, usando solo HOME`);
-  }
-  
-  return `
-  <!-- � NAVBAR STATICA PERFETTA - Responsive & Accessibile -->
-  <nav class="bg-white shadow-lg fixed w-full z-50 top-0 border-b border-gray-200" role="navigation" aria-label="Main navigation">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-        
-        <!-- 🏢 LOGO/BRAND -->
-        <div class="flex items-center flex-shrink-0">
-          <div class="flex items-center">
-            <div class="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
+async function generateNavbarWithDatabase(websiteId, businessName) {
               ${businessName}
             </div>
           </div>
@@ -363,16 +329,16 @@ async function generateNavbarWithDatabase(websiteId, businessName) {
       }
     }
     
-    // Genera navbar statica con i menu items (o default se vuoti)
-    return generateStaticNavbar(businessName, menuItems);
+    // Genera navbar statica con i menu items (o default se vuoti) - SCRIPT DISABILITATO per evitare conflitti
+    return generateStaticNavbar(businessName, menuItems, false);
     
   } catch (error) {
     console.error('❌ [NAVBAR-GENERATOR] Errore database completo:', error);
     console.error('❌ [NAVBAR-GENERATOR] Error message:', error.message);
     console.error('❌ [NAVBAR-GENERATOR] Error stack:', error.stack);
     console.error('❌ [NAVBAR-GENERATOR] Pool status:', !!pool);
-    // In caso di errore, usa navbar statica con menu di default
-    return generateStaticNavbar(businessName, []);
+    // In caso di errore, usa navbar statica con menu di default - SCRIPT DISABILITATO per evitare conflitti
+    return generateStaticNavbar(businessName, [], false);
   }
 }
 

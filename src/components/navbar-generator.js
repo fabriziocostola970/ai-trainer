@@ -104,10 +104,11 @@ async function generateDynamicNavbar(websiteId, businessName, pool) {
  * 🎨 NAVBAR STATICA RESPONSIVE - Template base per tutte le navbar
  * @param {string} businessName - Nome del business per il logo
  * @param {array} menuItems - Array di oggetti menu item dal database
+ * @param {boolean} includeScript - Se includere il JavaScript inline (default: true)
  * @returns {string} HTML navbar completa con JavaScript
  */
-function generateStaticNavbar(businessName, menuItems = []) {
-  console.log(`🎨 [NAVBAR-STATIC] Generazione navbar per: ${businessName} con ${menuItems.length} menu items`);
+function generateStaticNavbar(businessName, menuItems = [], includeScript = true) {
+  console.log(`🎨 [NAVBAR-STATIC] Generazione navbar per: ${businessName} con ${menuItems.length} menu items, script: ${includeScript}`);
   
   // ✅ DEFAULT: Solo HOME se non ci sono menu items
   const defaultMenuItems = [
@@ -234,6 +235,7 @@ function generateStaticNavbar(businessName, menuItems = []) {
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   
+  ${includeScript ? `
   <!-- 🎯 JAVASCRIPT MOBILE MENU - Sempre Funzionante -->
   <script>
     console.log('🚀 [NAVBAR] Script iniziato - caricamento in corso...');
@@ -368,7 +370,7 @@ function generateStaticNavbar(businessName, menuItems = []) {
         console.log('🔍 [NAVBAR-DEBUG] DOM già pronto, eseguendo subito...');
       }
     }
-  </script>`;
+  </script>` : '<!-- 🔧 SCRIPT DISABILITATO per evitare conflitti React -->'}`;
 }
 
 /**
