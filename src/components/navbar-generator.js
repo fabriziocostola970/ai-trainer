@@ -297,8 +297,8 @@ function generateStaticNavbar(businessName, menuItems = []) {
     }
     
     // Auto-attach al caricamento DOM per event listener aggiuntivo
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('🔍 [NAVBAR-DEBUG] DOM loaded, cercando elementi...');
+    function attachEventListeners() {
+      console.log('🔍 [NAVBAR-DEBUG] Attaching event listeners...');
       
       const hamburgerBtn = document.getElementById('hamburger-btn');
       const mobileMenu = document.getElementById('mobileMenu');
@@ -338,7 +338,16 @@ function generateStaticNavbar(businessName, menuItems = []) {
       });
       
       console.log('✅ [NAVBAR] Navbar completamente inizializzata');
-    });
+    }
+    
+    // Esegui subito se DOM è pronto, altrimenti aspetta DOMContentLoaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', attachEventListeners);
+      console.log('🔍 [NAVBAR-DEBUG] DOM in caricamento, aspettando DOMContentLoaded...');
+    } else {
+      attachEventListeners();
+      console.log('🔍 [NAVBAR-DEBUG] DOM già pronto, eseguendo subito...');
+    }
   </script>`;
 }
 
