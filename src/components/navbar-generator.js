@@ -192,10 +192,7 @@ function generateStaticNavbar(businessName, menuItems = []) {
                   class="inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
                   aria-controls="mobile-menu" 
                   aria-expanded="false"
-                  aria-label="Toggle main menu"
-                  onclick="console.log('🔍 HAMBURGER CLICKED DIRECTLY!'); toggleMobileMenu();"
-                  onmousedown="console.log('🔍 HAMBURGER MOUSEDOWN!');"
-                  onmouseup="console.log('🔍 HAMBURGER MOUSEUP!');">
+                  aria-label="Toggle main menu">
             <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
