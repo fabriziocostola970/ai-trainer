@@ -493,7 +493,49 @@ DESIGN REQUIREMENTS:
 - Rating stars interattive
 - Layout masonry o grid
 - Carousel per highlights
-- Social proof elements`
+- Social proof elements`,
+
+      catalog: `Crea una bellissima pagina "CATALOGO PRODOTTI" per ${businessName} mantenendo perfetta coerenza con la homepage esistente.
+
+REQUISITI DI COERENZA:
+- NAVBAR: NON includere navbar/navigazione - verrà aggiunta automaticamente dal sistema
+- NOME ATTIVITÀ: Usa sempre e solo "${businessName}" senza modifiche o interpretazioni
+- FOOTER: Mantieni footer identico a quello della homepage (stessi contenuti, link, layout)
+
+OBIETTIVO: Showcase prodotti e articoli in vendita.
+
+CONTENUTO DA INCLUDERE:
+- Griglia prodotti responsive
+- Cards prodotto con immagini, nome, prezzo, descrizione
+- Filtri per categoria, prezzo, rating
+- Barra di ricerca
+- Ordinamento (nome, prezzo, popolarità)
+- Dettagli prodotto al click (modal o expand)
+- Badge per promozioni/sconti
+- Call-to-action per contatti o acquisto
+
+FUNZIONALITÀ E-COMMERCE:
+- Product cards moderne con hover effects
+- Immagini placeholder professionali per prodotti
+- Rating stelle per ogni prodotto
+- Prezzo prominente con possibilità di sconti
+- Bottone "Contatta per prezzo" o "Richiedi info"
+- Quick view per dettagli rapidi
+
+STILE DA MANTENERE (Style DNA):
+- Colori primari: ${styleDNA.colors?.primary}, ${styleDNA.colors?.secondary}
+- Colori brand: ${styleDNA.colors?.brandColors?.slice(0, 4).join(', ') || 'Moderni'}
+- Font principale: ${styleDNA.typography?.primaryFont || 'Inter'}
+- Font secondario: ${styleDNA.typography?.secondaryFont || 'Playfair Display'}
+
+DESIGN REQUIREMENTS:
+- Grid layout responsive (1-2-3-4 colonne)
+- Cards prodotto eleganti con animazioni
+- Filtri sidebar o top bar
+- Paginazione o infinite scroll
+- Loading states per interazioni
+- Typography ottimizzata per prezzi e nomi prodotti
+- Bottoni CTA coerenti con il brand`
     };
 
     const selectedPrompt = pagePrompts[pageType];
@@ -783,7 +825,9 @@ JAVASCRIPT AUTOMATICO - AGGIUNTO AUTOMATICAMENTE DAL SISTEMA
           'menu': 'Menu',
           'products': 'Prodotti',
           'blog': 'Blog',
-          'portfolio': 'Portfolio'
+          'portfolio': 'Portfolio',
+          'catalog': 'Catalogo',
+          'testimonials': 'Recensioni'
         };
         
         const pageName = pageNames[pageType.toLowerCase()] || 
